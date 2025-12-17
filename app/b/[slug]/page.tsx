@@ -61,9 +61,11 @@ export default async function BoardPage({ params }: PageProps) {
     <main className="page">
       <div className="container-app max-w-5xl">
         {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">{board.title}</h1>
+        <header className="mb-6 sm:mb-8">
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight overflow-wrap-break-word min-w-0">
+              {board.title}
+            </h1>
             <PinSettings slug={slug} hasPin={!!board.pin} />
           </div>
         </header>

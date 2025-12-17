@@ -14,6 +14,7 @@ interface ManualJob {
   employmentType: string;
   link: string;
   notes: string;
+  customFields?: Record<string, string>;
 }
 
 export async function POST(request: NextRequest) {
@@ -51,11 +52,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Build custom fields with defaults
+    // Build custom fields with defaults, merging any provided values
     const customFields: Record<string, string> = {};
     for (const col of board.columns) {
       const defaultValue = col.type === 'checkbox' ? 'No' : '';
-      customFields[col.name] = defaultValue;
+      const providedValue = manualJob?.customFields?.[col.name];
+      customFields[col.name] = providedValue ?? defaultValue;
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
           employmentType: job!.employment_type || 'Not listed',
           notes: job!.notes || '',
           status: 'Saved',
-          dueDate: '',
+          dueDate: job!.due_date || '',
           parsedOn: job!.fetchedAt.split('T')[0],
           verified: job!.isVerified ? 'Yes' : 'No',
           customFields,

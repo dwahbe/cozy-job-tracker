@@ -165,50 +165,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
   };
 
   return (
-    <div className="mb-8">
-      {/* Column list */}
-      {columns.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {columns.map((col) => (
-            <div key={col.name} className="chip group flex items-center gap-2 pr-1">
-              <span className="font-medium">{col.name}</span>
-              <span className="opacity-70">({col.type})</span>
-              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => startEdit(col)}
-                  className="p-1 rounded hover:bg-amber-100"
-                  title="Edit column"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleDelete(col.name)}
-                  disabled={deleting === col.name}
-                  className="p-1 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
-                  title="Delete column"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
+    <div className="mb-6 sm:mb-8">
       {/* Error message */}
       {error && <div className="callout callout-error mb-3">{error}</div>}
 
@@ -238,7 +195,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                     type: e.target.value as 'text' | 'checkbox' | 'dropdown',
                   })
                 }
-                className="select"
+                className="select w-full"
               >
                 <option value="text">Text</option>
                 <option value="checkbox">Checkbox (Yes/No)</option>
@@ -284,7 +241,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
 
       {/* Add form */}
       {isAdding ? (
-        <div className="card p-5">
+        <div className="card p-5 mb-3">
           <h3 className="text-base font-semibold mb-3">Add custom column</h3>
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
@@ -304,7 +261,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as 'text' | 'checkbox' | 'dropdown')}
-                className="select"
+                className="select w-full"
               >
                 <option value="text">Text</option>
                 <option value="checkbox">Checkbox (Yes/No)</option>
@@ -348,10 +305,63 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         </div>
       ) : (
         !editing && (
-          <button onClick={() => setIsAdding(true)} className="btn btn-soft text-sm">
+          <button onClick={() => setIsAdding(true)} className="btn btn-soft text-sm mb-3">
             + Add custom column
           </button>
         )
+      )}
+
+      {/* Column list */}
+      {columns.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {columns.map((col) => (
+            <div key={col.name} className="chip group flex items-center gap-2 pr-1">
+              <span className="font-medium">{col.name}</span>
+              <span className="opacity-70">({col.type})</span>
+              <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEdit(col)}
+                  className="p-1 rounded hover:bg-amber-100 active:bg-amber-100"
+                  title="Edit column"
+                >
+                  <svg
+                    className="w-3.5 h-3.5 sm:w-3 sm:h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleDelete(col.name)}
+                  disabled={deleting === col.name}
+                  className="p-1 rounded hover:bg-red-100 active:bg-red-100 text-red-600 disabled:opacity-50"
+                  title="Delete column"
+                >
+                  <svg
+                    className="w-3.5 h-3.5 sm:w-3 sm:h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

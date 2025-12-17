@@ -17,6 +17,7 @@ interface ManualJob {
   employmentType: string;
   link: string;
   notes: string;
+  customFields: Record<string, string>;
 }
 
 const emptyManualJob: ManualJob = {
@@ -26,6 +27,7 @@ const emptyManualJob: ManualJob = {
   employmentType: '',
   link: '',
   notes: '',
+  customFields: {},
 };
 
 export function JobForm({ slug, columns }: JobFormProps) {
@@ -143,7 +145,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
 
   return (
     <div className="mb-8 card p-7">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Add a job</h2>
           <p className="muted text-sm">
@@ -152,7 +154,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
               : 'Enter job details manually.'}
           </p>
         </div>
-        <div className="view-toggle">
+        <div className="view-toggle shrink-0 self-start">
           <button
             type="button"
             onClick={() => switchMode('url')}
@@ -197,38 +199,55 @@ export function JobForm({ slug, columns }: JobFormProps) {
               <h3 className="text-base font-semibold mb-3">Preview</h3>
 
               <div className="space-y-2 text-sm mb-4">
-                <div className="flex gap-2">
-                  <span className="muted w-32">Title:</span>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Title:</span>
                   <span className={parsedJob.title ? '' : 'muted italic'}>
                     {parsedJob.title || 'Not found'}
                   </span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="muted w-32">Company:</span>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Company:</span>
                   <span className={parsedJob.company ? '' : 'muted italic'}>
                     {parsedJob.company || 'Not found'}
                   </span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="muted w-32">Location:</span>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Location:</span>
                   <span className={parsedJob.location ? '' : 'muted italic'}>
                     {parsedJob.location || 'Not found'}
                   </span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="muted w-32">Type:</span>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Type:</span>
                   <span className={parsedJob.employment_type ? '' : 'muted italic'}>
                     {parsedJob.employment_type || 'Not found'}
                   </span>
                 </div>
+                {parsedJob.due_date && (
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                    <span className="muted sm:w-32 shrink-0">Due Date:</span>
+                    <span>{parsedJob.due_date}</span>
+                  </div>
+                )}
                 {parsedJob.notes && (
-                  <div className="flex gap-2">
-                    <span className="muted w-32">Notes:</span>
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                    <span className="muted sm:w-32 shrink-0">Notes:</span>
                     <span>{parsedJob.notes}</span>
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <span className="muted w-32">Verified:</span>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Link:</span>
+                  <a
+                    href={parsedJob.finalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate hover:underline decoration-2 underline-offset-4"
+                  >
+                    {parsedJob.finalUrl}
+                  </a>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <span className="muted sm:w-32 shrink-0">Verified:</span>
                   <span className={parsedJob.isVerified ? 'text-emerald-700' : 'text-amber-700'}>
                     {parsedJob.isVerified ? 'Yes' : 'Partial'}
                   </span>
@@ -310,6 +329,68 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 className="input w-full resize-none"
               />
             </div>
+
+            {/* Custom columns */}
+            {columns.map((col) => (
+              <div key={col.name}>
+                <label className="block text-sm font-medium mb-1.5">{col.name}</label>
+                {col.type === 'checkbox' ? (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={manualJob.customFields[col.name] === 'Yes'}
+                      onChange={(e) =>
+                        setManualJob({
+                          ...manualJob,
+                          customFields: {
+                            ...manualJob.customFields,
+                            [col.name]: e.target.checked ? 'Yes' : 'No',
+                          },
+                        })
+                      }
+                      className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="text-sm muted">Yes</span>
+                  </label>
+                ) : col.type === 'dropdown' && col.options ? (
+                  <select
+                    value={manualJob.customFields[col.name] || ''}
+                    onChange={(e) =>
+                      setManualJob({
+                        ...manualJob,
+                        customFields: {
+                          ...manualJob.customFields,
+                          [col.name]: e.target.value,
+                        },
+                      })
+                    }
+                    className="select w-full"
+                  >
+                    <option value="">—</option>
+                    {col.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={manualJob.customFields[col.name] || ''}
+                    onChange={(e) =>
+                      setManualJob({
+                        ...manualJob,
+                        customFields: {
+                          ...manualJob.customFields,
+                          [col.name]: e.target.value,
+                        },
+                      })
+                    }
+                    className="input w-full"
+                  />
+                )}
+              </div>
+            ))}
           </div>
           <button
             type="submit"

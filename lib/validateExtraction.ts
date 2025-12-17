@@ -5,6 +5,7 @@ export interface ValidatedJob {
   company: string | null;
   location: string | null;
   employment_type: string | null;
+  due_date: string | null;
   notes: string | null;
   isVerified: boolean;
   fetchedAt: string;
@@ -24,7 +25,10 @@ export function validateExtraction(
 ): ValidatedJob {
   const lowerText = sourceText.toLowerCase();
 
-  function validateField(field: { value: string | null; evidence: string | null }): string | null {
+  function validateField(
+    field: { value: string | null; evidence: string | null },
+    skipValueCheck = false
+  ): string | null {
     // If value is null, keep it null
     if (field.value === null) {
       return null;
@@ -42,9 +46,12 @@ export function validateExtraction(
     }
 
     // Check if value is found within evidence (case-insensitive)
-    const lowerValue = field.value.toLowerCase();
-    if (!lowerEvidence.includes(lowerValue)) {
-      return null;
+    // Skip this check for fields like dates where formatting may differ
+    if (!skipValueCheck) {
+      const lowerValue = field.value.toLowerCase();
+      if (!lowerEvidence.includes(lowerValue)) {
+        return null;
+      }
     }
 
     // Validation passed, return the value
@@ -55,6 +62,7 @@ export function validateExtraction(
   const validatedCompany = validateField(extraction.company);
   const validatedLocation = validateField(extraction.location);
   const validatedEmploymentType = validateField(extraction.employment_type);
+  const validatedDueDate = validateField(extraction.due_date, true); // Skip value check - date formatting varies
   const validatedNotes = validateField(extraction.notes);
 
   // isVerified is true if at least title AND company have verified evidence
@@ -65,6 +73,7 @@ export function validateExtraction(
     company: validatedCompany,
     location: validatedLocation,
     employment_type: validatedEmploymentType,
+    due_date: validatedDueDate,
     notes: validatedNotes,
     isVerified,
     fetchedAt,

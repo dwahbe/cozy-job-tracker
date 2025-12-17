@@ -70,6 +70,12 @@ export async function POST(request: NextRequest) {
     // Check if it's a built-in field
     if (fieldLower === 'status') {
       job.status = value;
+    } else if (fieldLower === 'title') {
+      job.title = value;
+    } else if (fieldLower === 'company') {
+      job.company = value;
+    } else if (fieldLower === 'link') {
+      job.link = value;
     } else if (fieldLower === 'notes') {
       job.notes = value;
     } else if (fieldLower === 'due date') {

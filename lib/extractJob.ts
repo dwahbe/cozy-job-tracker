@@ -10,6 +10,7 @@ export interface RawExtraction {
   company: ExtractionField;
   location: ExtractionField;
   employment_type: ExtractionField;
+  due_date: ExtractionField;
   notes: ExtractionField;
 }
 
@@ -27,6 +28,7 @@ Extract these fields:
 - company: The company/organization name
 - location: Where the job is located (city, state, remote, etc.)
 - employment_type: Full-time, Part-time, Contract, etc.
+- due_date: Application deadline or closing date (format as YYYY-MM-DD if possible)
 - notes: Any other notable information (salary, benefits, requirements summary)
 
 Return ONLY valid JSON in this exact format:
@@ -35,6 +37,7 @@ Return ONLY valid JSON in this exact format:
   "company": { "value": "string or null", "evidence": "string or null" },
   "location": { "value": "string or null", "evidence": "string or null" },
   "employment_type": { "value": "string or null", "evidence": "string or null" },
+  "due_date": { "value": "string or null", "evidence": "string or null" },
   "notes": { "value": "string or null", "evidence": "string or null" }
 }`;
 

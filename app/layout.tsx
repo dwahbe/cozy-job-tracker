@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
+import CopyLink from './components/CopyLink';
 import './globals.css';
 
 const geistSans = Geist({
@@ -39,7 +40,7 @@ export default function RootLayout({
         {children}
         <footer className="footer">
           <div className="container-app text-center space-y-3">
-            <p className="text-base font-medium">📬 send this to your unemployed friend</p>
+            <CopyLink />
             <div className="flex items-center justify-center gap-2 text-sm">
               <a
                 href="https://github.com/dwahbe/cozy-job-tracker"

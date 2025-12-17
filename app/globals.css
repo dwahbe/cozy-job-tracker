@@ -198,9 +198,21 @@ a:focus-visible {
   color: var(--foreground);
 }
 
-.input,
-.select {
+.input {
   width: 100%;
+  border-radius: 14px;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  color: var(--foreground);
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.select {
+  width: auto;
   border-radius: 14px;
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.88);
@@ -295,6 +307,51 @@ a:focus-visible {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Sort Select */
+.sort-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.sort-icon {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: var(--muted-2);
+}
+
+.sort-select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 6px 28px 6px 32px;
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted-2);
+  cursor: pointer;
+  border-radius: 7px;
+  transition: all 150ms ease;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238a6a58' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 6px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.sort-select:hover {
+  color: var(--foreground);
+}
+
+.sort-select:focus {
+  outline: none;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 /* Table View */
 .table-wrapper {
   background: var(--surface);
@@ -348,25 +405,32 @@ a:focus-visible {
 
 /* Table cells */
 .th-title {
-  min-width: 200px;
+  min-width: 180px;
 }
 .th-company {
-  min-width: 140px;
+  min-width: 120px;
 }
 .th-location {
-  min-width: 120px;
-}
-.th-status {
-  min-width: 110px;
-}
-.th-due {
-  min-width: 120px;
-}
-.th-custom {
   min-width: 100px;
 }
-.th-date {
+.th-type {
   min-width: 90px;
+}
+.th-due {
+  min-width: 115px;
+}
+.th-notes {
+  min-width: 150px;
+  max-width: 200px;
+}
+.th-status {
+  min-width: 100px;
+}
+.th-custom {
+  min-width: 90px;
+}
+.th-date {
+  min-width: 85px;
 }
 .th-actions {
   width: 50px;
@@ -392,6 +456,22 @@ a:focus-visible {
   color: var(--muted-2);
 }
 
+.td-type {
+  color: var(--muted-2);
+}
+
+.td-notes {
+  max-width: 200px;
+}
+
+.notes-text {
+  display: block;
+  color: var(--muted-2);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .date-text {
   font-size: 0.75rem;
   color: var(--muted-2);
@@ -400,17 +480,19 @@ a:focus-visible {
 /* Status select in table */
 .status-select {
   padding: 4px 8px;
+  padding-left: 12px;
+  padding-right: 24px;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 999px;
   border: none;
   cursor: pointer;
   appearance: none;
+  text-align: center;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 4px center;
   background-repeat: no-repeat;
   background-size: 16px;
-  padding-right: 22px;
 }
 
 .status-select:focus {
@@ -483,6 +565,26 @@ a:focus-visible {
   opacity: 0.6;
 }
 
+/* Edit button in table */
+.edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.edit-btn:hover {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--accent);
+}
+
 /* Delete button in table */
 .delete-btn {
   display: flex;
@@ -532,4 +634,40 @@ a:focus-visible {
 
 .table-date::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .page {
+    padding: 2rem 0 3rem;
+  }
+
+  .container-app {
+    padding: 0 0.75rem;
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  .table-wrapper {
+    border-radius: 14px;
+  }
+
+  /* Better touch targets on mobile */
+  .btn {
+    min-height: 44px;
+    padding: 0.7rem 1.1rem;
+  }
+
+  .chip {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  /* Ensure inputs are readable on mobile */
+  .input,
+  .select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
 }
