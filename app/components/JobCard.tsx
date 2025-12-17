@@ -58,13 +58,14 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
     }
   };
 
-  const statusColor = {
-    Saved: 'bg-amber-100 text-amber-950',
-    Applied: 'bg-sky-100 text-sky-950',
-    Interview: 'bg-violet-100 text-violet-950',
-    Offer: 'bg-emerald-100 text-emerald-950',
-    Rejected: 'bg-rose-100 text-rose-950',
-  }[job.status] || 'bg-amber-100 text-amber-950';
+  const statusColor =
+    {
+      Saved: 'bg-amber-100 text-amber-950',
+      Applied: 'bg-sky-100 text-sky-950',
+      Interview: 'bg-violet-100 text-violet-950',
+      Offer: 'bg-emerald-100 text-emerald-950',
+      Rejected: 'bg-rose-100 text-rose-950',
+    }[job.status] || 'bg-amber-100 text-amber-950';
 
   return (
     <div className="card card-hover p-6">
@@ -179,14 +180,16 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
                 <input
                   type="text"
                   value={textFields[col.name] ?? job.customFields[col.name] ?? ''}
-                  onChange={(e) => setTextFields(prev => ({ ...prev, [col.name]: e.target.value }))}
+                  onChange={(e) =>
+                    setTextFields((prev) => ({ ...prev, [col.name]: e.target.value }))
+                  }
                   onBlur={(e) => {
                     const newValue = e.target.value;
                     const oldValue = job.customFields[col.name] || '';
                     if (newValue !== oldValue) {
                       updateField(col.name, newValue);
                     }
-                    setTextFields(prev => {
+                    setTextFields((prev) => {
                       const next = { ...prev };
                       delete next[col.name];
                       return next;
@@ -221,4 +224,3 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
     </div>
   );
 }
-

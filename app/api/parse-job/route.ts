@@ -11,20 +11,14 @@ export async function POST(request: NextRequest) {
     const { url } = body;
 
     if (!url || typeof url !== 'string') {
-      return NextResponse.json(
-        { error: 'URL is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
     // Validate URL format
     try {
       new URL(url);
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
 
     // Fetch the page
@@ -32,8 +26,8 @@ export async function POST(request: NextRequest) {
 
     if (pageResult.fetchError && pageResult.text.length === 0) {
       return NextResponse.json(
-        { 
-          error: 'Failed to fetch page', 
+        {
+          error: 'Failed to fetch page',
           details: pageResult.fetchError,
           finalUrl: pageResult.finalUrl,
           fetchedAt: pageResult.fetchedAt,
@@ -43,11 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract job data using OpenAI
-    const extraction = await extractJob(
-      pageResult.text,
-      pageResult.title,
-      pageResult.finalUrl
-    );
+    const extraction = await extractJob(pageResult.text, pageResult.title, pageResult.finalUrl);
 
     // Validate the extraction against source text
     const validatedJob = validateExtraction(
@@ -69,4 +59,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

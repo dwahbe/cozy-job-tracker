@@ -8,7 +8,7 @@ export function CreateBoardForm() {
   const [slug, setSlug] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // PIN protection state
   const [enablePin, setEnablePin] = useState(false);
   const [pin, setPin] = useState('');
@@ -57,7 +57,7 @@ export function CreateBoardForm() {
       const response = await fetch('/api/create-board', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           slug,
           pin: enablePin ? pin : undefined,
         }),
@@ -81,9 +81,7 @@ export function CreateBoardForm() {
   return (
     <form onSubmit={handleSubmit} className="card p-7">
       <h2 className="text-2xl font-semibold tracking-tight mb-1">Create your board</h2>
-      <p className="muted mb-5 text-sm">
-        Pick a short name — it becomes your board URL.
-      </p>
+      <p className="muted mb-5 text-sm">Pick a short name — it becomes your board URL.</p>
 
       <div className="space-y-4">
         <div>
@@ -118,7 +116,7 @@ export function CreateBoardForm() {
             />
             <span className="text-sm font-medium">Protect with PIN</span>
           </label>
-          
+
           {enablePin && (
             <div className="mt-3 space-y-3 pl-6">
               <div>
@@ -152,15 +150,9 @@ export function CreateBoardForm() {
           )}
         </div>
 
-        {error && (
-          <div className="callout callout-error">{error}</div>
-        )}
+        {error && <div className="callout callout-error">{error}</div>}
 
-        <button
-          type="submit"
-          disabled={loading || !slug}
-          className="btn btn-primary w-full"
-        >
+        <button type="submit" disabled={loading || !slug} className="btn btn-primary w-full">
           {loading ? 'Creating...' : 'Create Board'}
         </button>
       </div>

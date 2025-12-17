@@ -14,27 +14,18 @@ export async function POST(request: NextRequest) {
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
     // Validate job data
     if (!job || !job.finalUrl) {
-      return NextResponse.json(
-        { error: 'Invalid job data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
 
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Build custom fields with defaults

@@ -19,18 +19,12 @@ export async function POST(request: NextRequest) {
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
     // Validate required fields
     if (!jobLink || !field) {
-      return NextResponse.json(
-        { error: 'jobLink and field are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'jobLink and field are required' }, { status: 400 });
     }
 
     // Validate Status field values
@@ -43,24 +37,18 @@ export async function POST(request: NextRequest) {
 
     // Validate Applied field values
     if (field === 'Applied' && !['Yes', 'No'].includes(value)) {
-      return NextResponse.json(
-        { error: 'Applied must be Yes or No' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Applied must be Yes or No' }, { status: 400 });
     }
 
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // For dropdown custom columns, validate the value
     const customColumn = board.columns.find(
-      c => c.name.toLowerCase() === field.toLowerCase() && c.type === 'dropdown'
+      (c) => c.name.toLowerCase() === field.toLowerCase() && c.type === 'dropdown'
     );
     if (customColumn && customColumn.options && !customColumn.options.includes(value)) {
       return NextResponse.json(
@@ -70,18 +58,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Find and update the job
-    const jobIndex = board.jobs.findIndex(j => j.link === jobLink);
+    const jobIndex = board.jobs.findIndex((j) => j.link === jobLink);
     if (jobIndex === -1) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
     // Update the appropriate field
     const job = board.jobs[jobIndex];
     const fieldLower = field.toLowerCase();
-    
+
     // Check if it's a built-in field
     if (fieldLower === 'status') {
       job.status = value;

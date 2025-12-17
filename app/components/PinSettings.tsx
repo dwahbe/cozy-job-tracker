@@ -95,11 +95,21 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
       >
         {hasPin ? (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
           </svg>
         ) : (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+            />
           </svg>
         )}
       </button>
@@ -107,22 +117,21 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={handleClose}
-          />
-          
+          <div className="fixed inset-0 z-40" onClick={handleClose} />
+
           {/* Dropdown */}
           <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-lg border z-50 p-4">
             {mode === 'idle' ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className={`w-2 h-2 rounded-full ${hasPin ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full ${hasPin ? 'bg-green-500' : 'bg-gray-300'}`}
+                  />
                   <span className="text-gray-600">
                     {hasPin ? 'Protected with PIN' : 'Not protected'}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2">
                   {!hasPin && (
                     <button
@@ -212,9 +221,7 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                   </p>
                 )}
 
-                {error && (
-                  <div className="text-xs text-red-600">{error}</div>
-                )}
+                {error && <div className="text-xs text-red-600">{error}</div>}
 
                 <div className="flex gap-2">
                   <button
@@ -241,4 +248,3 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
     </div>
   );
 }
-

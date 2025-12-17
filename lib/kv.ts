@@ -72,4 +72,3 @@ export async function deleteBoard(slug: string): Promise<void> {
 export function generateJobId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
-

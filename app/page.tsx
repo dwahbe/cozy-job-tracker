@@ -1,11 +1,11 @@
-import Link from 'next/link'
-import { listBoards } from '@/lib/kv'
-import { CreateBoardForm } from './components/CreateBoardForm'
+import Link from 'next/link';
+import { listBoards } from '@/lib/kv';
+import { CreateBoardForm } from './components/CreateBoardForm';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const boards = await listBoards()
+  const boards = await listBoards();
 
   return (
     <main className="page">
@@ -15,8 +15,8 @@ export default async function HomePage() {
             Your cozy little job tracker
           </h1>
           <p className="text-base sm:text-lg muted max-w-2xl">
-            Paste a job URL, let the parser pull the details, and keep
-            everything tidy in your own board.
+            Paste a job URL, let the parser pull the details, and keep everything tidy in your own
+            board.
           </p>
         </div>
 
@@ -28,16 +28,10 @@ export default async function HomePage() {
         {/* Existing Boards */}
         {boards.length > 0 && (
           <div className="card p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Friends in this with you
-            </h2>
+            <h2 className="text-xl font-semibold mb-4">Friends in this with you</h2>
             <div className="space-y-2">
               {boards.map((board) => (
-                <Link
-                  key={board}
-                  href={`/b/${board}`}
-                  className="card card-hover block p-4"
-                >
+                <Link key={board} href={`/b/${board}`} className="card card-hover block p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold">/b/{board}</span>
                     <span className="text-sm muted">Open →</span>
@@ -49,5 +43,5 @@ export default async function HomePage() {
         )}
       </div>
     </main>
-  )
+  );
 }

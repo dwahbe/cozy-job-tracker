@@ -72,4 +72,3 @@ ${text.slice(0, 15000)}`;
   const parsed = JSON.parse(content) as RawExtraction;
   return parsed;
 }
-

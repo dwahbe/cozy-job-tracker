@@ -21,12 +21,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editing, setEditing] = useState<EditingColumn | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  
+
   // Add form state
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'text' | 'checkbox' | 'dropdown'>('text');
   const [newOptions, setNewOptions] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,10 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       };
 
       if (newType === 'dropdown') {
-        const opts = newOptions.split(',').map(o => o.trim()).filter(Boolean);
+        const opts = newOptions
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean);
         if (opts.length === 0) {
           setError('Dropdown columns need at least one option');
           setLoading(false);
@@ -78,7 +81,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-    
+
     setLoading(true);
     setError(null);
 
@@ -89,7 +92,10 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       };
 
       if (editing.type === 'dropdown') {
-        const opts = editing.options.split(',').map(o => o.trim()).filter(Boolean);
+        const opts = editing.options
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean);
         if (opts.length === 0) {
           setError('Dropdown columns need at least one option');
           setLoading(false);
@@ -164,10 +170,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       {columns.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
           {columns.map((col) => (
-            <div
-              key={col.name}
-              className="chip group flex items-center gap-2 pr-1"
-            >
+            <div key={col.name} className="chip group flex items-center gap-2 pr-1">
               <span className="font-medium">{col.name}</span>
               <span className="opacity-70">({col.type})</span>
               <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -177,7 +180,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                   title="Edit column"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
                   </svg>
                 </button>
                 <button
@@ -187,7 +195,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                   title="Delete column"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -219,7 +232,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
               <label className="block text-sm font-medium mb-1">Type</label>
               <select
                 value={editing.type}
-                onChange={(e) => setEditing({ ...editing, type: e.target.value as 'text' | 'checkbox' | 'dropdown' })}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    type: e.target.value as 'text' | 'checkbox' | 'dropdown',
+                  })
+                }
                 className="select"
               >
                 <option value="text">Text</option>
@@ -242,12 +260,19 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             )}
 
             <div className="flex gap-2">
-              <button type="submit" disabled={loading || !editing.name.trim()} className="btn btn-primary">
+              <button
+                type="submit"
+                disabled={loading || !editing.name.trim()}
+                className="btn btn-primary"
+              >
                 {loading ? 'Saving...' : 'Save'}
               </button>
               <button
                 type="button"
-                onClick={() => { setEditing(null); setError(null); }}
+                onClick={() => {
+                  setEditing(null);
+                  setError(null);
+                }}
                 className="btn btn-ghost"
               >
                 Cancel
@@ -301,12 +326,19 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             )}
 
             <div className="flex gap-2">
-              <button type="submit" disabled={loading || !newName.trim()} className="btn btn-primary">
+              <button
+                type="submit"
+                disabled={loading || !newName.trim()}
+                className="btn btn-primary"
+              >
                 {loading ? 'Adding...' : 'Add Column'}
               </button>
               <button
                 type="button"
-                onClick={() => { setIsAdding(false); setError(null); }}
+                onClick={() => {
+                  setIsAdding(false);
+                  setError(null);
+                }}
                 className="btn btn-ghost"
               >
                 Cancel
@@ -314,12 +346,13 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             </div>
           </form>
         </div>
-      ) : !editing && (
-        <button onClick={() => setIsAdding(true)} className="btn btn-soft text-sm">
-          + Add custom column
-        </button>
+      ) : (
+        !editing && (
+          <button onClick={() => setIsAdding(true)} className="btn btn-soft text-sm">
+            + Add custom column
+          </button>
+        )
       )}
     </div>
   );
 }
-

@@ -19,18 +19,12 @@ export async function PUT(request: NextRequest) {
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug or board not found' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug or board not found' }, { status: 400 });
     }
 
     // Validate column
     if (!column || !column.name || !column.type) {
-      return NextResponse.json(
-        { error: 'Column name and type are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Column name and type are required' }, { status: 400 });
     }
 
     if (!VALID_COLUMN_TYPES.includes(column.type)) {
@@ -50,26 +44,20 @@ export async function PUT(request: NextRequest) {
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Find the column
     const columnIndex = board.columns.findIndex(
-      c => c.name.toLowerCase() === oldName.toLowerCase()
+      (c) => c.name.toLowerCase() === oldName.toLowerCase()
     );
     if (columnIndex === -1) {
-      return NextResponse.json(
-        { error: 'Column not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Column not found' }, { status: 404 });
     }
 
     // If renaming, check new name doesn't conflict
     if (oldName.toLowerCase() !== column.name.toLowerCase()) {
-      if (board.columns.some(c => c.name.toLowerCase() === column.name.toLowerCase())) {
+      if (board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
         return NextResponse.json(
           { error: 'Column with that name already exists' },
           { status: 400 }
@@ -113,37 +101,25 @@ export async function DELETE(request: NextRequest) {
     const columnName = searchParams.get('name');
 
     if (!slug || !columnName) {
-      return NextResponse.json(
-        { error: 'Slug and column name are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Slug and column name are required' }, { status: 400 });
     }
 
     if (!SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Find and remove the column
     const columnIndex = board.columns.findIndex(
-      c => c.name.toLowerCase() === columnName.toLowerCase()
+      (c) => c.name.toLowerCase() === columnName.toLowerCase()
     );
     if (columnIndex === -1) {
-      return NextResponse.json(
-        { error: 'Column not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Column not found' }, { status: 404 });
     }
 
     const removedColumn = board.columns[columnIndex];

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* Warm, cozy light theme (default) */
@@ -14,7 +14,7 @@
   --accent-2: #f59e0b; /* amber-500 */
   --ring: rgba(245, 158, 11, 0.28);
   --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
-  --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.10);
+  --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
   --radius: 18px;
 }
 
@@ -33,22 +33,31 @@
     --foreground: #3a271d;
     --muted: #6a4a3a;
     --muted-2: #8a6a58;
-    --surface: rgba(255, 255, 255, 0.90);
+    --surface: rgba(255, 255, 255, 0.9);
     --surface-solid: #ffffff;
     --border: rgba(245, 158, 11, 0.28);
     --accent: #d97706;
     --accent-2: #f59e0b;
     --ring: rgba(245, 158, 11, 0.28);
     --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
-    --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.10);
+    --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
   }
 }
 
 body {
   min-height: 100dvh;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family:
+    var(--font-geist-sans),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
   background:
     radial-gradient(900px 450px at 20% -10%, rgba(245, 158, 11, 0.18), transparent 60%),
     radial-gradient(900px 450px at 85% 0%, rgba(251, 191, 36, 0.14), transparent 55%),
@@ -120,7 +129,10 @@ a:focus-visible {
 }
 
 .card-hover {
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
 .card-hover:hover {
@@ -138,8 +150,12 @@ a:focus-visible {
   padding: 0.6rem 1rem;
   font-weight: 650;
   letter-spacing: -0.01em;
-  transition: transform 120ms ease, box-shadow 180ms ease, background-color 180ms ease,
-    border-color 180ms ease, color 180ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
   user-select: none;
 }
 
@@ -190,11 +206,14 @@ a:focus-visible {
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(245, 158, 11, 0.22);
   color: var(--foreground);
-  transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
 .input::placeholder {
-  color: rgba(106, 74, 58, 0.60);
+  color: rgba(106, 74, 58, 0.6);
 }
 
 .input:focus,
@@ -224,7 +243,7 @@ a:focus-visible {
 }
 
 .callout-error {
-  background: rgba(239, 68, 68, 0.10);
+  background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.25);
   color: rgba(127, 29, 29, 0.95);
 }
@@ -329,14 +348,30 @@ a:focus-visible {
 }
 
 /* Table cells */
-.th-title { min-width: 200px; }
-.th-company { min-width: 140px; }
-.th-location { min-width: 120px; }
-.th-status { min-width: 110px; }
-.th-due { min-width: 120px; }
-.th-custom { min-width: 100px; }
-.th-date { min-width: 90px; }
-.th-actions { width: 50px; }
+.th-title {
+  min-width: 200px;
+}
+.th-company {
+  min-width: 140px;
+}
+.th-location {
+  min-width: 120px;
+}
+.th-status {
+  min-width: 110px;
+}
+.th-due {
+  min-width: 120px;
+}
+.th-custom {
+  min-width: 100px;
+}
+.th-date {
+  min-width: 90px;
+}
+.th-actions {
+  width: 50px;
+}
 
 .td-title .job-link {
   font-weight: 550;
@@ -384,11 +419,26 @@ a:focus-visible {
   box-shadow: 0 0 0 2px var(--ring);
 }
 
-.status-saved { background: #fef3c7; color: #92400e; }
-.status-applied { background: #dbeafe; color: #1e40af; }
-.status-interview { background: #ede9fe; color: #5b21b6; }
-.status-offer { background: #d1fae5; color: #065f46; }
-.status-rejected { background: #fee2e2; color: #991b1b; }
+.status-saved {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-applied {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.status-interview {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.status-offer {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 /* Table inputs */
 .table-checkbox {

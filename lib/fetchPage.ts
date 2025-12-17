@@ -8,16 +8,17 @@ export interface FetchPageResult {
   fetchError?: string;
 }
 
-const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export async function fetchPage(url: string): Promise<FetchPageResult> {
   const fetchedAt = new Date().toISOString();
-  
+
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
       redirect: 'follow',
@@ -45,7 +46,7 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
 
     // Get body text
     let text = $('body').text();
-    
+
     // Collapse whitespace
     text = text
       .replace(/\s+/g, ' ')
@@ -79,4 +80,3 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
     };
   }
 }
-

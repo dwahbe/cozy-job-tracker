@@ -13,36 +13,24 @@ export async function POST(request: NextRequest) {
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
     // Validate jobLink
     if (!jobLink) {
-      return NextResponse.json(
-        { error: 'jobLink is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'jobLink is required' }, { status: 400 });
     }
 
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Find and remove the job
-    const jobIndex = board.jobs.findIndex(j => j.link === jobLink);
+    const jobIndex = board.jobs.findIndex((j) => j.link === jobLink);
     if (jobIndex === -1) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
     board.jobs.splice(jobIndex, 1);

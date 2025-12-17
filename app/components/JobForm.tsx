@@ -88,10 +88,12 @@ export function JobForm({ slug, columns }: JobFormProps) {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Add a job</h2>
-          <p className="muted text-sm">Paste a posting URL. We&apos;ll extract and preview the details.</p>
+          <p className="muted text-sm">
+            Paste a posting URL. We&apos;ll extract and preview the details.
+          </p>
         </div>
       </div>
-      
+
       <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-3 mb-4">
         <input
           type="url"
@@ -110,18 +112,14 @@ export function JobForm({ slug, columns }: JobFormProps) {
         </button>
       </form>
 
-      {error && (
-        <div className="callout callout-error mb-4">{error}</div>
-      )}
+      {error && <div className="callout callout-error mb-4">{error}</div>}
 
-      {fetchWarning && (
-        <div className="callout callout-warn mb-4">Warning: {fetchWarning}</div>
-      )}
+      {fetchWarning && <div className="callout callout-warn mb-4">Warning: {fetchWarning}</div>}
 
       {parsedJob && (
         <div className="card card-solid p-5">
           <h3 className="text-base font-semibold mb-3">Preview</h3>
-          
+
           <div className="space-y-2 text-sm mb-4">
             <div className="flex gap-2">
               <span className="muted w-32">Title:</span>
@@ -161,11 +159,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
             </div>
           </div>
 
-          <button
-            onClick={handleAdd}
-            disabled={adding}
-            className="btn btn-primary w-full"
-          >
+          <button onClick={handleAdd} disabled={adding} className="btn btn-primary w-full">
             {adding ? 'Adding...' : 'Add to board'}
           </button>
         </div>
@@ -173,4 +167,3 @@ export function JobForm({ slug, columns }: JobFormProps) {
     </div>
   );
 }
-

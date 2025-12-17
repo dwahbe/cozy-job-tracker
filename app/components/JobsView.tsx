@@ -62,4 +62,3 @@ export function JobsView({ jobs, slug, columns }: JobsViewProps) {
     </div>
   );
 }
-

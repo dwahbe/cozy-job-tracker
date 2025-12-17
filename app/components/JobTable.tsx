@@ -58,13 +58,14 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
     }
   };
 
-  const statusColor = (status: string) => ({
-    Saved: 'status-saved',
-    Applied: 'status-applied',
-    Interview: 'status-interview',
-    Offer: 'status-offer',
-    Rejected: 'status-rejected',
-  }[status] || 'status-saved');
+  const statusColor = (status: string) =>
+    ({
+      Saved: 'status-saved',
+      Applied: 'status-applied',
+      Interview: 'status-interview',
+      Offer: 'status-offer',
+      Rejected: 'status-rejected',
+    })[status] || 'status-saved';
 
   const isUpdating = (jobLink: string, field: string) =>
     updating?.jobLink === jobLink && updating?.field === field;
@@ -80,7 +81,9 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
             <th className="th-status">Status</th>
             <th className="th-due">Due</th>
             {columns.map((col) => (
-              <th key={col.name} className="th-custom">{col.name}</th>
+              <th key={col.name} className="th-custom">
+                {col.name}
+              </th>
             ))}
             <th className="th-date">Added</th>
             <th className="th-actions"></th>
@@ -90,12 +93,7 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
           {jobs.map((job) => (
             <tr key={job.link} className={deleting === job.link ? 'row-deleting' : ''}>
               <td className="td-title">
-                <a
-                  href={job.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="job-link"
-                >
+                <a href={job.link} target="_blank" rel="noopener noreferrer" className="job-link">
                   {job.title}
                 </a>
               </td>
@@ -130,7 +128,9 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
                     <input
                       type="checkbox"
                       checked={job.customFields[col.name] === 'Yes'}
-                      onChange={(e) => updateField(job.link, col.name, e.target.checked ? 'Yes' : 'No')}
+                      onChange={(e) =>
+                        updateField(job.link, col.name, e.target.checked ? 'Yes' : 'No')
+                      }
                       disabled={isUpdating(job.link, col.name)}
                       className="table-checkbox"
                     />
@@ -209,4 +209,3 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
     </div>
   );
 }
-

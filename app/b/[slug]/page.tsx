@@ -26,7 +26,7 @@ export default async function BoardPage({ params }: PageProps) {
 
   // Get board from KV
   const board = await getBoard(slug);
-  
+
   if (!board) {
     notFound();
   }
@@ -35,7 +35,7 @@ export default async function BoardPage({ params }: PageProps) {
   if (board.pin) {
     const cookieStore = await cookies();
     const authCookie = cookieStore.get(`board_${slug}_auth`);
-    
+
     // If no valid cookie, show PIN form
     if (!authCookie || authCookie.value !== 'verified') {
       return <PinForm slug={slug} boardTitle={board.title} />;
@@ -63,9 +63,7 @@ export default async function BoardPage({ params }: PageProps) {
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              {board.title}
-            </h1>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">{board.title}</h1>
             <PinSettings slug={slug} hasPin={!!board.pin} />
           </div>
         </header>

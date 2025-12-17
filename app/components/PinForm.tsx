@@ -23,7 +23,7 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (pin.length < 4) {
       setError('PIN must be at least 4 digits');
       return;
@@ -95,9 +95,7 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
               />
             </div>
 
-            {error && (
-              <div className="text-sm text-red-600">{error}</div>
-            )}
+            {error && <div className="text-sm text-red-600">{error}</div>}
 
             <button
               type="submit"
@@ -112,4 +110,3 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
     </main>
   );
 }
-

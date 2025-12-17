@@ -14,7 +14,12 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
         aria-pressed={view === 'table'}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M1 3h14M1 8h14M1 13h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path
+            d="M1 3h14M1 8h14M1 13h14"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
         </svg>
         <span>Table</span>
       </button>
@@ -34,4 +39,3 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
     </div>
   );
 }
-

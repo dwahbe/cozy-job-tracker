@@ -14,48 +14,33 @@ export async function POST(request: NextRequest) {
 
     // Validate inputs
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board' }, { status: 400 });
     }
 
     if (!pin) {
-      return NextResponse.json(
-        { error: 'PIN required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'PIN required' }, { status: 400 });
     }
 
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
-    
+
     if (!board.pin) {
-      return NextResponse.json(
-        { error: 'Board is not protected' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Board is not protected' }, { status: 400 });
     }
 
     // Verify PIN
     const isValid = await bcrypt.compare(pin, board.pin);
-    
+
     if (!isValid) {
-      return NextResponse.json(
-        { error: 'Incorrect PIN' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Incorrect PIN' }, { status: 401 });
     }
 
     // Create response with auth cookie
     const response = NextResponse.json({ success: true });
-    
+
     // Set HttpOnly cookie for this board
     response.cookies.set(`board_${slug}_auth`, 'verified', {
       httpOnly: true,
@@ -68,9 +53,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Verify PIN error:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify PIN' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to verify PIN' }, { status: 500 });
   }
 }

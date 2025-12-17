@@ -14,18 +14,12 @@ export async function POST(request: NextRequest) {
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json(
-        { error: 'Invalid board slug' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
     // Validate column
     if (!column || !column.name || !column.type) {
-      return NextResponse.json(
-        { error: 'Column name and type are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Column name and type are required' }, { status: 400 });
     }
 
     if (!VALID_COLUMN_TYPES.includes(column.type)) {
@@ -46,18 +40,12 @@ export async function POST(request: NextRequest) {
     // Get board from KV
     const board = await getBoard(slug);
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Check if column already exists
-    if (board.columns.some(c => c.name.toLowerCase() === column.name.toLowerCase())) {
-      return NextResponse.json(
-        { error: 'Column already exists' },
-        { status: 400 }
-      );
+    if (board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
+      return NextResponse.json({ error: 'Column already exists' }, { status: 400 });
     }
 
     // Add column

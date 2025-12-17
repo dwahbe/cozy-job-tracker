@@ -22,23 +22,17 @@ export async function POST(request: NextRequest) {
 
     // Validate PIN if provided
     if (pin && !PIN_REGEX.test(pin)) {
-      return NextResponse.json(
-        { error: 'PIN must be 4-6 digits.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'PIN must be 4-6 digits.' }, { status: 400 });
     }
 
     // Check if board already exists
     if (await boardExists(slug)) {
-      return NextResponse.json(
-        { error: 'A board with this name already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'A board with this name already exists' }, { status: 409 });
     }
 
     // Create the board
     const boardTitle = title || `${slug.charAt(0).toUpperCase() + slug.slice(1)}'s Job Board`;
-    
+
     const board: Board = {
       title: boardTitle,
       columns: [],

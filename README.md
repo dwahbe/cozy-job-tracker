@@ -76,6 +76,7 @@ Personal job tracking board.
 ### Tracking Status
 
 Each job card has controls for:
+
 - **Applied**: Checkbox to mark if you've applied
 - **Status**: Dropdown (Saved, Applied, Interview, Offer, Rejected)
 - **Custom fields**: Any columns you've added
@@ -83,6 +84,7 @@ Each job card has controls for:
 ### Custom Columns
 
 Click "+ Add custom column" to create:
+
 - **Text**: Free-form text input (e.g., Salary, Notes)
 - **Checkbox**: Yes/No toggle (e.g., Referral, Remote OK)
 - **Dropdown**: Select from predefined options (e.g., Priority: Low/Medium/High)
