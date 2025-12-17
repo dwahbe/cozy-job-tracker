@@ -1,8 +1,6 @@
 ---
 title: Dylan's Job Board
-columns:
-  - name: Referral
-    type: text
+columns: []
 pin: $2b$10$wVMElktBhWtXlQ4vuGiZgOE.pBahBerD8/n92kjmyeS.bHH9gW3qC
 ---
 
@@ -19,7 +17,6 @@ Personal job tracking board.
   - Notes: 
   - Applied: No
   - Status: Saved
-  - Referral: kauawkudbaw
   - Parsed on: 2025-12-17
   - Verified: Yes
 
@@ -30,7 +27,6 @@ Personal job tracking board.
   - Notes: 
   - Applied: No
   - Status: Interview
-  - Referral: 
   - Due date: 2025-12-18
   - Parsed on: 2025-12-17
   - Verified: Yes
@@ -42,7 +38,6 @@ Personal job tracking board.
   - Notes: Annual salary: $80K USD, with potential cost-of-living adjustments of up to 20% dependent on location.
   - Applied: No
   - Status: Saved
-  - Referral: 
   - Parsed on: 2025-12-17
   - Verified: Yes
 
@@ -53,6 +48,5 @@ Personal job tracking board.
   - Notes: 
   - Status: Saved
   - Due date:
-  - Referral: 
   - Parsed on: 2025-12-17
   - Verified: Yes

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { parseBoardFile, deleteJobFromMarkdown, reconstructFile } from '@/lib/markdown';
+import { getBoard, saveBoard } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 
 export async function POST(request: NextRequest) {
@@ -30,38 +27,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board path' },
-        { status: 400 }
-      );
-    }
-
-    // Check if board exists
-    try {
-      await fs.access(boardPath);
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
 
-    // Read current board content
-    const fileContent = await fs.readFile(boardPath, 'utf-8');
-    const boardData = parseBoardFile(fileContent);
+    // Find and remove the job
+    const jobIndex = board.jobs.findIndex(j => j.link === jobLink);
+    if (jobIndex === -1) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
 
-    // Delete the job from markdown
-    const updatedContent = deleteJobFromMarkdown(boardData.content, jobLink);
+    board.jobs.splice(jobIndex, 1);
 
-    // Reconstruct file with frontmatter
-    const newFileContent = reconstructFile(boardData, updatedContent);
-
-    // Write back to file
-    await fs.writeFile(boardPath, newFileContent, 'utf-8');
+    // Save board
+    await saveBoard(slug, board);
 
     // Revalidate the board page
     revalidatePath(`/b/${slug}`);
@@ -75,4 +62,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import bcrypt from 'bcryptjs';
-import { parseBoardFile, reconstructFile } from '@/lib/markdown';
+import { getBoard, saveBoard } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 const PIN_REGEX = /^\d{4,6}$/;
 
@@ -35,32 +32,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board' },
-        { status: 400 }
-      );
-    }
-
-    // Read board file
-    let fileContent: string;
-    try {
-      fileContent = await fs.readFile(boardPath, 'utf-8');
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
 
-    // Parse board
-    const boardData = parseBoardFile(fileContent);
-
     // If board has existing PIN, verify current PIN
-    if (boardData.pin) {
+    if (board.pin) {
       if (!currentPin) {
         return NextResponse.json(
           { error: 'Current PIN required' },
@@ -68,7 +50,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const isValid = await bcrypt.compare(currentPin, boardData.pin);
+      const isValid = await bcrypt.compare(currentPin, board.pin);
       if (!isValid) {
         return NextResponse.json(
           { error: 'Incorrect current PIN' },
@@ -80,15 +62,14 @@ export async function POST(request: NextRequest) {
     // Update PIN
     if (newPin) {
       // Set or change PIN
-      boardData.pin = await bcrypt.hash(newPin, 10);
+      board.pin = await bcrypt.hash(newPin, 10);
     } else {
       // Remove PIN
-      delete boardData.pin;
+      delete board.pin;
     }
 
-    // Reconstruct and save file
-    const newContent = reconstructFile(boardData, boardData.content);
-    await fs.writeFile(boardPath, newContent, 'utf-8');
+    // Save board
+    await saveBoard(slug, board);
 
     // Create response and clear auth cookie (user needs to re-authenticate)
     const response = NextResponse.json({ success: true });
@@ -111,4 +92,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

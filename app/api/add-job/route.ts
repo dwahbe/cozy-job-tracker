@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { parseBoardFile, formatJobMarkdown, appendUnderSavedSection, reconstructFile } from '@/lib/markdown';
+import { getBoard, saveBoard, generateJobId, type Job } from '@/lib/kv';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 
 export async function POST(request: NextRequest) {
@@ -31,41 +28,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path and verify it's within BOARDS_DIR
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board path' },
-        { status: 400 }
-      );
-    }
-
-    // Check if board exists
-    try {
-      await fs.access(boardPath);
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
 
-    // Read current board content
-    const fileContent = await fs.readFile(boardPath, 'utf-8');
-    const boardData = parseBoardFile(fileContent);
+    // Build custom fields with defaults
+    const customFields: Record<string, string> = {};
+    for (const col of board.columns) {
+      const defaultValue = col.type === 'checkbox' ? 'No' : '';
+      customFields[col.name] = defaultValue;
+    }
 
-    // Format the job as markdown
-    const jobBlock = formatJobMarkdown(job, boardData.columns);
+    // Create the new job
+    const newJob: Job = {
+      id: generateJobId(),
+      title: job.title || 'Unknown Position',
+      company: job.company || 'Unknown Company',
+      link: job.finalUrl,
+      location: job.location || 'Not listed',
+      employmentType: job.employment_type || 'Not listed',
+      notes: job.notes || '',
+      status: 'Saved',
+      dueDate: '',
+      parsedOn: job.fetchedAt.split('T')[0],
+      verified: job.isVerified ? 'Yes' : 'No',
+      customFields,
+    };
 
-    // Append to the saved section
-    const updatedContent = appendUnderSavedSection(boardData.content, jobBlock);
+    // Add job to board
+    board.jobs.push(newJob);
 
-    // Reconstruct file with frontmatter
-    const newFileContent = reconstructFile(boardData, updatedContent);
-
-    // Write back to file
-    await fs.writeFile(boardPath, newFileContent, 'utf-8');
+    // Save board
+    await saveBoard(slug, board);
 
     // Revalidate the board page
     revalidatePath(`/b/${slug}`);
@@ -79,4 +78,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

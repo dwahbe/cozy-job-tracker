@@ -270,6 +270,68 @@ export function addColumnToFrontmatter(fileContent: string, column: Column): str
 }
 
 /**
+ * Update a column definition in frontmatter
+ */
+export function updateColumnInFrontmatter(
+  fileContent: string,
+  oldName: string,
+  column: Column
+): string {
+  const { data, content } = matter(fileContent);
+  
+  const columns: Column[] = data.columns || [];
+  const index = columns.findIndex(c => c.name.toLowerCase() === oldName.toLowerCase());
+  
+  if (index === -1) {
+    throw new Error('Column not found');
+  }
+  
+  // If renaming, check new name doesn't conflict
+  if (oldName.toLowerCase() !== column.name.toLowerCase()) {
+    if (columns.some(c => c.name.toLowerCase() === column.name.toLowerCase())) {
+      throw new Error('Column with that name already exists');
+    }
+  }
+  
+  columns[index] = column;
+  
+  const newData = { ...data, columns };
+  
+  // If the column was renamed, update all jobs in the content
+  let updatedContent = content;
+  if (oldName !== column.name) {
+    const oldPattern = new RegExp(`(- ${escapeRegex(oldName)}:)`, 'g');
+    updatedContent = content.replace(oldPattern, `- ${column.name}:`);
+  }
+  
+  return matter.stringify(updatedContent, newData);
+}
+
+/**
+ * Delete a column definition from frontmatter
+ */
+export function deleteColumnFromFrontmatter(fileContent: string, columnName: string): string {
+  const { data, content } = matter(fileContent);
+  
+  const columns: Column[] = data.columns || [];
+  const index = columns.findIndex(c => c.name.toLowerCase() === columnName.toLowerCase());
+  
+  if (index === -1) {
+    throw new Error('Column not found');
+  }
+  
+  columns.splice(index, 1);
+  
+  const newData = { ...data, columns };
+  
+  // Remove the column from all jobs in content
+  const fieldPattern = new RegExp(`\\n  - ${escapeRegex(columnName)}:.*`, 'g');
+  const updatedContent = content.replace(fieldPattern, '');
+  
+  return matter.stringify(updatedContent, newData);
+}
+
+/**
  * Reconstruct full file content from frontmatter and body
  */
 export function reconstructFile(data: BoardData, content: string): string {

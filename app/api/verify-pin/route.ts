@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import bcrypt from 'bcryptjs';
-import { parseBoardFile } from '@/lib/markdown';
+import { getBoard } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
@@ -30,31 +27,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board' },
-        { status: 400 }
-      );
-    }
-
-    // Read board file
-    let fileContent: string;
-    try {
-      fileContent = await fs.readFile(boardPath, 'utf-8');
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
-
-    // Parse board and get PIN hash
-    const boardData = parseBoardFile(fileContent);
     
-    if (!boardData.pin) {
+    if (!board.pin) {
       return NextResponse.json(
         { error: 'Board is not protected' },
         { status: 400 }
@@ -62,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify PIN
-    const isValid = await bcrypt.compare(pin, boardData.pin);
+    const isValid = await bcrypt.compare(pin, board.pin);
     
     if (!isValid) {
       return NextResponse.json(
@@ -92,4 +74,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

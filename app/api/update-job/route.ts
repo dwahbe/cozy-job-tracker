@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { parseBoardFile, updateJobInMarkdown, reconstructFile } from '@/lib/markdown';
+import { getBoard, saveBoard } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
@@ -52,32 +49,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board path' },
-        { status: 400 }
-      );
-    }
-
-    // Check if board exists
-    try {
-      await fs.access(boardPath);
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
 
-    // Read current board content
-    const fileContent = await fs.readFile(boardPath, 'utf-8');
-    const boardData = parseBoardFile(fileContent);
-
     // For dropdown custom columns, validate the value
-    const customColumn = boardData.columns.find(
+    const customColumn = board.columns.find(
       c => c.name.toLowerCase() === field.toLowerCase() && c.type === 'dropdown'
     );
     if (customColumn && customColumn.options && !customColumn.options.includes(value)) {
@@ -87,14 +69,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update the job in markdown
-    const updatedContent = updateJobInMarkdown(boardData.content, jobLink, field, value);
+    // Find and update the job
+    const jobIndex = board.jobs.findIndex(j => j.link === jobLink);
+    if (jobIndex === -1) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
 
-    // Reconstruct file with frontmatter
-    const newFileContent = reconstructFile(boardData, updatedContent);
+    // Update the appropriate field
+    const job = board.jobs[jobIndex];
+    const fieldLower = field.toLowerCase();
+    
+    // Check if it's a built-in field
+    if (fieldLower === 'status') {
+      job.status = value;
+    } else if (fieldLower === 'notes') {
+      job.notes = value;
+    } else if (fieldLower === 'due date') {
+      job.dueDate = value;
+    } else if (fieldLower === 'location') {
+      job.location = value;
+    } else if (fieldLower === 'employment type') {
+      job.employmentType = value;
+    } else {
+      // Custom field
+      job.customFields[field] = value;
+    }
 
-    // Write back to file
-    await fs.writeFile(boardPath, newFileContent, 'utf-8');
+    // Save board
+    await saveBoard(slug, board);
 
     // Revalidate the board page
     revalidatePath(`/b/${slug}`);
@@ -108,4 +113,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

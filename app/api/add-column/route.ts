@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { addColumnToFrontmatter, type Column } from '@/lib/markdown';
+import { getBoard, saveBoard, type Column } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown'];
 
@@ -46,34 +43,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build safe path
-    const boardPath = path.join(BOARDS_DIR, `${slug}.md`);
-    const resolvedPath = path.resolve(boardPath);
-    if (!resolvedPath.startsWith(path.resolve(BOARDS_DIR))) {
-      return NextResponse.json(
-        { error: 'Invalid board path' },
-        { status: 400 }
-      );
-    }
-
-    // Check if board exists
-    try {
-      await fs.access(boardPath);
-    } catch {
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },
         { status: 404 }
       );
     }
 
-    // Read current board content
-    const fileContent = await fs.readFile(boardPath, 'utf-8');
+    // Check if column already exists
+    if (board.columns.some(c => c.name.toLowerCase() === column.name.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Column already exists' },
+        { status: 400 }
+      );
+    }
 
-    // Add column to frontmatter
-    const newFileContent = addColumnToFrontmatter(fileContent, column);
+    // Add column
+    board.columns.push(column);
 
-    // Write back to file
-    await fs.writeFile(boardPath, newFileContent, 'utf-8');
+    // Add default values for existing jobs
+    const defaultValue = column.type === 'checkbox' ? 'No' : '';
+    for (const job of board.jobs) {
+      job.customFields[column.name] = defaultValue;
+    }
+
+    // Save board
+    await saveBoard(slug, board);
 
     // Revalidate the board page
     revalidatePath(`/b/${slug}`);
@@ -87,4 +84,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

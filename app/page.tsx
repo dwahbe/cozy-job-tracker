@@ -1,23 +1,11 @@
 import Link from 'next/link'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { listBoards } from '@/lib/kv'
 import { CreateBoardForm } from './components/CreateBoardForm'
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards')
-
-async function getBoards() {
-  try {
-    const files = await fs.readdir(BOARDS_DIR)
-    return files
-      .filter((f) => f.endsWith('.md'))
-      .map((f) => f.replace('.md', ''))
-  } catch {
-    return []
-  }
-}
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const boards = await getBoards()
+  const boards = await listBoards()
 
   return (
     <main className="page">
