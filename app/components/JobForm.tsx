@@ -152,26 +152,18 @@ export function JobForm({ slug, columns }: JobFormProps) {
               : 'Enter job details manually.'}
           </p>
         </div>
-        <div className="flex gap-1 bg-[var(--bg-tertiary)] rounded-lg p-1">
+        <div className="view-toggle">
           <button
             type="button"
             onClick={() => switchMode('url')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              mode === 'url'
-                ? 'bg-[var(--bg-primary)] shadow-sm font-medium'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
+            className={`view-toggle-btn ${mode === 'url' ? 'active' : ''}`}
           >
             From URL
           </button>
           <button
             type="button"
             onClick={() => switchMode('manual')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              mode === 'manual'
-                ? 'bg-[var(--bg-primary)] shadow-sm font-medium'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
+            className={`view-toggle-btn ${mode === 'manual' ? 'active' : ''}`}
           >
             Manual
           </button>
