@@ -7,19 +7,42 @@ export const runtime = 'nodejs';
 
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 
+interface ManualJob {
+  title: string;
+  company: string;
+  location: string;
+  employmentType: string;
+  link: string;
+  notes: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, job } = body as { slug: string; job: ValidatedJob };
+    const { slug, job, manualJob } = body as {
+      slug: string;
+      job?: ValidatedJob;
+      manualJob?: ManualJob;
+    };
 
     // Validate slug
     if (!slug || !SLUG_REGEX.test(slug)) {
       return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
     }
 
-    // Validate job data
-    if (!job || !job.finalUrl) {
+    // Validate that we have either job or manualJob
+    if (!job && !manualJob) {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
+    }
+
+    // For URL-parsed jobs, require finalUrl
+    if (job && !job.finalUrl) {
+      return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
+    }
+
+    // For manual jobs, require title and company
+    if (manualJob && (!manualJob.title || !manualJob.company)) {
+      return NextResponse.json({ error: 'Title and company are required' }, { status: 400 });
     }
 
     // Get board from KV
@@ -35,21 +58,38 @@ export async function POST(request: NextRequest) {
       customFields[col.name] = defaultValue;
     }
 
+    const today = new Date().toISOString().split('T')[0];
+
     // Create the new job
-    const newJob: Job = {
-      id: generateJobId(),
-      title: job.title || 'Unknown Position',
-      company: job.company || 'Unknown Company',
-      link: job.finalUrl,
-      location: job.location || 'Not listed',
-      employmentType: job.employment_type || 'Not listed',
-      notes: job.notes || '',
-      status: 'Saved',
-      dueDate: '',
-      parsedOn: job.fetchedAt.split('T')[0],
-      verified: job.isVerified ? 'Yes' : 'No',
-      customFields,
-    };
+    const newJob: Job = manualJob
+      ? {
+          id: generateJobId(),
+          title: manualJob.title,
+          company: manualJob.company,
+          link: manualJob.link || '',
+          location: manualJob.location || 'Not listed',
+          employmentType: manualJob.employmentType || 'Not listed',
+          notes: manualJob.notes || '',
+          status: 'Saved',
+          dueDate: '',
+          parsedOn: today,
+          verified: 'Manual',
+          customFields,
+        }
+      : {
+          id: generateJobId(),
+          title: job!.title || 'Unknown Position',
+          company: job!.company || 'Unknown Company',
+          link: job!.finalUrl,
+          location: job!.location || 'Not listed',
+          employmentType: job!.employment_type || 'Not listed',
+          notes: job!.notes || '',
+          status: 'Saved',
+          dueDate: '',
+          parsedOn: job!.fetchedAt.split('T')[0],
+          verified: job!.isVerified ? 'Yes' : 'No',
+          customFields,
+        };
 
     // Add job to board
     board.jobs.push(newJob);

@@ -1,132 +1,60 @@
-# Personal Job Board
+# cozy job tracker 🌱
 
-A simple, file-based job tracking application with AI-powered job parsing. Built with Next.js App Router.
+calm tracking for a noisy job search.
 
-## Features
+paste a job url, let AI parse it, and keep everything organized in one cozy spot. no spreadsheet gymnastics required.
 
-- **AI-Powered Parsing**: Paste a job URL and automatically extract title, company, location, and more using GPT-4o-mini
-- **Evidence-Based Extraction**: Anti-hallucination validation ensures extracted data is grounded in the source text
-- **File-Based Storage**: All data stored in markdown files - no database needed
-- **Custom Columns**: Add your own tracking fields (text, checkbox, dropdown)
-- **Status Tracking**: Track application status (Saved → Applied → Interview → Offer → Rejected)
+## what it does
 
-## Setup
+- **ai-powered parsing** — drop in a job url and watch it extract title, company, location, salary, and more
+- **stress-free tracking** — move jobs through your pipeline: saved → applied → interview → offer
+- **custom columns** — add whatever fields make sense for your search (referral? vibe check? notes to self?)
+- **share with friends** — send your board to a friend who's also in the thick of it
 
-### Prerequisites
-
-- Node.js 18+ or Bun
-- OpenAI API key
-
-### Installation
+## get started
 
 ```bash
-# Clone and install dependencies
+# install
 bun install
 
-# Set up environment variables
+# set up your openai key
 cp .env.example .env.local
-# Edit .env.local and add your OPENAI_API_KEY
+# add your OPENAI_API_KEY to .env.local
 
-# Run the development server
+# run it
 bun dev
 ```
 
-### Environment Variables
+then visit [localhost:3000](http://localhost:3000) and create your first board.
 
-Create a `.env.local` file with:
-
-```
-OPENAI_API_KEY=sk-your-api-key-here
-```
-
-## Usage
-
-### Creating a Board
-
-1. Create a markdown file in `content/boards/`:
-
-```bash
-mkdir -p content/boards
-```
-
-2. Create `content/boards/yourname.md`:
-
-```markdown
----
-title: Your Name's Job Board
-columns: []
----
-
-# Your Name's Job Board
-
-Personal job tracking board.
-
-## Saved
-```
-
-3. Visit `http://localhost:3000/b/yourname`
-
-### Adding Jobs
-
-1. Paste a job posting URL in the input field
-2. Click "Parse job" to extract job details
-3. Review the preview (verified fields are highlighted)
-4. Click "Add to board" to save
-
-### Tracking Status
-
-Each job card has controls for:
-
-- **Applied**: Checkbox to mark if you've applied
-- **Status**: Dropdown (Saved, Applied, Interview, Offer, Rejected)
-- **Custom fields**: Any columns you've added
-
-### Custom Columns
-
-Click "+ Add custom column" to create:
-
-- **Text**: Free-form text input (e.g., Salary, Notes)
-- **Checkbox**: Yes/No toggle (e.g., Referral, Remote OK)
-- **Dropdown**: Select from predefined options (e.g., Priority: Low/Medium/High)
-
-## File Structure
+## environment variables
 
 ```
-content/boards/        # Markdown board files
-app/
-  b/[slug]/page.tsx   # Board page
-  api/
-    parse-job/        # Parse job URL
-    add-job/          # Add job to board
-    update-job/       # Update job fields
-    delete-job/       # Delete a job
-    add-column/       # Add custom column
-lib/
-  fetchPage.ts        # Fetch and clean web pages
-  extractJob.ts       # OpenAI extraction
-  validateExtraction.ts # Anti-hallucination validation
-  markdown.ts         # Markdown parsing/formatting
+OPENAI_API_KEY=sk-your-key-here
 ```
 
-## Deployment
+## deploying
 
-Deploy to Vercel:
+works great on vercel:
 
 ```bash
 vercel
 ```
 
-Make sure to set the `OPENAI_API_KEY` environment variable in your Vercel project settings.
+just add your `OPENAI_API_KEY` in vercel's environment variables.
 
-**Note**: On Vercel, the `content/boards/` directory is read-only after deployment. For persistent storage in production, consider using Vercel Blob Storage or a database.
+**note:** uses vercel kv for storage in production. file-based storage works locally.
 
-## Limitations
+## limitations
 
-- **Static HTML only**: JavaScript-heavy job sites may not parse correctly
-- **No authentication**: Anyone with the URL can view/edit a board
-- **File-based**: Not suitable for high-traffic production use
-- **Vercel deployment**: File writes work in development but not in production on Vercel's serverless functions
+- javascript-heavy job sites might not parse well (looking at you, greenhouse iframes)
+- no auth — share the url, share the board
+- built for personal use, not high-traffic scenarios
 
-## License
+## license
 
-MIT
+MIT — do whatever you want with it.
+
+---
+
+📬 send this to your unemployed friend

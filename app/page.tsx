@@ -12,11 +12,10 @@ export default async function HomePage() {
       <div className="container-app max-w-3xl">
         <div className="mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
-            Your cozy little job tracker
+            track your job hunt, stress-free 🌱
           </h1>
           <p className="text-base sm:text-lg muted max-w-2xl">
-            Paste a job URL, let the parser pull the details, and keep everything tidy in your own
-            board.
+            create a board, paste a job url, and track your applications in one cozy spot.
           </p>
         </div>
 
