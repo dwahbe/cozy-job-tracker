@@ -16,7 +16,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'cozy job tracker',
-  description: 'track your job applications with AI-powered parsing',
+  description: 'calm tracking for a noisy job search',
+  openGraph: {
+    title: 'cozy job tracker',
+    description: 'calm tracking for a noisy job search',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'cozy job tracker',
+    description: 'calm tracking for a noisy job search',
+  },
 };
 
 export default function RootLayout({

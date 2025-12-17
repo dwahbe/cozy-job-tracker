@@ -390,7 +390,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
             )}
           </div>
         ))}
-
       </div>
 
       {/* Meta info */}

@@ -38,4 +38,3 @@ export function SortSelect({ sortBy, onSortChange }: SortSelectProps) {
     </div>
   );
 }
-

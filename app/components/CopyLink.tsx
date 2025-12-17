@@ -31,7 +31,7 @@ export default function CopyLink() {
       >
         📬 send this to your unemployed friend
       </button>
-      <span 
+      <span
         className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-sm text-green-600 whitespace-nowrap transition-opacity duration-200 ${copied ? 'opacity-100' : 'opacity-0'}`}
       >
         Copied to clipboard!
@@ -39,4 +39,3 @@ export default function CopyLink() {
     </div>
   );
 }
-
