@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { ViewToggle } from './ViewToggle';
 import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
+
+const VIEW_STORAGE_KEY = 'cozy-jobs-view-preference';
 
 interface JobsViewProps {
   jobs: ParsedJob[];
@@ -13,7 +15,19 @@ interface JobsViewProps {
 }
 
 export function JobsView({ jobs, slug, columns }: JobsViewProps) {
-  const [view, setView] = useState<'cards' | 'table'>('cards');
+  const [view, setView] = useState<'cards' | 'table'>('table');
+
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (saved === 'cards' || saved === 'table') {
+      setView(saved);
+    }
+  }, []);
+
+  const handleViewChange = (newView: 'cards' | 'table') => {
+    setView(newView);
+    localStorage.setItem(VIEW_STORAGE_KEY, newView);
+  };
 
   if (jobs.length === 0) {
     return (
@@ -33,7 +47,7 @@ export function JobsView({ jobs, slug, columns }: JobsViewProps) {
         <p className="muted text-sm">
           {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
         </p>
-        <ViewToggle view={view} onViewChange={setView} />
+        <ViewToggle view={view} onViewChange={handleViewChange} />
       </div>
 
       {view === 'cards' ? (

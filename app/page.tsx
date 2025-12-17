@@ -1,23 +1,23 @@
-import Link from 'next/link';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { CreateBoardForm } from './components/CreateBoardForm';
+import Link from 'next/link'
+import { promises as fs } from 'fs'
+import path from 'path'
+import { CreateBoardForm } from './components/CreateBoardForm'
 
-const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards');
+const BOARDS_DIR = path.join(process.cwd(), 'content', 'boards')
 
 async function getBoards() {
   try {
-    const files = await fs.readdir(BOARDS_DIR);
+    const files = await fs.readdir(BOARDS_DIR)
     return files
       .filter((f) => f.endsWith('.md'))
-      .map((f) => f.replace('.md', ''));
+      .map((f) => f.replace('.md', ''))
   } catch {
-    return [];
+    return []
   }
 }
 
 export default async function HomePage() {
-  const boards = await getBoards();
+  const boards = await getBoards()
 
   return (
     <main className="page">
@@ -27,8 +27,8 @@ export default async function HomePage() {
             Your cozy little job tracker
           </h1>
           <p className="text-base sm:text-lg muted max-w-2xl">
-            Paste a job URL, let the parser pull the details, and keep everything tidy in your own
-            board.
+            Paste a job URL, let the parser pull the details, and keep
+            everything tidy in your own board.
           </p>
         </div>
 
@@ -40,7 +40,9 @@ export default async function HomePage() {
         {/* Existing Boards */}
         {boards.length > 0 && (
           <div className="card p-6">
-            <h2 className="text-xl font-semibold mb-4">Existing boards</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Friends in this with you
+            </h2>
             <div className="space-y-2">
               {boards.map((board) => (
                 <Link
@@ -59,5 +61,5 @@ export default async function HomePage() {
         )}
       </div>
     </main>
-  );
+  )
 }

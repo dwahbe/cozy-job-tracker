@@ -3,6 +3,7 @@ title: Dylan's Job Board
 columns:
   - name: Referral
     type: text
+pin: $2b$10$wVMElktBhWtXlQ4vuGiZgOE.pBahBerD8/n92kjmyeS.bHH9gW3qC
 ---
 
 # Dylan's Job Board
