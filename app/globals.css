@@ -699,9 +699,10 @@ a:focus-visible {
 
   /* Compact sort select - icon only */
   .sort-select {
-    padding: 8px 24px 8px 28px;
+    padding: 6px 24px 6px 28px;
     color: transparent;
     width: 52px;
+    height: 32px;
   }
 
   .sort-select option {

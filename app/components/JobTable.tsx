@@ -75,10 +75,14 @@ const formatDateDisplay = (dateStr: string): string => {
   const ordinal = (n: number) => {
     if (n > 3 && n < 21) return 'th';
     switch (n % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
     }
   };
   return `${month} ${day}${ordinal(day)} ${year}`;
@@ -152,7 +156,12 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
     setEditValue('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, jobLink: string, field: string, originalValue: string) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent,
+    jobLink: string,
+    field: string,
+    originalValue: string
+  ) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       saveEdit(jobLink, field, originalValue);
@@ -284,7 +293,11 @@ export function JobTable({ jobs, slug, columns }: JobTableProps) {
                 <EditableCell jobLink={job.link} field="Location" value={job.location || ''} />
               </td>
               <td className="td-type">
-                <EditableCell jobLink={job.link} field="Employment type" value={job.employmentType || ''} />
+                <EditableCell
+                  jobLink={job.link}
+                  field="Employment type"
+                  value={job.employmentType || ''}
+                />
               </td>
               <td className="td-due">
                 <label className="relative cursor-pointer group inline-block">
