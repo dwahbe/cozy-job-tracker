@@ -61,16 +61,20 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
             if (data.datePosted) parts.push(`Date Posted: ${data.datePosted}`);
             if (data.jobLocation?.address) {
               const addr = data.jobLocation.address;
-              const loc = [addr.addressLocality, addr.addressRegion, addr.addressCountry].filter(Boolean).join(', ');
+              const loc = [addr.addressLocality, addr.addressRegion, addr.addressCountry]
+                .filter(Boolean)
+                .join(', ');
               if (loc) parts.push(`Location: ${loc}`);
             }
-            if (data.hiringOrganization?.name) parts.push(`Company: ${data.hiringOrganization.name}`);
+            if (data.hiringOrganization?.name)
+              parts.push(`Company: ${data.hiringOrganization.name}`);
             if (data.baseSalary) {
               const salary = data.baseSalary;
               if (salary.value) {
-                const salaryStr = typeof salary.value === 'object'
-                  ? `${salary.value.minValue || ''}-${salary.value.maxValue || ''} ${salary.currency || ''}`
-                  : `${salary.value} ${salary.currency || ''}`;
+                const salaryStr =
+                  typeof salary.value === 'object'
+                    ? `${salary.value.minValue || ''}-${salary.value.maxValue || ''} ${salary.currency || ''}`
+                    : `${salary.value} ${salary.currency || ''}`;
                 parts.push(`Salary: ${salaryStr}`);
               }
             }

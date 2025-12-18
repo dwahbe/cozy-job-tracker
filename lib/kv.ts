@@ -22,8 +22,37 @@ export interface Job {
 export interface Board {
   title: string;
   columns: Column[];
+  columnOrder?: string[]; // Order of columns (built-in IDs + custom names)
   pin?: string; // bcrypt hash
   jobs: Job[];
+}
+
+// Built-in column IDs
+const BUILTIN_COLUMN_IDS = [
+  '_title',
+  '_company',
+  '_location',
+  '_type',
+  '_dueDate',
+  '_notes',
+  '_status',
+];
+
+/**
+ * Get the column order for a board, with defaults for boards without saved order
+ */
+export function getColumnOrder(board: Board): string[] {
+  if (board.columnOrder && board.columnOrder.length > 0) {
+    // Ensure any new custom columns are included
+    const customNames = board.columns.map((c) => c.name);
+    const missingCustom = customNames.filter((n) => !board.columnOrder!.includes(n));
+    if (missingCustom.length > 0) {
+      return [...board.columnOrder, ...missingCustom];
+    }
+    return board.columnOrder;
+  }
+  // Default: built-in columns followed by custom columns
+  return [...BUILTIN_COLUMN_IDS, ...board.columns.map((c) => c.name)];
 }
 
 // Re-export Column type

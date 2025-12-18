@@ -93,6 +93,58 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+// PATCH - Reorder custom columns
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { slug, columnOrder } = body as {
+      slug: string;
+      columnOrder: string[]; // Array of custom column names in new order
+    };
+
+    // Validate slug
+    if (!slug || !SLUG_REGEX.test(slug)) {
+      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
+    }
+
+    // Validate columnOrder
+    if (!Array.isArray(columnOrder)) {
+      return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
+    }
+
+    // Get board from KV
+    const board = await getBoard(slug);
+    if (!board) {
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+    }
+
+    // Verify all column names exist
+    const existingNames = new Set(board.columns.map((c) => c.name));
+    for (const name of columnOrder) {
+      if (!existingNames.has(name)) {
+        return NextResponse.json({ error: `Column "${name}" not found` }, { status: 400 });
+      }
+    }
+
+    // Reorder columns based on columnOrder
+    const columnMap = new Map(board.columns.map((c) => [c.name, c]));
+    board.columns = columnOrder.map((name) => columnMap.get(name)!);
+
+    // Save board
+    await saveBoard(slug, board);
+
+    revalidatePath(`/b/${slug}`);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Reorder columns error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to reorder columns' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE - Remove column
 export async function DELETE(request: NextRequest) {
   try {

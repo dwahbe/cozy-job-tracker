@@ -16,6 +16,7 @@ interface JobsViewProps {
   jobs: ParsedJob[];
   slug: string;
   columns: Column[];
+  columnOrder: string[];
 }
 
 function getStoredView(): 'cards' | 'table' {
@@ -29,7 +30,7 @@ function getStoredSort(): SortOption {
   return (localStorage.getItem(SORT_STORAGE_KEY) as SortOption) || 'added-desc';
 }
 
-export function JobsView({ jobs, slug, columns }: JobsViewProps) {
+export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
   const [view, setView] = useState<'cards' | 'table'>(getStoredView);
   const [sortBy, setSortBy] = useState<SortOption>(getStoredSort);
 
@@ -116,7 +117,7 @@ export function JobsView({ jobs, slug, columns }: JobsViewProps) {
           ))}
         </div>
       ) : (
-        <JobTable jobs={sortedJobs} slug={slug} columns={columns} />
+        <JobTable jobs={sortedJobs} slug={slug} columns={columns} columnOrder={columnOrder} />
       )}
     </div>
   );

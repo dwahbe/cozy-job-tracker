@@ -398,6 +398,21 @@ a:focus-visible {
   background: rgba(245, 158, 11, 0.06);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  user-select: none;
+  transition: background-color 120ms ease;
+}
+
+/* Draggable headers (has [style] from dnd-kit) */
+.job-table th[style] {
+  cursor: grab;
+}
+
+.job-table th[style]:hover {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.job-table th[style]:active {
+  cursor: grabbing;
 }
 
 .job-table td {

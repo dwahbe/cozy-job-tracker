@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getBoard } from '@/lib/kv';
+import { getBoard, getColumnOrder } from '@/lib/kv';
 import { JobForm } from '@/app/components/JobForm';
 import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
@@ -77,7 +77,12 @@ export default async function BoardPage({ params }: PageProps) {
         <ColumnManager slug={slug} columns={board.columns} />
 
         {/* Jobs List */}
-        <JobsView jobs={jobs} slug={slug} columns={board.columns} />
+        <JobsView
+          jobs={jobs}
+          slug={slug}
+          columns={board.columns}
+          columnOrder={getColumnOrder(board)}
+        />
       </div>
     </main>
   );
