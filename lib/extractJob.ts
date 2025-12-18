@@ -28,7 +28,10 @@ Extract these fields:
 - company: The company/organization name
 - location: Where the job is located (city, state, remote, etc.)
 - employment_type: Full-time, Part-time, Contract, etc.
-- due_date: Application deadline or closing date (format as YYYY-MM-DD if possible)
+- due_date: Application deadline or closing date. IMPORTANT:
+  - If a specific date is mentioned, format as YYYY-MM-DD
+  - If the posting EXPLICITLY states "rolling basis", "rolling admissions", "no deadline", "open until filled", or similar phrases indicating there is no fixed deadline, set value to "rolling"
+  - Only set to "rolling" if the text explicitly mentions this - do NOT assume rolling if no date is mentioned
 - notes: Any other notable information (salary, benefits, requirements summary)
 
 Return ONLY valid JSON in this exact format:
@@ -37,7 +40,7 @@ Return ONLY valid JSON in this exact format:
   "company": { "value": "string or null", "evidence": "string or null" },
   "location": { "value": "string or null", "evidence": "string or null" },
   "employment_type": { "value": "string or null", "evidence": "string or null" },
-  "due_date": { "value": "string or null", "evidence": "string or null" },
+  "due_date": { "value": "string or null or 'rolling'", "evidence": "string or null" },
   "notes": { "value": "string or null", "evidence": "string or null" }
 }`;
 

@@ -51,11 +51,26 @@ export function JobsView({ jobs, slug, columns }: JobsViewProps) {
       }
 
       if (sortBy === 'due-asc') {
+        // Rolling due dates at the top, then by date, jobs without due dates at the end
+        const aIsRolling = a.dueDate === 'rolling';
+        const bIsRolling = b.dueDate === 'rolling';
+        const aHasDate = a.dueDate && !aIsRolling;
+        const bHasDate = b.dueDate && !bIsRolling;
+
+        // Rolling comes first
+        if (aIsRolling && !bIsRolling) return -1;
+        if (!aIsRolling && bIsRolling) return 1;
+        if (aIsRolling && bIsRolling) return 0;
+
+        // Then actual dates
+        if (aHasDate && bHasDate) return a.dueDate.localeCompare(b.dueDate);
+
         // Jobs without due dates go to the end
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
+
+        return 0;
       }
 
       if (sortBy === 'status-asc') {

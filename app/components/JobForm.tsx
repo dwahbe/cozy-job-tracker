@@ -226,7 +226,9 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 {parsedJob.due_date && (
                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                     <span className="muted sm:w-32 shrink-0">Due Date:</span>
-                    <span>{parsedJob.due_date}</span>
+                    <span>
+                      {parsedJob.due_date === 'rolling' ? '🔄 Rolling basis' : parsedJob.due_date}
+                    </span>
                   </div>
                 )}
                 {parsedJob.notes && (

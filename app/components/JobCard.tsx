@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { celebrateOffer } from '@/lib/confetti';
@@ -22,8 +22,97 @@ interface EditableFields {
 
 const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
+function DueDatePicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+    setIsOpen(false);
+  };
+
+  const handleRollingClick = () => {
+    onChange('rolling');
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    onChange('');
+    setIsOpen(false);
+  };
+
+  const displayText = value ? formatDateDisplay(value) : 'Set due date';
+
+  return (
+    <div className="flex items-center gap-2 text-sm" ref={containerRef}>
+      <span className="muted">📅</span>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          disabled={disabled}
+          className="hover:underline underline-offset-2 text-left"
+        >
+          {displayText}
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 top-full left-0 mt-1 bg-white border border-black/10 rounded-lg shadow-lg p-3 min-w-[200px]">
+            <div className="space-y-2">
+              <input
+                type="date"
+                value={value === 'rolling' ? '' : value}
+                onChange={handleDateChange}
+                className="input w-full text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleRollingClick}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  value === 'rolling' ? 'bg-amber-100 text-amber-800' : 'hover:bg-black/5'
+                }`}
+              >
+                🔄 Rolling basis
+              </button>
+              {value && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-500 hover:bg-black/5 transition-colors"
+                >
+                  ✕ Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const formatDateDisplay = (dateStr: string): string => {
   if (!dateStr) return '';
+  if (dateStr === 'rolling') return 'Rolling';
   const date = new Date(dateStr + 'T00:00:00');
   const month = date.toLocaleDateString('en-US', { month: 'long' });
   const day = date.getDate();
@@ -322,21 +411,11 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
       {/* Controls */}
       <div className="flex flex-col gap-3 pt-4 border-t border-black/5">
         {/* Due date */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="muted">📅</span>
-          <label className="relative cursor-pointer group">
-            <span className="group-hover:underline underline-offset-2">
-              {job.dueDate ? formatDateDisplay(job.dueDate) : 'Set due date'}
-            </span>
-            <input
-              type="date"
-              value={job.dueDate || ''}
-              onChange={(e) => updateField('Due date', e.target.value)}
-              disabled={updating === 'Due date'}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </label>
-        </div>
+        <DueDatePicker
+          value={job.dueDate || ''}
+          onChange={(value) => updateField('Due date', value)}
+          disabled={updating === 'Due date'}
+        />
 
         {/* Status dropdown */}
         <div className="flex items-center gap-2 text-sm">
