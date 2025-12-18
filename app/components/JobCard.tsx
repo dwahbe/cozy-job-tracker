@@ -22,6 +22,24 @@ interface EditableFields {
 
 const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
+const formatDateDisplay = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr + 'T00:00:00');
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const ordinal = (n: number) => {
+    if (n > 3 && n < 21) return 'th';
+    switch (n % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+  return `${month} ${day}${ordinal(day)} ${year}`;
+};
+
 const statusColor = (status: string) =>
   ({
     Saved: 'status-saved',
@@ -302,13 +320,18 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
         {/* Due date */}
         <div className="flex items-center gap-2 text-sm">
           <span className="muted">📅</span>
-          <input
-            type="date"
-            value={job.dueDate || ''}
-            onChange={(e) => updateField('Due date', e.target.value)}
-            disabled={updating === 'Due date'}
-            className="table-date"
-          />
+          <label className="relative cursor-pointer group">
+            <span className="group-hover:underline underline-offset-2">
+              {job.dueDate ? formatDateDisplay(job.dueDate) : 'Set due date'}
+            </span>
+            <input
+              type="date"
+              value={job.dueDate || ''}
+              onChange={(e) => updateField('Due date', e.target.value)}
+              disabled={updating === 'Due date'}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </label>
         </div>
 
         {/* Status dropdown */}

@@ -54,6 +54,13 @@ export default function RootLayout({
           <div className="container-app text-center space-y-3">
             <CopyLink />
             <div className="flex items-center justify-center gap-2 text-sm">
+              <span className="muted">
+                built by{' '}
+                <a href="https://dylanwahbe.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  Dylan Wahbe
+                </a>
+              </span>
+              <span className="muted">·</span>
               <a
                 href="https://github.com/dwahbe/cozy-job-tracker"
                 target="_blank"
@@ -65,13 +72,6 @@ export default function RootLayout({
                 </svg>
                 open source
               </a>
-              <span className="muted">·</span>
-              <span className="muted">
-                built by{' '}
-                <a href="https://dylanwahbe.com" target="_blank" rel="noopener noreferrer">
-                  Dylan Wahbe
-                </a>
-              </span>
             </div>
           </div>
         </footer>
