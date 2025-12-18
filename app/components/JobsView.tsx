@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { ViewToggle } from './ViewToggle';
 import { SortSelect, type SortOption } from './SortSelect';
@@ -18,20 +18,20 @@ interface JobsViewProps {
   columns: Column[];
 }
 
-export function JobsView({ jobs, slug, columns }: JobsViewProps) {
-  const [view, setView] = useState<'cards' | 'table'>('table');
-  const [sortBy, setSortBy] = useState<SortOption>('added-desc');
+function getStoredView(): 'cards' | 'table' {
+  if (typeof window === 'undefined') return 'table';
+  const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+  return saved === 'cards' || saved === 'table' ? saved : 'table';
+}
 
-  useEffect(() => {
-    const savedView = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (savedView === 'cards' || savedView === 'table') {
-      setView(savedView);
-    }
-    const savedSort = localStorage.getItem(SORT_STORAGE_KEY);
-    if (savedSort) {
-      setSortBy(savedSort as SortOption);
-    }
-  }, []);
+function getStoredSort(): SortOption {
+  if (typeof window === 'undefined') return 'added-desc';
+  return (localStorage.getItem(SORT_STORAGE_KEY) as SortOption) || 'added-desc';
+}
+
+export function JobsView({ jobs, slug, columns }: JobsViewProps) {
+  const [view, setView] = useState<'cards' | 'table'>(getStoredView);
+  const [sortBy, setSortBy] = useState<SortOption>(getStoredSort);
 
   const handleViewChange = (newView: 'cards' | 'table') => {
     setView(newView);
