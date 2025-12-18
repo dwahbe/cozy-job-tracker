@@ -44,6 +44,11 @@
   }
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   min-height: 100dvh;
   color: var(--foreground);
@@ -690,5 +695,16 @@ a:focus-visible {
   .input,
   .select {
     font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Compact sort select - icon only */
+  .sort-select {
+    padding: 8px 24px 8px 28px;
+    color: transparent;
+    width: 52px;
+  }
+
+  .sort-select option {
+    color: var(--muted-2);
   }
 }
