@@ -367,6 +367,21 @@ a:focus-visible {
   overflow-x: auto;
 }
 
+/* Expand table on larger screens */
+@media (min-width: 1200px) {
+  .table-wrapper {
+    margin-left: calc(-1 * min(8vw, 180px));
+    margin-right: calc(-1 * min(8vw, 180px));
+  }
+}
+
+@media (min-width: 1600px) {
+  .table-wrapper {
+    margin-left: calc(-1 * min(12vw, 300px));
+    margin-right: calc(-1 * min(12vw, 300px));
+  }
+}
+
 .job-table {
   width: 100%;
   border-collapse: collapse;
