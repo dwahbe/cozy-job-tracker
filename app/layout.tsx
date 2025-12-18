@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
+import { Analytics } from '@vercel/analytics/next';
 import CopyLink from './components/CopyLink';
 import './globals.css';
 
@@ -48,6 +49,7 @@ export default function RootLayout({
           </div>
         </header>
         {children}
+        <Analytics />
         <footer className="footer">
           <div className="container-app text-center space-y-3">
             <CopyLink />
