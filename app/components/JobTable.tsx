@@ -82,7 +82,7 @@ const BUILTIN_COLUMNS = [
   { id: '_location', label: 'Location', thClass: 'th-location', tdClass: 'td-location' },
   { id: '_type', label: 'Type', thClass: 'th-type', tdClass: 'td-type' },
   { id: '_dueDate', label: 'Due Date', thClass: 'th-due', tdClass: 'td-due' },
-  { id: '_notes', label: 'Notes', thClass: 'th-notes', tdClass: 'td-notes' },
+  { id: '_notes', label: 'Salary / Notes', thClass: 'th-notes', tdClass: 'td-notes' },
   { id: '_status', label: 'Status', thClass: 'th-status', tdClass: 'td-status' },
 ] as const;
 

@@ -233,7 +233,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 )}
                 {parsedJob.notes && (
                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                    <span className="muted sm:w-32 shrink-0">Notes:</span>
+                    <span className="muted sm:w-32 shrink-0">Salary / Notes:</span>
                     <span>{parsedJob.notes}</span>
                   </div>
                 )}
@@ -322,7 +322,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1.5">Notes</label>
+              <label className="block text-sm font-medium mb-1.5">Salary / Notes</label>
               <textarea
                 value={manualJob.notes}
                 onChange={(e) => setManualJob({ ...manualJob, notes: e.target.value })}

@@ -326,7 +326,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1.5">Notes</label>
+              <label className="block text-sm font-medium mb-1.5">Salary / Notes</label>
               <textarea
                 value={editFields.notes}
                 onChange={(e) => setEditFields({ ...editFields, notes: e.target.value })}
