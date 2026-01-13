@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 import { Analytics } from '@vercel/analytics/next';
 import CopyLink from './components/CopyLink';
+import { FeedbackButton } from './components/FeedbackButton';
 import './globals.css';
 
 const geistSans = Geist({
@@ -52,8 +53,12 @@ export default function RootLayout({
         <Analytics />
         <footer className="footer">
           <div className="container-app text-center space-y-3">
-            <CopyLink />
-            <div className="flex items-center justify-center gap-2 text-sm">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap pb-4">
+              <CopyLink />
+              <span className="muted hidden sm:inline">·</span>
+              <FeedbackButton />
+            </div>
+            <div className="flex items-center justify-center gap-2 text-sm flex-wrap">
               <span className="muted">
                 built by{' '}
                 <a

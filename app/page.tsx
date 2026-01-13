@@ -27,7 +27,7 @@ export default async function HomePage() {
         {/* Existing Boards */}
         {boards.length > 0 && (
           <div className="card p-6">
-            <h2 className="text-xl font-semibold mb-4">Friends in this with you</h2>
+            <h2 className="text-xl font-semibold mb-4">{boards.length} {boards.length === 1 ? 'friend' : 'friends'} in this with you</h2>
             <div className="space-y-2">
               {boards.map((board) => (
                 <Link key={board} href={`/b/${board}`} className="card card-hover block p-4">
