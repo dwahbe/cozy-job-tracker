@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
     if (pageResult.fetchError && pageResult.text.length === 0) {
       return NextResponse.json(
         {
-          error: 'Failed to fetch page',
-          details: pageResult.fetchError,
+          error: pageResult.fetchError,
+          errorType: pageResult.errorType,
           finalUrl: pageResult.finalUrl,
           fetchedAt: pageResult.fetchedAt,
         },

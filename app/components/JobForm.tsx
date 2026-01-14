@@ -36,6 +36,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<string | null>(null);
   const [parsedJob, setParsedJob] = useState<ValidatedJob | null>(null);
   const [fetchWarning, setFetchWarning] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -45,6 +46,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setErrorType(null);
     setParsedJob(null);
     setFetchWarning(null);
 
@@ -59,6 +61,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
 
       if (!response.ok) {
         setError(data.error || 'Failed to parse job');
+        setErrorType(data.errorType || null);
         return;
       }
 
@@ -68,6 +71,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse job');
+      setErrorType('network_error');
     } finally {
       setLoading(false);
     }
@@ -139,6 +143,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
   const switchMode = (newMode: 'url' | 'manual') => {
     setMode(newMode);
     setError(null);
+    setErrorType(null);
     setParsedJob(null);
     setFetchWarning(null);
   };
@@ -404,7 +409,22 @@ export function JobForm({ slug, columns }: JobFormProps) {
         </form>
       )}
 
-      {error && <div className="callout callout-error mt-4">{error}</div>}
+      {error && (
+        <div className="callout callout-error mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span>{error}</span>
+            {errorType && ['bot_protection', 'http_error', 'empty_content'].includes(errorType) && (
+              <button
+                type="button"
+                onClick={() => switchMode('manual')}
+                className="btn btn-sm whitespace-nowrap"
+              >
+                Use Manual Entry
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,80 @@ export interface FetchPageResult {
   text: string;
   fetchedAt: string;
   fetchError?: string;
+  errorType?: 'bot_protection' | 'http_error' | 'empty_content' | 'network_error';
+}
+
+// Known bot protection patterns
+const BOT_PROTECTION_PATTERNS = [
+  'Just a moment...',
+  'Attention Required',
+  'Access denied',
+  'Please verify you are a human',
+  'Checking your browser',
+];
+
+function detectBotProtection(html: string, title: string | null): boolean {
+  // Check title patterns
+  for (const pattern of BOT_PROTECTION_PATTERNS) {
+    if (title?.toLowerCase().includes(pattern.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // Check for Cloudflare challenge scripts
+  if (html.includes('cf_chl_opt') || html.includes('/cdn-cgi/challenge-platform')) {
+    return true;
+  }
+
+  // Check for common bot protection indicators
+  if (html.includes('Enable JavaScript and cookies to continue')) {
+    return true;
+  }
+
+  // PerimeterX
+  if (html.includes('_pxhd') || html.includes('perimeterx')) {
+    return true;
+  }
+
+  // DataDome
+  if (html.includes('datadome')) {
+    return true;
+  }
+
+  return false;
+}
+
+function getFriendlyHttpError(status: number): string {
+  switch (status) {
+    case 401:
+    case 403:
+      return 'This page requires login or blocked our request. Try using manual entry.';
+    case 404:
+      return 'This job posting may have been removed or the link is broken.';
+    case 429:
+      return 'Too many requests. Please wait a moment and try again.';
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return 'The job site is having issues right now. Try again later or use manual entry.';
+    default:
+      return 'Could not load this page. Try using manual entry instead.';
+  }
+}
+
+function getFriendlyNetworkError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('timeout') || lower.includes('timed out')) {
+    return 'The page took too long to load. Try again or use manual entry.';
+  }
+  if (lower.includes('network') || lower.includes('connect') || lower.includes('dns')) {
+    return 'Could not connect to the site. Check your internet or try manual entry.';
+  }
+  if (lower.includes('ssl') || lower.includes('certificate')) {
+    return 'Security issue with this site. Try using manual entry instead.';
+  }
+  return 'Something went wrong loading this page. Try using manual entry.';
 }
 
 const USER_AGENT =
@@ -13,16 +87,44 @@ const USER_AGENT =
 
 export async function fetchPage(url: string): Promise<FetchPageResult> {
   const fetchedAt = new Date().toISOString();
+  const isLinkedInJob = url.includes('linkedin.com/jobs/view/');
 
   try {
+    // For LinkedIn jobs, don't auto-follow redirects so we can detect expired jobs
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
-      redirect: 'follow',
+      redirect: isLinkedInJob ? 'manual' : 'follow',
     });
+
+    // Check for LinkedIn expired job redirect
+    if (
+      isLinkedInJob &&
+      (response.status === 301 ||
+        response.status === 302 ||
+        response.status === 303 ||
+        response.status === 307 ||
+        response.status === 308)
+    ) {
+      const redirectUrl = response.headers.get('location') || '';
+      if (redirectUrl.includes('expired_jd_redirect') || redirectUrl.includes('/jobs/search')) {
+        return {
+          finalUrl: redirectUrl || url,
+          title: null,
+          text: '',
+          fetchedAt,
+          fetchError: 'This LinkedIn job posting has expired. Please use manual entry instead.',
+          errorType: 'http_error',
+        };
+      }
+      // If it's a different redirect, follow it manually
+      return fetchPage(
+        redirectUrl.startsWith('http') ? redirectUrl : `https://www.linkedin.com${redirectUrl}`
+      );
+    }
 
     if (!response.ok) {
       return {
@@ -30,7 +132,8 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
         title: null,
         text: '',
         fetchedAt,
-        fetchError: `HTTP ${response.status}: ${response.statusText}`,
+        fetchError: getFriendlyHttpError(response.status),
+        errorType: 'http_error',
       };
     }
 
@@ -41,6 +144,18 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
     const ogTitle = $('meta[property="og:title"]').attr('content')?.trim();
     const htmlTitle = $('title').first().text().trim();
     const title = ogTitle || htmlTitle || null;
+
+    // Check for bot protection before processing
+    if (detectBotProtection(html, title)) {
+      return {
+        finalUrl: response.url || url,
+        title,
+        text: '',
+        fetchedAt,
+        fetchError: 'This site blocks automatic access. Please use manual entry instead.',
+        errorType: 'bot_protection',
+      };
+    }
 
     // Extract OpenGraph description (common for job sites)
     const ogDescription = $('meta[property="og:description"]').attr('content')?.trim() || '';
@@ -114,7 +229,9 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
         title,
         text,
         fetchedAt,
-        fetchError: 'Content appears to be gated or empty',
+        fetchError:
+          'Could not find job details on this page. It may require login or use manual entry.',
+        errorType: 'empty_content',
       };
     }
 
@@ -125,12 +242,14 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
       fetchedAt,
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : '';
     return {
       finalUrl: url,
       title: null,
       text: '',
       fetchedAt,
-      fetchError: error instanceof Error ? error.message : 'Unknown fetch error',
+      fetchError: getFriendlyNetworkError(message),
+      errorType: 'network_error',
     };
   }
 }

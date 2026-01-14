@@ -56,7 +56,9 @@ function AutoHeightTextarea({
       textareaRef.current.focus();
       textareaRef.current.select();
     }
-  }, [autoFocus]);
+    // Only run on mount - autoFocus is effectively constant
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <textarea
@@ -166,11 +168,31 @@ function DueDatePicker({
   disabled?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        zIndex: 9999,
+      });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -198,8 +220,9 @@ function DueDatePicker({
   const displayText = value ? formatDateDisplay(value) : '—';
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
@@ -208,7 +231,11 @@ function DueDatePicker({
         {displayText}
       </button>
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-white border border-black/10 rounded-lg shadow-lg p-3 min-w-[200px]">
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-white border border-black/10 rounded-lg shadow-lg p-3 min-w-[200px]"
+        >
           <div className="space-y-2">
             <input
               type="date"
