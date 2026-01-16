@@ -54,7 +54,8 @@ function AutoHeightTextarea({
   useEffect(() => {
     if (autoFocus && textareaRef.current) {
       textareaRef.current.focus();
-      textareaRef.current.select();
+      const end = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(end, end);
     }
     // Only run on mount - autoFocus is effectively constant
     // eslint-disable-next-line react-hooks/exhaustive-deps
