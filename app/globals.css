@@ -271,6 +271,54 @@ a:focus-visible {
   color: rgba(120, 53, 15, 0.95);
 }
 
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  min-height: auto;
+}
+
+/* Bulk add progress list */
+.bulk-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  transition: background-color 150ms ease;
+}
+
+.bulk-progress-item.success {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.bulk-progress-item.failed {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.bulk-progress-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.bulk-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: bulkSpin 600ms linear infinite;
+}
+
+@keyframes bulkSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .footer {
   padding: 1.75rem 0 2.5rem;
   color: var(--muted-2);
@@ -883,6 +931,10 @@ a:focus-visible {
   .input,
   .select {
     font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  .btn-sm {
+    min-height: auto;
   }
 
   /* Compact sort select - icon only */

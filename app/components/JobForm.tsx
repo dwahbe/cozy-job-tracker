@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 import type { Column } from '@/lib/markdown';
+import { BulkAddForm } from './BulkAddForm';
 
 interface JobFormProps {
   slug: string;
@@ -32,7 +33,7 @@ const emptyManualJob: ManualJob = {
 
 export function JobForm({ slug, columns }: JobFormProps) {
   const router = useRouter();
-  const [mode, setMode] = useState<'url' | 'manual'>('url');
+  const [mode, setMode] = useState<'url' | 'manual' | 'bulk'>('url');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +141,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
     }
   };
 
-  const switchMode = (newMode: 'url' | 'manual') => {
+  const switchMode = (newMode: 'url' | 'manual' | 'bulk') => {
     setMode(newMode);
     setError(null);
     setErrorType(null);
@@ -156,7 +157,9 @@ export function JobForm({ slug, columns }: JobFormProps) {
           <p className="muted text-sm">
             {mode === 'url'
               ? "Paste a posting URL. We'll extract and preview the details."
-              : 'Enter job details manually.'}
+              : mode === 'manual'
+                ? 'Enter job details manually.'
+                : 'Paste multiple URLs to add them all at once.'}
           </p>
         </div>
         <div className="view-toggle shrink-0 self-start">
@@ -174,10 +177,19 @@ export function JobForm({ slug, columns }: JobFormProps) {
           >
             Manual
           </button>
+          <button
+            type="button"
+            onClick={() => switchMode('bulk')}
+            className={`view-toggle-btn ${mode === 'bulk' ? 'active' : ''}`}
+          >
+            Bulk
+          </button>
         </div>
       </div>
 
-      {mode === 'url' ? (
+      {mode === 'bulk' ? (
+        <BulkAddForm slug={slug} />
+      ) : mode === 'url' ? (
         <>
           <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
