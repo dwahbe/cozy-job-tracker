@@ -1,38 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { changelog } from '../changelog-data';
 
 const STORAGE_KEY = 'cozy-changelog-dismissed';
 
-export function WhatsNewBanner() {
-  const [visible, setVisible] = useState(false);
+function getSnapshot() {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
+function getServerSnapshot() {
+  return null;
+}
+
+function subscribe(onStoreChange: () => void) {
+  window.addEventListener('storage', onStoreChange);
+  return () => window.removeEventListener('storage', onStoreChange);
+}
+
+export function WhatsNewBanner() {
   const latest = changelog[0];
   const dismissKey = latest?.date ?? '';
 
-  // Only show after hydration, and only if not dismissed for this entry
-  useEffect(() => {
-    if (!dismissKey) return;
+  const dismissed = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const visible = !!dismissKey && dismissed !== dismissKey;
+
+  const handleDismiss = useCallback(() => {
     try {
-      const dismissed = localStorage.getItem(STORAGE_KEY);
-      if (dismissed !== dismissKey) {
-        setVisible(true);
-      }
+      localStorage.setItem(STORAGE_KEY, dismissKey);
+      // Force re-render by dispatching a storage event
+      window.dispatchEvent(new Event('storage'));
     } catch {
       // localStorage unavailable
     }
   }, [dismissKey]);
-
-  const handleDismiss = () => {
-    setVisible(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, dismissKey);
-    } catch {
-      // localStorage unavailable
-    }
-  };
 
   if (!visible || !latest) return null;
 
