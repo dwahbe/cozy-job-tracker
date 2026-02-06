@@ -898,6 +898,217 @@ a:focus-visible {
   opacity: 1;
 }
 
+/* Topbar what's new link */
+.topbar-whats-new {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  transition: all 150ms ease;
+}
+
+.topbar-whats-new:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* What's New Banner */
+.whats-new-banner {
+  background: rgba(245, 158, 11, 0.07);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+  animation: bannerSlideDown 250ms ease;
+}
+
+@keyframes bannerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.whats-new-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  position: relative;
+}
+
+.whats-new-banner-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+
+.whats-new-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: white;
+}
+
+.whats-new-text {
+  color: var(--foreground);
+  font-weight: 550;
+}
+
+.whats-new-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.whats-new-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 120ms ease;
+  position: absolute;
+  right: 0.5rem;
+}
+
+.whats-new-close:hover {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--foreground);
+}
+
+/* Changelog page — two-column layout */
+.changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.changelog-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba(245, 158, 11, 0.18);
+}
+
+.changelog-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.changelog-date-col {
+  padding-top: 0.15rem;
+}
+
+.changelog-date {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
+.changelog-content-col {
+  min-width: 0;
+}
+
+.changelog-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.35rem;
+}
+
+.changelog-tag-new {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.changelog-tag-improvement {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.changelog-tag-fix {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.changelog-entry-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  margin-bottom: 0.35rem;
+}
+
+.changelog-emoji {
+  margin-right: 0.35rem;
+}
+
+.changelog-entry-desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Changelog feedback CTA */
+.changelog-cta {
+  margin-top: 2.5rem;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.12));
+  border: 1px dashed rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius);
+}
+
+.changelog-cta-emoji {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.changelog-cta-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 0.35rem;
+}
+
+.changelog-cta-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+  max-width: 340px;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+
+.changelog-cta-action {
+  display: inline-flex;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 640px) {
   .page {
@@ -947,5 +1158,19 @@ a:focus-visible {
 
   .sort-select option {
     color: var(--muted-2);
+  }
+
+  /* Banner: hide "See what's new" text on small screens */
+  .whats-new-link {
+    display: none;
+  }
+
+  .whats-new-close {
+    position: static;
+  }
+
+  .changelog-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 }

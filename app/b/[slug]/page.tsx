@@ -6,6 +6,7 @@ import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
 import { PinForm } from '@/app/components/PinForm';
 import { PinSettings } from '@/app/components/PinSettings';
+import { WhatsNewBanner } from '@/app/components/WhatsNewBanner';
 import type { ParsedJob } from '@/lib/markdown';
 
 export const dynamic = 'force-dynamic';
@@ -58,33 +59,36 @@ export default async function BoardPage({ params }: PageProps) {
   }));
 
   return (
-    <main className="page">
-      <div className="container-app max-w-5xl">
-        {/* Header */}
-        <header className="mb-6 sm:mb-8">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight overflow-wrap-break-word min-w-0">
-              {board.title}
-            </h1>
-            <PinSettings slug={slug} hasPin={!!board.pin} />
-          </div>
-        </header>
+    <>
+      <WhatsNewBanner />
+      <main className="page">
+        <div className="container-app max-w-5xl">
+          {/* Header */}
+          <header className="mb-6 sm:mb-8">
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight overflow-wrap-break-word min-w-0">
+                {board.title}
+              </h1>
+              <PinSettings slug={slug} hasPin={!!board.pin} />
+            </div>
+          </header>
 
-        {/* Add Job Form */}
-        <JobForm slug={slug} columns={board.columns} />
+          {/* Add Job Form */}
+          <JobForm slug={slug} columns={board.columns} />
 
-        {/* Column Manager */}
-        <ColumnManager slug={slug} columns={board.columns} />
+          {/* Column Manager */}
+          <ColumnManager slug={slug} columns={board.columns} />
 
-        {/* Jobs List */}
-        <JobsView
-          jobs={jobs}
-          slug={slug}
-          columns={board.columns}
-          columnOrder={getColumnOrder(board)}
-        />
-      </div>
-    </main>
+          {/* Jobs List */}
+          <JobsView
+            jobs={jobs}
+            slug={slug}
+            columns={board.columns}
+            columnOrder={getColumnOrder(board)}
+          />
+        </div>
+      </main>
+    </>
   );
 }
 

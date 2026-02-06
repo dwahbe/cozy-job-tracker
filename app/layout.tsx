@@ -44,9 +44,9 @@ export default function RootLayout({
             <Link href="/" className="brand">
               cozy job tracker
             </Link>
-            <div className="text-sm muted hidden sm:block">
-              calm tracking for a noisy job search
-            </div>
+            <Link href="/changelog" className="topbar-whats-new hidden sm:inline-flex">
+              what&apos;s new
+            </Link>
           </div>
         </header>
         {children}
