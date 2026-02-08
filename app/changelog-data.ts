@@ -9,6 +9,14 @@ export type ChangelogEntry = {
 export const changelog: ChangelogEntry[] = [
   {
     date: 'Feb 8, 2026',
+    title: 'Multi-column sorting',
+    emoji: '🔀',
+    tag: 'new',
+    description:
+      'Sort your board by multiple columns at once — including custom columns. Stack sort rules to dial in exactly the order you want — like company A–Z, then date applied newest first.',
+  },
+  {
+    date: 'Feb 8, 2026',
     title: 'Email accounts',
     emoji: '🔑',
     tag: 'new',
