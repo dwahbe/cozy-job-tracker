@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { getBoard, getColumnOrder } from '@/lib/kv';
 import { JobForm } from '@/app/components/JobForm';
 import { JobsView } from '@/app/components/JobsView';
@@ -7,6 +8,7 @@ import { ColumnManager } from '@/app/components/ColumnManager';
 import { PinForm } from '@/app/components/PinForm';
 import { PinSettings } from '@/app/components/PinSettings';
 import { WhatsNewBanner } from '@/app/components/WhatsNewBanner';
+import { MigrationBanner } from '@/app/components/MigrationBanner';
 import type { ParsedJob } from '@/lib/markdown';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +32,25 @@ export default async function BoardPage({ params }: PageProps) {
 
   if (!board) {
     notFound();
+  }
+
+  // Check if board has been migrated
+  if (board.migratedTo) {
+    return (
+      <main className="page">
+        <div className="container-app max-w-md">
+          <div className="card p-8 text-center">
+            <h1 className="text-2xl font-bold mb-3">board has moved</h1>
+            <p className="muted mb-6">
+              this board has been migrated to an account. sign in to access it.
+            </p>
+            <Link href="/login" className="btn btn-primary inline-block">
+              sign in
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   // Check PIN protection
@@ -63,6 +84,9 @@ export default async function BoardPage({ params }: PageProps) {
       <WhatsNewBanner />
       <main className="page">
         <div className="container-app max-w-5xl">
+          {/* Migration Banner */}
+          <MigrationBanner slug={slug} />
+
           {/* Header */}
           <header className="mb-6 sm:mb-8">
             <div className="flex items-start justify-between gap-3">

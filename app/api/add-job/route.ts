@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard, generateJobId, type Job } from '@/lib/kv';
+import { generateJobId, type Job } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
 export const runtime = 'nodejs';
-
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 
 interface ManualJob {
   title: string;
@@ -26,11 +24,6 @@ export async function POST(request: NextRequest) {
       manualJob?: ManualJob;
     };
 
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
-
     // Validate that we have either job or manualJob
     if (!job && !manualJob) {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
@@ -46,15 +39,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and company are required' }, { status: 400 });
     }
 
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Build custom fields with defaults, merging any provided values
     const customFields: Record<string, string> = {};
-    for (const col of board.columns) {
+    for (const col of ctx.board.columns) {
       const defaultValue = col.type === 'checkbox' ? 'No' : '';
       const providedValue = manualJob?.customFields?.[col.name];
       customFields[col.name] = providedValue ?? defaultValue;
@@ -94,13 +87,10 @@ export async function POST(request: NextRequest) {
         };
 
     // Add job to board
-    board.jobs.push(newJob);
+    ctx.board.jobs.push(newJob);
 
     // Save board
-    await saveBoard(slug, board);
-
-    // Revalidate the board page
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {

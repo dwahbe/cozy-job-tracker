@@ -17,4 +17,4 @@ MIT — do whatever you want with it. Please credit accordingly :)
 
 ---
 
-📬 send this to your unemployed friend
+📬 Send this to your unemployed friend

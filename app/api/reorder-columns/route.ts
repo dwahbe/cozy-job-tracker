@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
-
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,29 +11,22 @@ export async function POST(request: NextRequest) {
       columnOrder: string[];
     };
 
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
-
     // Validate columnOrder
     if (!Array.isArray(columnOrder)) {
       return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
     }
 
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Save the new column order
-    board.columnOrder = columnOrder;
+    ctx.board.columnOrder = columnOrder;
 
     // Save board
-    await saveBoard(slug, board);
-
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {

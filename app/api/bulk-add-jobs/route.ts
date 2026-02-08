@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard, generateJobId, type Job } from '@/lib/kv';
+import { generateJobId, type Job } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
 export const runtime = 'nodejs';
 
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 const MAX_JOBS = 50;
 
 export async function POST(request: NextRequest) {
@@ -15,10 +14,6 @@ export async function POST(request: NextRequest) {
       slug: string;
       jobs: ValidatedJob[];
     };
-
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
 
     if (!Array.isArray(jobs) || jobs.length === 0) {
       return NextResponse.json({ error: 'No jobs provided' }, { status: 400 });
@@ -35,8 +30,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
@@ -46,7 +42,7 @@ export async function POST(request: NextRequest) {
     const newJobs: Job[] = jobs.map((job) => {
       // Build custom fields with defaults
       const customFields: Record<string, string> = {};
-      for (const col of board.columns) {
+      for (const col of ctx.board.columns) {
         customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
       }
 
@@ -66,9 +62,8 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    board.jobs.push(...newJobs);
-    await saveBoard(slug, board);
-    revalidatePath(`/b/${slug}`);
+    ctx.board.jobs.push(...newJobs);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true, added: newJobs.length });
   } catch (error) {

@@ -156,7 +156,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
           <h2 className="text-xl font-semibold tracking-tight">Add a job</h2>
           <p className="muted text-sm">
             {mode === 'url'
-              ? "Paste a posting URL. We'll extract and preview the details."
+              ? 'Paste a posting URL to extract and preview the details.'
               : mode === 'manual'
                 ? 'Enter job details manually.'
                 : 'Paste multiple URLs to add them all at once.'}
@@ -242,7 +242,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 </div>
                 {parsedJob.due_date && (
                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                    <span className="muted sm:w-32 shrink-0">Due Date:</span>
+                    <span className="muted sm:w-32 shrink-0">Due date:</span>
                     <span>
                       {parsedJob.due_date === 'rolling' ? '🔄 Rolling basis' : parsedJob.due_date}
                     </span>
@@ -250,7 +250,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 )}
                 {parsedJob.notes && (
                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                    <span className="muted sm:w-32 shrink-0">Salary / Notes:</span>
+                    <span className="muted sm:w-32 shrink-0">Salary / notes:</span>
                     <span>{parsedJob.notes}</span>
                   </div>
                 )}
@@ -284,7 +284,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">
-                Job Title <span className="text-red-500">*</span>
+                Job title <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -297,7 +297,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">
-                Company <span className="text-red-500">*</span>
+                Company <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -319,7 +319,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Employment Type</label>
+              <label className="block text-sm font-medium mb-1.5">Employment type</label>
               <input
                 type="text"
                 value={manualJob.employmentType}
@@ -339,7 +339,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1.5">Salary / Notes</label>
+              <label className="block text-sm font-medium mb-1.5">Salary / notes</label>
               <textarea
                 value={manualJob.notes}
                 onChange={(e) => setManualJob({ ...manualJob, notes: e.target.value })}
@@ -367,7 +367,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                           },
                         })
                       }
-                      className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                      className="w-4 h-4 rounded border-border accent-accent"
                     />
                     <span className="text-sm muted">Yes</span>
                   </label>
@@ -431,7 +431,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                 onClick={() => switchMode('manual')}
                 className="btn btn-sm whitespace-nowrap"
               >
-                Use Manual Entry
+                Use manual entry
               </button>
             )}
           </div>

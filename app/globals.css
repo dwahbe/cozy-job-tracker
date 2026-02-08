@@ -6,21 +6,62 @@
   --background-2: #fff2e2; /* peachy cream */
   --foreground: #3a271d; /* warm cocoa */
   --muted: #6a4a3a;
-  --muted-2: #8a6a58;
+  --muted-2: #7c5c4a;
+  --muted-3: #a08978; /* extra-light, for placeholders & disabled */
   --surface: rgba(255, 255, 255, 0.88);
   --surface-solid: #ffffff;
+  --surface-hover: rgba(245, 158, 11, 0.06);
   --border: rgba(245, 158, 11, 0.28); /* amber */
   --accent: #d97706; /* amber-600 */
   --accent-2: #f59e0b; /* amber-500 */
+  --accent-soft: rgba(245, 158, 11, 0.1);
   --ring: rgba(245, 158, 11, 0.28);
+
+  /* Semantic colors */
+  --success: #059669;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(239, 68, 68, 0.1);
+
+  /* Status colors */
+  --status-saved-bg: #fef3c7;
+  --status-saved-text: #92400e;
+  --status-applied-bg: #dbeafe;
+  --status-applied-text: #1e40af;
+  --status-interview-bg: #ede9fe;
+  --status-interview-text: #5b21b6;
+  --status-offer-bg: #d1fae5;
+  --status-offer-text: #065f46;
+  --status-rejected-bg: #fee2e2;
+  --status-rejected-text: #991b1b;
+
   --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
   --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
-  --radius: 18px;
+
+  /* Radius scale */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+  --radius: var(--radius-lg); /* default */
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-2: var(--background-2);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-muted-3: var(--muted-3);
+  --color-surface-solid: var(--surface-solid);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -32,13 +73,20 @@
     --background-2: #fff2e2;
     --foreground: #3a271d;
     --muted: #6a4a3a;
-    --muted-2: #8a6a58;
+    --muted-2: #7c5c4a;
+    --muted-3: #a08978;
     --surface: rgba(255, 255, 255, 0.9);
     --surface-solid: #ffffff;
+    --surface-hover: rgba(245, 158, 11, 0.06);
     --border: rgba(245, 158, 11, 0.28);
     --accent: #d97706;
     --accent-2: #f59e0b;
+    --accent-soft: rgba(245, 158, 11, 0.1);
     --ring: rgba(245, 158, 11, 0.28);
+    --success: #059669;
+    --success-soft: rgba(16, 185, 129, 0.1);
+    --danger: #dc2626;
+    --danger-soft: rgba(239, 68, 68, 0.1);
     --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
     --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
   }
@@ -151,7 +199,7 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 0.6rem 1rem;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -205,7 +253,7 @@ a:focus-visible {
 
 .input {
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(245, 158, 11, 0.22);
@@ -218,7 +266,7 @@ a:focus-visible {
 
 .select {
   width: auto;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(245, 158, 11, 0.22);
@@ -245,7 +293,7 @@ a:focus-visible {
   align-items: center;
   gap: 0.4rem;
   padding: 0.28rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(245, 158, 11, 0.18);
@@ -253,14 +301,14 @@ a:focus-visible {
 }
 
 .callout {
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   padding: 0.75rem 0.9rem;
   font-size: 0.9rem;
 }
 
 .callout-error {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger-soft);
   border-color: rgba(239, 68, 68, 0.25);
   color: rgba(127, 29, 29, 0.95);
 }
@@ -288,11 +336,11 @@ a:focus-visible {
 }
 
 .bulk-progress-item.success {
-  background: rgba(16, 185, 129, 0.06);
+  background: var(--success-soft);
 }
 
 .bulk-progress-item.failed {
-  background: rgba(239, 68, 68, 0.06);
+  background: var(--danger-soft);
 }
 
 .bulk-progress-icon {
@@ -331,7 +379,7 @@ a:focus-visible {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.8rem;
   font-weight: 550;
   color: var(--muted-2);
@@ -382,7 +430,7 @@ a:focus-visible {
 
 @media (max-width: 640px) {
   .feedback-modal {
-    border-radius: 14px;
+    border-radius: var(--radius-md);
     padding: 1rem;
   }
 
@@ -465,7 +513,7 @@ a:focus-visible {
 }
 
 .feedback-error {
-  color: #dc2626;
+  color: var(--danger);
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
 }
@@ -476,7 +524,7 @@ a:focus-visible {
   align-items: center;
   gap: 0.75rem;
   padding: 1.5rem 0;
-  color: #059669;
+  color: var(--success);
 }
 
 .feedback-success p {
@@ -513,12 +561,72 @@ a:focus-visible {
 }
 
 .view-toggle-btn.active {
-  background: white;
+  background: var(--surface-solid);
   color: var(--foreground);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Sort Select */
+/* Search input */
+.search-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+  color: var(--muted-3);
+}
+
+.search-input {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 6px 28px 6px 30px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--foreground);
+  border-radius: 7px;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+  width: 100%;
+}
+
+.search-input::placeholder {
+  color: var(--muted-3);
+  font-weight: 500;
+}
+
+.search-input:focus {
+  outline: none;
+  background-color: var(--surface-solid);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--muted-3);
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.search-clear:hover {
+  color: var(--foreground);
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .sort-select-wrapper {
   display: inline-flex;
   align-items: center;
@@ -559,7 +667,7 @@ a:focus-visible {
 
 .sort-select:focus {
   outline: none;
-  background-color: white;
+  background-color: var(--surface-solid);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -725,7 +833,7 @@ a:focus-visible {
   padding-right: 24px;
   font-size: 0.75rem;
   font-weight: 600;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
   appearance: none;
@@ -742,24 +850,24 @@ a:focus-visible {
 }
 
 .status-saved {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--status-saved-bg);
+  color: var(--status-saved-text);
 }
 .status-applied {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--status-applied-bg);
+  color: var(--status-applied-text);
 }
 .status-interview {
-  background: #ede9fe;
-  color: #5b21b6;
+  background: var(--status-interview-bg);
+  color: var(--status-interview-text);
 }
 .status-offer {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--status-offer-bg);
+  color: var(--status-offer-text);
 }
 .status-rejected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected-text);
 }
 
 /* Table inputs */
@@ -773,9 +881,9 @@ a:focus-visible {
 .table-select {
   padding: 4px 8px;
   font-size: 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(245, 158, 11, 0.2);
-  background: white;
+  background: var(--surface-solid);
   cursor: pointer;
 }
 
@@ -788,9 +896,9 @@ a:focus-visible {
 .table-input {
   padding: 4px 8px;
   font-size: 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(245, 158, 11, 0.2);
-  background: white;
+  background: var(--surface-solid);
   width: 100%;
   min-width: 80px;
 }
@@ -863,8 +971,8 @@ a:focus-visible {
 }
 
 .delete-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .delete-btn:disabled {
@@ -876,9 +984,9 @@ a:focus-visible {
 .table-date {
   padding: 4px 8px;
   font-size: 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(245, 158, 11, 0.2);
-  background: white;
+  background: var(--surface-solid);
   cursor: pointer;
   color: var(--foreground);
 }
@@ -905,7 +1013,7 @@ a:focus-visible {
   color: var(--accent);
   text-decoration: none;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: rgba(245, 158, 11, 0.08);
   border: 1px solid rgba(245, 158, 11, 0.18);
   transition: all 150ms ease;
@@ -955,7 +1063,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1034,7 +1142,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.68rem;
   font-weight: 650;
   text-transform: uppercase;
@@ -1043,8 +1151,8 @@ a:focus-visible {
 }
 
 .changelog-tag-new {
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .changelog-tag-improvement {
@@ -1120,11 +1228,11 @@ a:focus-visible {
   }
 
   .card {
-    border-radius: 14px;
+    border-radius: var(--radius-md);
   }
 
   .table-wrapper {
-    border-radius: 14px;
+    border-radius: var(--radius-md);
   }
 
   /* Better touch targets on mobile */
@@ -1146,6 +1254,11 @@ a:focus-visible {
 
   .btn-sm {
     min-height: auto;
+  }
+
+  /* Search on mobile */
+  .search-input {
+    font-size: 16px;
   }
 
   /* Compact sort select - icon only */

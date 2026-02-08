@@ -25,6 +25,9 @@ export interface Board {
   columnOrder?: string[]; // Order of columns (built-in IDs + custom names)
   pin?: string; // bcrypt hash
   jobs: Job[];
+  // Migration fields (Phase 2)
+  migratedTo?: string; // userId who claimed this board
+  migratedAt?: string; // ISO date of migration
 }
 
 // Built-in column IDs
@@ -100,4 +103,69 @@ export async function deleteBoard(slug: string): Promise<void> {
  */
 export function generateJobId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// ============================================================
+// Authenticated user board functions (userId-keyed)
+// ============================================================
+
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
+
+/**
+ * Get a board by authenticated userId
+ */
+export async function getBoardByUserId(userId: string): Promise<Board | null> {
+  return await kv.get<Board>(`board:${userId}`);
+}
+
+/**
+ * Save a board for an authenticated user
+ */
+export async function saveBoardByUserId(userId: string, board: Board): Promise<void> {
+  await kv.set(`board:${userId}`, board);
+}
+
+/**
+ * List only legacy slug-based boards (excludes userId-keyed boards)
+ */
+export async function listLegacyBoards(): Promise<string[]> {
+  const keys = await kv.keys('board:*');
+  return keys.map((key) => key.replace('board:', '')).filter((id) => SLUG_PATTERN.test(id));
+}
+
+/**
+ * List importable legacy boards (slug-based, not yet migrated) with titles and PIN status
+ */
+export async function listImportableBoards(): Promise<
+  { slug: string; title: string; hasPin: boolean }[]
+> {
+  const slugs = await listLegacyBoards();
+  const results: { slug: string; title: string; hasPin: boolean }[] = [];
+  for (const slug of slugs) {
+    const board = await getBoard(slug);
+    if (board && !board.migratedTo) {
+      results.push({ slug, title: board.title, hasPin: !!board.pin });
+    }
+  }
+  return results;
+}
+
+/**
+ * Mark a legacy board as migrated to an authenticated user
+ */
+export async function markBoardMigrated(slug: string, userId: string): Promise<void> {
+  const board = await getBoard(slug);
+  if (!board) return;
+  board.migratedTo = userId;
+  board.migratedAt = new Date().toISOString();
+  await saveBoard(slug, board);
+}
+
+/**
+ * Resolve the board key for an API request.
+ * If a userId is provided (authenticated), use that.
+ * Otherwise fall back to the slug (legacy).
+ */
+export function resolveBoardKey(userId: string | null, slug: string | null): string | null {
+  return userId || slug;
 }

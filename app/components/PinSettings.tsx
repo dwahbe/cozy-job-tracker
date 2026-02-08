@@ -90,7 +90,7 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="p-2 text-muted-2 hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
         title="PIN Settings"
       >
         {hasPin ? (
@@ -120,14 +120,14 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
           <div className="fixed inset-0 z-40" onClick={handleClose} />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-lg border z-50 p-4">
+          <div className="absolute right-0 top-full mt-2 w-72 bg-surface-solid rounded-lg shadow-lg border border-border z-50 p-4">
             {mode === 'idle' ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <span
-                    className={`w-2 h-2 rounded-full ${hasPin ? 'bg-green-500' : 'bg-gray-300'}`}
+                    className={`w-2 h-2 rounded-full ${hasPin ? 'bg-success' : 'bg-muted-3'}`}
                   />
-                  <span className="text-gray-600">
+                  <span className="text-muted">
                     {hasPin ? 'Protected with PIN' : 'Not protected'}
                   </span>
                 </div>
@@ -136,7 +136,7 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                   {!hasPin && (
                     <button
                       onClick={() => setMode('add')}
-                      className="w-full text-left px-3 py-2 text-sm rounded hover:bg-gray-50 transition-colors"
+                      className="w-full text-left px-3 py-2 text-sm rounded hover:bg-surface-hover transition-colors"
                     >
                       Add PIN protection
                     </button>
@@ -145,13 +145,13 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                     <>
                       <button
                         onClick={() => setMode('change')}
-                        className="w-full text-left px-3 py-2 text-sm rounded hover:bg-gray-50 transition-colors"
+                        className="w-full text-left px-3 py-2 text-sm rounded hover:bg-surface-hover transition-colors"
                       >
                         Change PIN
                       </button>
                       <button
                         onClick={() => setMode('remove')}
-                        className="w-full text-left px-3 py-2 text-sm text-red-600 rounded hover:bg-red-50 transition-colors"
+                        className="w-full text-left px-3 py-2 text-sm text-danger rounded hover:bg-danger-soft transition-colors"
                       >
                         Remove PIN
                       </button>
@@ -162,14 +162,14 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-3">
                 <h3 className="font-medium text-sm">
-                  {mode === 'add' && 'Add PIN Protection'}
+                  {mode === 'add' && 'Add PIN protection'}
                   {mode === 'change' && 'Change PIN'}
                   {mode === 'remove' && 'Remove PIN'}
                 </h3>
 
                 {(mode === 'change' || mode === 'remove') && (
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Current PIN</label>
+                    <label className="block text-xs text-muted-2 mb-1">Current PIN</label>
                     <input
                       type="password"
                       inputMode="numeric"
@@ -186,8 +186,8 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                 {(mode === 'add' || mode === 'change') && (
                   <>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">
-                        {mode === 'change' ? 'New PIN' : 'PIN'} (4-6 digits)
+                      <label className="block text-xs text-muted-2 mb-1">
+                        {mode === 'change' ? 'New PIN' : 'PIN'} (4–6 digits)
                       </label>
                       <input
                         type="password"
@@ -201,7 +201,7 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Confirm PIN</label>
+                      <label className="block text-xs text-muted-2 mb-1">Confirm PIN</label>
                       <input
                         type="password"
                         inputMode="numeric"
@@ -216,12 +216,12 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                 )}
 
                 {mode === 'remove' && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-2">
                     Anyone with the link will be able to view this board.
                   </p>
                 )}
 
-                {error && <div className="text-xs text-red-600">{error}</div>}
+                {error && <div className="text-xs text-danger">{error}</div>}
 
                 <div className="flex gap-2">
                   <button
@@ -234,7 +234,7 @@ export function PinSettings({ slug, hasPin }: PinSettingsProps) {
                   </button>
                   <button
                     type="submit"
-                    className={`btn flex-1 text-sm py-1.5 ${mode === 'remove' ? 'bg-red-600 hover:bg-red-700 text-white' : 'btn-primary'}`}
+                    className={`btn flex-1 text-sm py-1.5 ${mode === 'remove' ? 'bg-danger hover:opacity-90 text-white' : 'btn-primary'}`}
                     disabled={loading}
                   >
                     {loading ? '...' : mode === 'remove' ? 'Remove' : 'Save'}

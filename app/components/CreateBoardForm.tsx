@@ -134,7 +134,7 @@ export function CreateBoardForm() {
           {error && <div className="callout callout-error">{error}</div>}
 
           <button type="submit" disabled={loading || !slug} className="btn btn-primary w-full">
-            {loading ? 'Creating...' : 'Create Board'}
+            {loading ? 'Creating...' : 'Create board'}
           </button>
         </div>
       </form>
@@ -146,11 +146,11 @@ export function CreateBoardForm() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
           {/* Modal */}
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full p-6 space-y-5">
+          <div className="relative bg-surface-solid rounded-xl shadow-xl max-w-md w-full p-6 space-y-5">
             <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-success-soft rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg
-                  className="w-6 h-6 text-green-600 dark:text-green-400"
+                  className="w-6 h-6 text-success"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -171,7 +171,7 @@ export function CreateBoardForm() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">PIN (4-6 digits)</label>
+                <label className="block text-sm font-medium mb-1">PIN (4–6 digits)</label>
                 <input
                   type="password"
                   inputMode="numeric"

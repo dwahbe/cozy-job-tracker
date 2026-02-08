@@ -29,10 +29,10 @@ export default function CopyLink() {
         onClick={handleCopy}
         className="text-sm sm:text-base font-medium underline underline-offset-2 decoration-dashed hover:decoration-solid cursor-pointer"
       >
-        📬 send this to your unemployed friend
+        📬 Send this to your unemployed friend
       </button>
       <span
-        className={`absolute top-full left-1/2 -translate-x-1/2 mt-1 text-sm text-green-600 whitespace-nowrap transition-opacity duration-200 ${copied ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute top-full left-1/2 -translate-x-1/2 mt-1 text-sm text-success whitespace-nowrap transition-opacity duration-200 ${copied ? 'opacity-100' : 'opacity-0'}`}
       >
         Copied!
       </span>

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { changelog } from '../changelog-data';
+import { changelog } from '@/app/changelog-data';
 import { ChangelogFeedbackCTA } from './ChangelogFeedbackCTA';
 
 export const metadata: Metadata = {
   title: "what's new — cozy job tracker",
-  description: 'The latest updates and improvements to Cozy Job Tracker.',
+  description: 'The latest updates and improvements to cozy job tracker.',
 };
 
 const tagLabels: Record<string, string> = {
@@ -24,10 +24,10 @@ export default function ChangelogPage() {
             href="/"
             className="text-sm muted hover:underline inline-flex items-center gap-1 mb-4"
           >
-            ← back home
+            ← Back home
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">what&apos;s new</h1>
-          <p className="text-base muted">the latest updates to cozy job tracker.</p>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">What&apos;s new</h1>
+          <p className="text-base muted">The latest updates to cozy job tracker.</p>
         </div>
 
         {/* Entries */}

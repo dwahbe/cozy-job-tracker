@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { celebrateOffer } from '@/lib/confetti';
@@ -84,12 +84,38 @@ const BUILTIN_COLUMNS = [
   { id: '_company', label: 'Company', thClass: 'th-company', tdClass: 'td-company' },
   { id: '_location', label: 'Location', thClass: 'th-location', tdClass: 'td-location' },
   { id: '_type', label: 'Type', thClass: 'th-type', tdClass: 'td-type' },
-  { id: '_dueDate', label: 'Due Date', thClass: 'th-due', tdClass: 'td-due' },
-  { id: '_notes', label: 'Salary / Notes', thClass: 'th-notes', tdClass: 'td-notes' },
+  { id: '_dueDate', label: 'Due date', thClass: 'th-due', tdClass: 'td-due' },
+  { id: '_notes', label: 'Salary / notes', thClass: 'th-notes', tdClass: 'td-notes' },
   { id: '_status', label: 'Status', thClass: 'th-status', tdClass: 'td-status' },
 ] as const;
 
 type BuiltinColumnId = (typeof BUILTIN_COLUMNS)[number]['id'];
+
+function getFieldValue(job: ParsedJob, field: string): string {
+  switch (field.toLowerCase()) {
+    case 'status': return job.status;
+    case 'title': return job.title;
+    case 'company': return job.company;
+    case 'location': return job.location || '';
+    case 'employment type': return job.employmentType || '';
+    case 'notes': return job.notes || '';
+    case 'due date': return job.dueDate || '';
+    default: return job.customFields[field] || '';
+  }
+}
+
+function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
+  switch (field.toLowerCase()) {
+    case 'status': job.status = value; break;
+    case 'title': job.title = value; break;
+    case 'company': job.company = value; break;
+    case 'location': job.location = value; break;
+    case 'employment type': job.employmentType = value; break;
+    case 'notes': job.notes = value; break;
+    case 'due date': job.dueDate = value; break;
+    default: job.customFields[field] = value;
+  }
+}
 
 function isBuiltinColumn(id: string): id is BuiltinColumnId {
   return BUILTIN_COLUMNS.some((c) => c.id === id);
@@ -235,7 +261,7 @@ function DueDatePicker({
         <div
           ref={dropdownRef}
           style={dropdownStyle}
-          className="bg-white border border-black/10 rounded-lg shadow-lg p-3 min-w-[200px]"
+          className="bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
         >
           <div className="space-y-2">
             <input
@@ -248,7 +274,7 @@ function DueDatePicker({
               type="button"
               onClick={handleRollingClick}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                value === 'rolling' ? 'bg-amber-100 text-amber-800' : 'hover:bg-black/5'
+                value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
               }`}
             >
               🔄 Rolling basis
@@ -257,7 +283,7 @@ function DueDatePicker({
               <button
                 type="button"
                 onClick={handleClear}
-                className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-500 hover:bg-black/5 transition-colors"
+                className="w-full text-left px-3 py-2 rounded-md text-sm muted hover:bg-black/5 transition-colors"
               >
                 ✕ Clear
               </button>
@@ -269,14 +295,14 @@ function DueDatePicker({
   );
 }
 
-export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
+export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTableProps) {
   const router = useRouter();
-  const [updating, setUpdating] = useState<{ jobLink: string; field: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [textFields, setTextFields] = useState<Record<string, Record<string, string>>>({});
   const [editingCell, setEditingCell] = useState<{ jobLink: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [localOrder, setLocalOrder] = useState(columnOrder);
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, Record<string, string>>>({});
 
   // Create a map of custom columns for quick lookup
   const customColumnMap = new Map(columns.map((c) => [c.name, c]));
@@ -285,6 +311,45 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
   useEffect(() => {
     setLocalOrder(columnOrder);
   }, [columnOrder]);
+
+  // Reconcile optimistic state when server data arrives
+  useEffect(() => {
+    setPendingUpdates((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<string, Record<string, string>> = {};
+      for (const [jobLink, fields] of Object.entries(prev)) {
+        const serverJob = serverJobs.find((j) => j.link === jobLink);
+        if (!serverJob) continue;
+        const remaining: Record<string, string> = {};
+        for (const [field, value] of Object.entries(fields)) {
+          if (getFieldValue(serverJob, field) !== value) {
+            remaining[field] = value;
+          }
+        }
+        if (Object.keys(remaining).length > 0) {
+          next[jobLink] = remaining;
+        }
+      }
+      return Object.keys(next).length > 0 ? next : {};
+    });
+  }, [serverJobs]);
+
+  // Apply optimistic updates for instant UI feedback
+  const effectiveJobs = useMemo(() => {
+    if (Object.keys(pendingUpdates).length === 0) return serverJobs;
+    return serverJobs.map((job) => {
+      const updates = pendingUpdates[job.link];
+      if (!updates) return job;
+      const ej: ParsedJob = { ...job, customFields: { ...job.customFields } };
+      for (const [field, val] of Object.entries(updates)) {
+        applyFieldUpdate(ej, field, val);
+      }
+      return ej;
+    });
+  }, [serverJobs, pendingUpdates]);
+
+  // Shadow prop so existing render code uses optimistic values
+  const jobs = effectiveJobs;
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -328,8 +393,24 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
     }
   };
 
+  const revertPendingUpdate = (jobLink: string, field: string) => {
+    setPendingUpdates((prev) => {
+      const next = { ...prev };
+      if (next[jobLink]) {
+        delete next[jobLink][field];
+        if (Object.keys(next[jobLink]).length === 0) delete next[jobLink];
+      }
+      return next;
+    });
+  };
+
   const updateField = async (jobLink: string, field: string, value: string) => {
-    setUpdating({ jobLink, field });
+    // Optimistic update - UI reflects change immediately
+    setPendingUpdates((prev) => ({
+      ...prev,
+      [jobLink]: { ...prev[jobLink], [field]: value },
+    }));
+
     try {
       const response = await fetch('/api/update-job', {
         method: 'POST',
@@ -342,11 +423,12 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
           celebrateOffer();
         }
         router.refresh();
+      } else {
+        revertPendingUpdate(jobLink, field);
       }
     } catch (err) {
       console.error('Update failed:', err);
-    } finally {
-      setUpdating(null);
+      revertPendingUpdate(jobLink, field);
     }
   };
 
@@ -411,9 +493,6 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
       Rejected: 'status-rejected',
     })[status] || 'status-saved';
 
-  const isUpdating = (jobLink: string, field: string) =>
-    updating?.jobLink === jobLink && updating?.field === field;
-
   const isEditing = (jobLink: string, field: string) =>
     editingCell?.jobLink === jobLink && editingCell?.field === field;
 
@@ -461,7 +540,7 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
             className="opacity-0 group-hover/cell:opacity-100 p-0.5 hover:bg-black/5 rounded transition-opacity"
             title="Edit"
           >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-gray-400">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-muted-3">
               <path
                 d="M10.5 1.5l2 2-7.5 7.5H3v-2l7.5-7.5zM8.5 3.5l2 2"
                 stroke="currentColor"
@@ -478,7 +557,7 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
     return (
       <span
         onClick={() => startEditing(jobLink, field, value)}
-        className={`cursor-pointer hover:bg-black/5 px-1 -mx-1 rounded transition-colors ${isEmpty ? 'text-gray-400' : ''} ${className}`}
+        className={`cursor-pointer hover:bg-black/5 px-1 -mx-1 rounded transition-colors ${isEmpty ? 'text-muted-3' : ''} ${className}`}
       >
         {displayValue}
       </span>
@@ -546,7 +625,6 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
               <DueDatePicker
                 value={job.dueDate || ''}
                 onChange={(value) => updateField(job.link, 'Due date', value)}
-                disabled={isUpdating(job.link, 'Due date')}
               />
             </td>
           );
@@ -567,7 +645,6 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
               <select
                 value={job.status}
                 onChange={(e) => updateField(job.link, 'Status', e.target.value)}
-                disabled={isUpdating(job.link, 'Status')}
                 className={`status-select ${statusColor(job.status)}`}
               >
                 {STATUS_OPTIONS.map((status) => (
@@ -596,17 +673,15 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
           <input
             type="checkbox"
             checked={job.customFields[customCol.name] === 'Yes'}
-            onChange={(e) => updateField(job.link, customCol.name, e.target.checked ? 'Yes' : 'No')}
-            disabled={isUpdating(job.link, customCol.name)}
-            className="table-checkbox"
+                onChange={(e) => updateField(job.link, customCol.name, e.target.checked ? 'Yes' : 'No')}
+                className="table-checkbox"
           />
         )}
         {customCol.type === 'dropdown' && customCol.options && (
           <select
             value={job.customFields[customCol.name] || ''}
-            onChange={(e) => updateField(job.link, customCol.name, e.target.value)}
-            disabled={isUpdating(job.link, customCol.name)}
-            className="table-select"
+                onChange={(e) => updateField(job.link, customCol.name, e.target.value)}
+                className="table-select"
           >
             <option value="">—</option>
             {customCol.options.map((opt) => (
@@ -640,9 +715,8 @@ export function JobTable({ jobs, slug, columns, columnOrder }: JobTableProps) {
                 return next;
               });
             }}
-            disabled={isUpdating(job.link, customCol.name)}
-            placeholder="..."
-            className="table-input"
+                placeholder="..."
+                className="table-input"
           />
         )}
       </td>

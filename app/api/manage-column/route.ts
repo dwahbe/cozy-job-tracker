@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard, type Column } from '@/lib/kv';
+import { type Column } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown'];
 
 // PUT - Update column
@@ -16,11 +15,6 @@ export async function PUT(request: NextRequest) {
       oldName: string;
       column: Column;
     };
-
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug or board not found' }, { status: 400 });
-    }
 
     // Validate column
     if (!column || !column.name || !column.type) {
@@ -41,14 +35,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Find the column
-    const columnIndex = board.columns.findIndex(
+    const columnIndex = ctx.board.columns.findIndex(
       (c) => c.name.toLowerCase() === oldName.toLowerCase()
     );
     if (columnIndex === -1) {
@@ -57,7 +51,7 @@ export async function PUT(request: NextRequest) {
 
     // If renaming, check new name doesn't conflict
     if (oldName.toLowerCase() !== column.name.toLowerCase()) {
-      if (board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
+      if (ctx.board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
         return NextResponse.json(
           { error: 'Column with that name already exists' },
           { status: 400 }
@@ -66,11 +60,11 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update column
-    board.columns[columnIndex] = column;
+    ctx.board.columns[columnIndex] = column;
 
     // If renamed, update custom fields in all jobs
     if (oldName !== column.name) {
-      for (const job of board.jobs) {
+      for (const job of ctx.board.jobs) {
         if (oldName in job.customFields) {
           job.customFields[column.name] = job.customFields[oldName];
           delete job.customFields[oldName];
@@ -79,9 +73,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Save board
-    await saveBoard(slug, board);
-
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -99,27 +91,22 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { slug, columnOrder } = body as {
       slug: string;
-      columnOrder: string[]; // Array of custom column names in new order
+      columnOrder: string[];
     };
-
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
 
     // Validate columnOrder
     if (!Array.isArray(columnOrder)) {
       return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
     }
 
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Verify all column names exist
-    const existingNames = new Set(board.columns.map((c) => c.name));
+    const existingNames = new Set(ctx.board.columns.map((c) => c.name));
     for (const name of columnOrder) {
       if (!existingNames.has(name)) {
         return NextResponse.json({ error: `Column "${name}" not found` }, { status: 400 });
@@ -127,13 +114,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Reorder columns based on columnOrder
-    const columnMap = new Map(board.columns.map((c) => [c.name, c]));
-    board.columns = columnOrder.map((name) => columnMap.get(name)!);
+    const columnMap = new Map(ctx.board.columns.map((c) => [c.name, c]));
+    ctx.board.columns = columnOrder.map((name) => columnMap.get(name)!);
 
     // Save board
-    await saveBoard(slug, board);
-
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -156,36 +141,30 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Slug and column name are required' }, { status: 400 });
     }
 
-    if (!SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
-
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Find and remove the column
-    const columnIndex = board.columns.findIndex(
+    const columnIndex = ctx.board.columns.findIndex(
       (c) => c.name.toLowerCase() === columnName.toLowerCase()
     );
     if (columnIndex === -1) {
       return NextResponse.json({ error: 'Column not found' }, { status: 404 });
     }
 
-    const removedColumn = board.columns[columnIndex];
-    board.columns.splice(columnIndex, 1);
+    const removedColumn = ctx.board.columns[columnIndex];
+    ctx.board.columns.splice(columnIndex, 1);
 
     // Remove custom field from all jobs
-    for (const job of board.jobs) {
+    for (const job of ctx.board.jobs) {
       delete job.customFields[removedColumn.name];
     }
 
     // Save board
-    await saveBoard(slug, board);
-
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {

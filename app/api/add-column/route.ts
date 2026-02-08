@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard, type Column } from '@/lib/kv';
+import { type Column } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown'];
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { slug, column } = body as { slug: string; column: Column };
-
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
-    }
 
     // Validate column
     if (!column || !column.name || !column.type) {
@@ -37,31 +31,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Check if column already exists
-    if (board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
+    if (ctx.board.columns.some((c) => c.name.toLowerCase() === column.name.toLowerCase())) {
       return NextResponse.json({ error: 'Column already exists' }, { status: 400 });
     }
 
     // Add column
-    board.columns.push(column);
+    ctx.board.columns.push(column);
 
     // Add default values for existing jobs
     const defaultValue = column.type === 'checkbox' ? 'No' : '';
-    for (const job of board.jobs) {
+    for (const job of ctx.board.jobs) {
       job.customFields[column.name] = defaultValue;
     }
 
     // Save board
-    await saveBoard(slug, board);
-
-    // Revalidate the board page
-    revalidatePath(`/b/${slug}`);
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {

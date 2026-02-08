@@ -1,99 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getBoard, saveBoard } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
-const SLUG_REGEX = /^[a-z0-9-]+$/;
 const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
+
+interface FieldUpdate {
+  field: string;
+  value: string;
+}
+
+function applyFieldToJob(
+  job: { title: string; company: string; link: string; notes: string; dueDate: string; location: string; employmentType: string; status: string; customFields: Record<string, string> },
+  field: string,
+  value: string
+) {
+  const fieldLower = field.toLowerCase();
+  if (fieldLower === 'status') job.status = value;
+  else if (fieldLower === 'title') job.title = value;
+  else if (fieldLower === 'company') job.company = value;
+  else if (fieldLower === 'link') job.link = value;
+  else if (fieldLower === 'notes') job.notes = value;
+  else if (fieldLower === 'due date') job.dueDate = value;
+  else if (fieldLower === 'location') job.location = value;
+  else if (fieldLower === 'employment type') job.employmentType = value;
+  else job.customFields[field] = value;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, jobLink, field, value } = body as {
+    const { slug, jobLink, field, value, fields } = body as {
       slug: string;
       jobLink: string;
-      field: string;
-      value: string;
+      field?: string;
+      value?: string;
+      fields?: FieldUpdate[];
     };
 
-    // Validate slug
-    if (!slug || !SLUG_REGEX.test(slug)) {
-      return NextResponse.json({ error: 'Invalid board slug' }, { status: 400 });
+    if (!jobLink) {
+      return NextResponse.json({ error: 'jobLink is required' }, { status: 400 });
     }
 
-    // Validate required fields
-    if (!jobLink || !field) {
-      return NextResponse.json({ error: 'jobLink and field are required' }, { status: 400 });
+    // Normalize: support single field or batch fields array
+    const updates: FieldUpdate[] = fields
+      ? fields
+      : field
+        ? [{ field, value: value ?? '' }]
+        : [];
+
+    if (updates.length === 0) {
+      return NextResponse.json({ error: 'field or fields is required' }, { status: 400 });
     }
 
-    // Validate Status field values
-    if (field === 'Status' && !STATUS_OPTIONS.includes(value)) {
-      return NextResponse.json(
-        { error: `Status must be one of: ${STATUS_OPTIONS.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Validate Applied field values
-    if (field === 'Applied' && !['Yes', 'No'].includes(value)) {
-      return NextResponse.json({ error: 'Applied must be Yes or No' }, { status: 400 });
-    }
-
-    // Get board from KV
-    const board = await getBoard(slug);
-    if (!board) {
+    // Resolve board (auth session or legacy slug)
+    const ctx = await resolveBoard(slug);
+    if (!ctx) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // For dropdown custom columns, validate the value
-    const customColumn = board.columns.find(
-      (c) => c.name.toLowerCase() === field.toLowerCase() && c.type === 'dropdown'
-    );
-    if (customColumn && customColumn.options && !customColumn.options.includes(value)) {
-      return NextResponse.json(
-        { error: `${field} must be one of: ${customColumn.options.join(', ')}` },
-        { status: 400 }
+    // Validate all updates
+    for (const update of updates) {
+      if (update.field === 'Status' && !STATUS_OPTIONS.includes(update.value)) {
+        return NextResponse.json(
+          { error: `Status must be one of: ${STATUS_OPTIONS.join(', ')}` },
+          { status: 400 }
+        );
+      }
+      if (update.field === 'Applied' && !['Yes', 'No'].includes(update.value)) {
+        return NextResponse.json({ error: 'Applied must be Yes or No' }, { status: 400 });
+      }
+      const customColumn = ctx.board.columns.find(
+        (c) => c.name.toLowerCase() === update.field.toLowerCase() && c.type === 'dropdown'
       );
+      if (customColumn && customColumn.options && !customColumn.options.includes(update.value)) {
+        return NextResponse.json(
+          { error: `${update.field} must be one of: ${customColumn.options.join(', ')}` },
+          { status: 400 }
+        );
+      }
     }
 
-    // Find and update the job
-    const jobIndex = board.jobs.findIndex((j) => j.link === jobLink);
+    // Find the job
+    const jobIndex = ctx.board.jobs.findIndex((j) => j.link === jobLink);
     if (jobIndex === -1) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Update the appropriate field
-    const job = board.jobs[jobIndex];
-    const fieldLower = field.toLowerCase();
-
-    // Check if it's a built-in field
-    if (fieldLower === 'status') {
-      job.status = value;
-    } else if (fieldLower === 'title') {
-      job.title = value;
-    } else if (fieldLower === 'company') {
-      job.company = value;
-    } else if (fieldLower === 'link') {
-      job.link = value;
-    } else if (fieldLower === 'notes') {
-      job.notes = value;
-    } else if (fieldLower === 'due date') {
-      job.dueDate = value;
-    } else if (fieldLower === 'location') {
-      job.location = value;
-    } else if (fieldLower === 'employment type') {
-      job.employmentType = value;
-    } else {
-      // Custom field
-      job.customFields[field] = value;
+    // Apply all field updates in a single read-modify-write
+    const job = ctx.board.jobs[jobIndex];
+    for (const update of updates) {
+      applyFieldToJob(job, update.field, update.value);
     }
 
-    // Save board
-    await saveBoard(slug, board);
-
-    // Revalidate the board page
-    revalidatePath(`/b/${slug}`);
+    // Save board once
+    await saveBoardAndRevalidate(ctx);
 
     return NextResponse.json({ success: true });
   } catch (error) {

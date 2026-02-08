@@ -60,9 +60,9 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
       <div className="container-app max-w-md">
         <div className="card p-8 text-center">
           <div className="mb-6">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-hover flex items-center justify-center">
               <svg
-                className="w-8 h-8 text-gray-500"
+                className="w-8 h-8 text-muted-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -76,7 +76,7 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
               </svg>
             </div>
             <h1 className="text-xl font-semibold mb-1">{boardTitle}</h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm muted">
               This board is protected. Enter the PIN to continue.
             </p>
           </div>
@@ -95,7 +95,7 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
               />
             </div>
 
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {error && <div className="text-sm text-danger">{error}</div>}
 
             <button
               type="submit"

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export function FeedbackButton() {
+export function FeedbackButton({ className }: { className?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -78,10 +78,13 @@ export function FeedbackButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="text-sm sm:text-base font-medium underline underline-offset-2 decoration-dashed hover:decoration-solid cursor-pointer"
+        className={
+          className ||
+          'text-sm sm:text-base font-medium underline underline-offset-2 decoration-dashed hover:decoration-solid cursor-pointer'
+        }
         aria-label="Send feedback"
       >
-        💬 send feedback
+        {className ? 'Send feedback' : '💬 Send feedback'}
       </button>
 
       {isOpen &&
@@ -89,7 +92,7 @@ export function FeedbackButton() {
           <div className="feedback-overlay">
             <div ref={modalRef} className="feedback-modal">
               <div className="feedback-header">
-                <h3>send feedback</h3>
+                <h3>Send feedback</h3>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="feedback-close"
@@ -116,7 +119,7 @@ export function FeedbackButton() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <p>thanks for your feedback!</p>
+                  <p>Thanks for your feedback!</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
@@ -124,7 +127,7 @@ export function FeedbackButton() {
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="ideas, bugs, love notes..."
+                    placeholder="Ideas, bugs, love notes..."
                     className="feedback-textarea"
                     rows={4}
                     disabled={status === 'sending'}

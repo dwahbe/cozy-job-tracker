@@ -61,11 +61,11 @@ function SortableColumnChip({
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-amber-100 rounded touch-none"
+        className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-accent-soft rounded touch-none"
         title="Drag to reorder"
       >
         <svg
-          className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-gray-400"
+          className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-muted-3"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -78,7 +78,7 @@ function SortableColumnChip({
       <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           onClick={onEdit}
-          className="p-1 rounded hover:bg-amber-100 active:bg-amber-100"
+          className="p-1 rounded hover:bg-accent-soft active:bg-accent-soft"
           title="Edit column"
         >
           <svg
@@ -98,7 +98,7 @@ function SortableColumnChip({
         <button
           onClick={onDelete}
           disabled={isDeleting}
-          className="p-1 rounded hover:bg-red-100 active:bg-red-100 text-red-600 disabled:opacity-50"
+          className="p-1 rounded hover:bg-danger-soft active:bg-danger-soft text-danger disabled:opacity-50"
           title="Delete column"
         >
           <svg
@@ -447,7 +447,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                 disabled={loading || !newName.trim()}
                 className="btn btn-primary"
               >
-                {loading ? 'Adding...' : 'Add Column'}
+                {loading ? 'Adding...' : 'Add column'}
               </button>
               <button
                 type="button"

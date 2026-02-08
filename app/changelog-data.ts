@@ -8,16 +8,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
-    date: 'Feb 6, 2026',
-    title: 'Bulk Job Import',
-    emoji: '📦',
+    date: 'Feb 8, 2026',
+    title: 'Email accounts',
+    emoji: '🔑',
     tag: 'new',
+    description:
+      'Sign in with your email to get a personal board tied to your account. No password needed — just a magic link. Already have a board? Import it after creating your account.',
+  },
+  {
+    date: 'Feb 6, 2026',
+    title: 'Bulk job import',
+    emoji: '📦',
     description:
       'Paste up to 50 job URLs and import them all at once. No more adding jobs one by one — just paste, review, and go.',
   },
   {
     date: 'Jan 1, 2026',
-    title: 'Cozy Job Tracker launched!',
+    title: 'cozy job tracker launched!',
     emoji: '🌱',
     description:
       "Your cozy corner of the internet for tracking job applications. Create a board, paste a URL, and you're off.",

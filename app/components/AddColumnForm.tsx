@@ -121,7 +121,7 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
 
         <div className="flex gap-2">
           <button type="submit" disabled={loading || !name.trim()} className="btn btn-primary">
-            {loading ? 'Adding...' : 'Add Column'}
+            {loading ? 'Adding...' : 'Add column'}
           </button>
           <button
             type="button"

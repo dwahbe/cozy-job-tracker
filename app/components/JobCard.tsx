@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { celebrateOffer } from '@/lib/confetti';
@@ -76,7 +76,7 @@ function DueDatePicker({
           {displayText}
         </button>
         {isOpen && (
-          <div className="absolute z-50 top-full left-0 mt-1 bg-white border border-black/10 rounded-lg shadow-lg p-3 min-w-[200px]">
+          <div className="absolute z-50 top-full left-0 mt-1 bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]">
             <div className="space-y-2">
               <input
                 type="date"
@@ -88,7 +88,7 @@ function DueDatePicker({
                 type="button"
                 onClick={handleRollingClick}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  value === 'rolling' ? 'bg-amber-100 text-amber-800' : 'hover:bg-black/5'
+                  value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
                 }`}
               >
                 🔄 Rolling basis
@@ -97,7 +97,7 @@ function DueDatePicker({
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-500 hover:bg-black/5 transition-colors"
+                  className="w-full text-left px-3 py-2 rounded-md text-sm muted hover:bg-black/5 transition-colors"
                 >
                   ✕ Clear
                 </button>
@@ -133,6 +133,32 @@ const formatDateDisplay = (dateStr: string): string => {
   return `${month} ${day}${ordinal(day)} ${year}`;
 };
 
+function getFieldValue(job: ParsedJob, field: string): string {
+  switch (field.toLowerCase()) {
+    case 'status': return job.status;
+    case 'title': return job.title;
+    case 'company': return job.company;
+    case 'location': return job.location || '';
+    case 'employment type': return job.employmentType || '';
+    case 'notes': return job.notes || '';
+    case 'due date': return job.dueDate || '';
+    default: return job.customFields[field] || '';
+  }
+}
+
+function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
+  switch (field.toLowerCase()) {
+    case 'status': job.status = value; break;
+    case 'title': job.title = value; break;
+    case 'company': job.company = value; break;
+    case 'location': job.location = value; break;
+    case 'employment type': job.employmentType = value; break;
+    case 'notes': job.notes = value; break;
+    case 'due date': job.dueDate = value; break;
+    default: job.customFields[field] = value;
+  }
+}
+
 const statusColor = (status: string) =>
   ({
     Saved: 'status-saved',
@@ -142,29 +168,58 @@ const statusColor = (status: string) =>
     Rejected: 'status-rejected',
   })[status] || 'status-saved';
 
-export function JobCard({ job, slug, columns }: JobCardProps) {
+export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
   const router = useRouter();
-  const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [textFields, setTextFields] = useState<Record<string, string>>({});
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editFields, setEditFields] = useState<EditableFields>({
-    title: job.title,
-    company: job.company,
-    location: job.location || '',
-    employmentType: job.employmentType || '',
-    notes: job.notes || '',
-    link: job.link,
+    title: serverJob.title,
+    company: serverJob.company,
+    location: serverJob.location || '',
+    employmentType: serverJob.employmentType || '',
+    notes: serverJob.notes || '',
+    link: serverJob.link,
   });
 
+  // Reconcile optimistic state when server data arrives
+  useEffect(() => {
+    setPendingUpdates((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<string, string> = {};
+      for (const [field, value] of Object.entries(prev)) {
+        if (getFieldValue(serverJob, field) !== value) {
+          next[field] = value;
+        }
+      }
+      return Object.keys(next).length > 0 ? next : {};
+    });
+  }, [serverJob]);
+
+  // Apply optimistic updates for instant UI feedback
+  const effectiveJob = useMemo(() => {
+    if (Object.keys(pendingUpdates).length === 0) return serverJob;
+    const ej: typeof serverJob = { ...serverJob, customFields: { ...serverJob.customFields } };
+    for (const [field, val] of Object.entries(pendingUpdates)) {
+      applyFieldUpdate(ej, field, val);
+    }
+    return ej;
+  }, [serverJob, pendingUpdates]);
+
+  // Shadow prop so existing render code uses optimistic values
+  const job = effectiveJob;
+
   const updateField = async (field: string, value: string) => {
-    setUpdating(field);
+    // Optimistic update - UI reflects change immediately
+    setPendingUpdates((prev) => ({ ...prev, [field]: value }));
+
     try {
       const response = await fetch('/api/update-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobLink: job.link, field, value }),
+        body: JSON.stringify({ slug, jobLink: serverJob.link, field, value }),
       });
 
       if (response.ok) {
@@ -172,11 +227,20 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
           celebrateOffer();
         }
         router.refresh();
+      } else {
+        setPendingUpdates((prev) => {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        });
       }
     } catch (err) {
       console.error('Update failed:', err);
-    } finally {
-      setUpdating(null);
+      setPendingUpdates((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
     }
   };
 
@@ -188,7 +252,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobLink: job.link }),
+        body: JSON.stringify({ slug, jobLink: serverJob.link }),
       });
 
       if (response.ok) {
@@ -208,7 +272,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
       location: job.location || '',
       employmentType: job.employmentType || '',
       notes: job.notes || '',
-      link: job.link,
+      link: serverJob.link,
     });
     setIsEditing(true);
   };
@@ -220,7 +284,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
   const handleSaveEdit = async () => {
     setSaving(true);
     try {
-      // Update each changed field
       const updates: { field: string; value: string }[] = [];
 
       if (editFields.title !== job.title) {
@@ -238,21 +301,21 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
       if (editFields.notes !== (job.notes || '')) {
         updates.push({ field: 'Notes', value: editFields.notes });
       }
-      if (editFields.link !== job.link) {
+      if (editFields.link !== serverJob.link) {
         updates.push({ field: 'Link', value: editFields.link });
       }
 
-      // Send all updates
-      for (const update of updates) {
+      if (updates.length > 0) {
+        // Optimistic update
+        for (const update of updates) {
+          setPendingUpdates((prev) => ({ ...prev, [update.field]: update.value }));
+        }
+
+        // Single batch API call instead of N sequential calls
         await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug,
-            jobLink: job.link,
-            field: update.field,
-            value: update.value,
-          }),
+          body: JSON.stringify({ slug, jobLink: serverJob.link, fields: updates }),
         });
       }
 
@@ -269,7 +332,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
     return (
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-lg tracking-tight">Edit Job</h3>
+          <h3 className="font-semibold text-lg tracking-tight">Edit job</h3>
           <button onClick={handleCancelEdit} className="text-sm muted hover:text-black">
             ✕
           </button>
@@ -306,7 +369,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Employment Type</label>
+              <label className="block text-sm font-medium mb-1.5">Employment type</label>
               <input
                 type="text"
                 value={editFields.employmentType}
@@ -326,7 +389,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1.5">Salary / Notes</label>
+              <label className="block text-sm font-medium mb-1.5">Salary / notes</label>
               <textarea
                 value={editFields.notes}
                 onChange={(e) => setEditFields({ ...editFields, notes: e.target.value })}
@@ -343,7 +406,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
               disabled={saving || !editFields.title || !editFields.company}
               className="btn btn-primary flex-1"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : 'Save changes'}
             </button>
             <button onClick={handleCancelEdit} disabled={saving} className="btn btn-ghost">
               Cancel
@@ -372,7 +435,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="p-1.5 rounded-md hover:bg-rose-50 text-sm muted hover:text-rose-700 transition-colors"
+            className="p-1.5 rounded-md hover:bg-danger-soft text-sm muted hover:text-danger transition-colors"
             title="Delete job"
           >
             🗑️
@@ -414,7 +477,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
         <DueDatePicker
           value={job.dueDate || ''}
           onChange={(value) => updateField('Due date', value)}
-          disabled={updating === 'Due date'}
         />
 
         {/* Status dropdown */}
@@ -423,7 +485,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
           <select
             value={job.status}
             onChange={(e) => updateField('Status', e.target.value)}
-            disabled={updating === 'Status'}
             className={`status-select ${statusColor(job.status)}`}
           >
             {STATUS_OPTIONS.map((status) => (
@@ -443,8 +504,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
                   type="checkbox"
                   checked={job.customFields[col.name] === 'Yes'}
                   onChange={(e) => updateField(col.name, e.target.checked ? 'Yes' : 'No')}
-                  disabled={updating === col.name}
-                  className="h-4 w-4 accent-orange-500"
+                  className="h-4 w-4 accent-accent"
                 />
                 <span className="text-sm">{col.name}</span>
               </label>
@@ -455,7 +515,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
                 <select
                   value={job.customFields[col.name] || ''}
                   onChange={(e) => updateField(col.name, e.target.value)}
-                  disabled={updating === col.name}
                   className="select w-auto py-1.5 text-sm"
                 >
                   <option value="">—</option>
@@ -488,7 +547,6 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
                       return next;
                     });
                   }}
-                  disabled={updating === col.name}
                   placeholder="..."
                   className="input w-28 py-1.5 text-sm"
                 />
@@ -500,7 +558,7 @@ export function JobCard({ job, slug, columns }: JobCardProps) {
 
       {/* Meta info */}
       <div className="mt-4 pt-4 border-t border-black/5 flex items-center gap-4 text-xs muted">
-        <span>Added: {job.parsedOn}</span>
+          <span>Added: {job.parsedOn}</span>
         <span className={job.verified === 'Yes' ? 'text-emerald-700' : 'text-amber-700'}>
           {job.verified === 'Yes' ? '✓ Verified' : '⚠ Partial'}
         </span>

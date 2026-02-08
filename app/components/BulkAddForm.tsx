@@ -210,7 +210,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
             {urlCount === 0 ? (
               'No URLs detected'
             ) : overLimit ? (
-              <span className="text-red-600">
+              <span className="text-danger">
                 {urlCount} URLs detected (max {MAX_URLS})
               </span>
             ) : (
@@ -244,9 +244,9 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
               Cancel
             </button>
           </div>
-          <div className="w-full h-2 rounded-full bg-amber-100 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-accent-soft overflow-hidden">
             <div
-              className="h-full rounded-full bg-amber-500 transition-all duration-300"
+              className="h-full rounded-full bg-accent transition-all duration-300"
               style={{ width: `${(parsedCount / entries.length) * 100}%` }}
             />
           </div>
@@ -263,7 +263,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
             )}
           </span>
           <button type="button" onClick={handleReset} className="btn btn-ghost btn-sm">
-            Start over
+              Start over
           </button>
         </div>
       )}
@@ -274,7 +274,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
           <div key={i} className={`bulk-progress-item ${entry.status}`}>
             {/* Status icon */}
             <span className="bulk-progress-icon">
-              {entry.status === 'pending' && <span className="text-amber-400">○</span>}
+              {entry.status === 'pending' && <span className="text-muted-3">○</span>}
               {entry.status === 'parsing' && <span className="bulk-spinner" />}
               {entry.status === 'success' && (
                 <svg
@@ -293,7 +293,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
               )}
               {entry.status === 'failed' && (
                 <svg
-                  className="w-4 h-4 text-red-500"
+                  className="w-4 h-4 text-danger"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -312,12 +312,12 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
             <span className="min-w-0 flex-1 truncate text-sm">
               {entry.status === 'success' && entry.job ? (
                 <span>
-                  <span className="font-medium">{entry.job.title || 'Unknown Position'}</span>
+                  <span className="font-medium">{entry.job.title || 'Unknown position'}</span>
                   <span className="muted"> at </span>
-                  <span>{entry.job.company || 'Unknown Company'}</span>
+                  <span>{entry.job.company || 'Unknown company'}</span>
                 </span>
               ) : (
-                <span className={entry.status === 'failed' ? 'text-red-700' : 'muted'}>
+                <span className={entry.status === 'failed' ? 'text-danger' : 'muted'}>
                   {entry.url}
                   {entry.error && <span className="muted text-xs ml-2">— {entry.error}</span>}
                 </span>
