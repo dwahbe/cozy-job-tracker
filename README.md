@@ -2,19 +2,27 @@
 
 calm tracking for a noisy job search.
 
-paste a job url, cozyjobtracker parses it, and keep everything organized in one cozy spot.
+I built this because job hunting is stressful enough without fighting your tracking tool. paste a job url, it pulls the details, and you get a clean board to track everything. that's basically it.
 
 ## what it does
 
-- **auto parsing** — drop in a job url and watch it extract title, company, location, salary, and more
-- **stress-free tracking** — move jobs through your pipeline: saved → applied → interview → offer
+- **auto parsing** — paste a job url and it extracts title, company, location, salary, type — all of it
+- **bulk import** — paste up to 50 urls and import them all at once. no more adding jobs one by one
+- **board & table views** — drag jobs through your pipeline: saved → applied → interview → offer
 - **custom columns** — add whatever fields make sense for your search (referral? vibe check? notes to self?)
-- **share with friends** — send your board to a friend who's also in the thick of it
+- **notes & due dates** — keep track of deadlines and details without a separate app
+- **share your board** — send a public link to a friend who's also in the thick of it
+
+no AI cover letter generators, no LinkedIn integrations, no "career coaching." just a clean board for keeping track of where you applied.
+
+## stack
+
+next.js, react, tailwind, upstash redis, openai for parsing, nextauth magic links via resend
 
 ## license
 
-MIT — do whatever you want with it. Please credit accordingly :)
+MIT — please give credit when appropriate :)
 
 ---
 
-📬 Send this to your unemployed friend
+📬 send this to your unemployed friend
