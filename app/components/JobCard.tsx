@@ -135,27 +135,50 @@ const formatDateDisplay = (dateStr: string): string => {
 
 function getFieldValue(job: ParsedJob, field: string): string {
   switch (field.toLowerCase()) {
-    case 'status': return job.status;
-    case 'title': return job.title;
-    case 'company': return job.company;
-    case 'location': return job.location || '';
-    case 'employment type': return job.employmentType || '';
-    case 'notes': return job.notes || '';
-    case 'due date': return job.dueDate || '';
-    default: return job.customFields[field] || '';
+    case 'status':
+      return job.status;
+    case 'title':
+      return job.title;
+    case 'company':
+      return job.company;
+    case 'location':
+      return job.location || '';
+    case 'employment type':
+      return job.employmentType || '';
+    case 'notes':
+      return job.notes || '';
+    case 'due date':
+      return job.dueDate || '';
+    default:
+      return job.customFields[field] || '';
   }
 }
 
 function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
   switch (field.toLowerCase()) {
-    case 'status': job.status = value; break;
-    case 'title': job.title = value; break;
-    case 'company': job.company = value; break;
-    case 'location': job.location = value; break;
-    case 'employment type': job.employmentType = value; break;
-    case 'notes': job.notes = value; break;
-    case 'due date': job.dueDate = value; break;
-    default: job.customFields[field] = value;
+    case 'status':
+      job.status = value;
+      break;
+    case 'title':
+      job.title = value;
+      break;
+    case 'company':
+      job.company = value;
+      break;
+    case 'location':
+      job.location = value;
+      break;
+    case 'employment type':
+      job.employmentType = value;
+      break;
+    case 'notes':
+      job.notes = value;
+      break;
+    case 'due date':
+      job.dueDate = value;
+      break;
+    default:
+      job.customFields[field] = value;
   }
 }
 
@@ -558,7 +581,7 @@ export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
 
       {/* Meta info */}
       <div className="mt-4 pt-4 border-t border-black/5 flex items-center gap-4 text-xs muted">
-          <span>Added: {job.parsedOn}</span>
+        <span>Added: {job.parsedOn}</span>
         <span className={job.verified === 'Yes' ? 'text-emerald-700' : 'text-amber-700'}>
           {job.verified === 'Yes' ? '✓ Verified' : '⚠ Partial'}
         </span>

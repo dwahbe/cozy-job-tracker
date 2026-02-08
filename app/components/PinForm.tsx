@@ -76,9 +76,7 @@ export function PinForm({ slug, boardTitle }: PinFormProps) {
               </svg>
             </div>
             <h1 className="text-xl font-semibold mb-1">{boardTitle}</h1>
-            <p className="text-sm muted">
-              This board is protected. Enter the PIN to continue.
-            </p>
+            <p className="text-sm muted">This board is protected. Enter the PIN to continue.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

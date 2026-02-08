@@ -89,7 +89,15 @@ export function ImportBoardModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Import existing board</h2>
           <button onClick={onClose} className="muted hover:opacity-70 cursor-pointer p-1">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
               <path d="M4 4l8 8M12 4l-8 8" />
             </svg>
           </button>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'data policy — cozy job tracker',
   description:
-    "How cozy job tracker handles your data. The short version: nothing weird happens with it.",
+    'How cozy job tracker handles your data. The short version: nothing weird happens with it.',
 };
 
 export default function DataPolicyPage() {
@@ -28,8 +28,8 @@ export default function DataPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2">The short version</h2>
             <p className="muted">
-              Your email is used to sign you in. That&apos;s it. I won&apos;t sell it, share it,
-              or do anything weird with it.
+              Your email is used to sign you in. That&apos;s it. I won&apos;t sell it, share it, or
+              do anything weird with it.
             </p>
           </section>
 
@@ -48,14 +48,10 @@ export default function DataPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-2">
-              What cozy job tracker doesn&apos;t do
-            </h2>
+            <h2 className="text-lg font-semibold mb-2">What cozy job tracker doesn&apos;t do</h2>
             <ul className="muted space-y-2 list-disc pl-5">
               <li>Sell or share your data with anyone</li>
-              <li>
-                Send you marketing emails (I don&apos;t even have a mailing list)
-              </li>
+              <li>Send you marketing emails (I don&apos;t even have a mailing list)</li>
               <li>
                 Email you at all — unless you explicitly opt in, which I don&apos;t even ask for
                 right now
@@ -68,8 +64,8 @@ export default function DataPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2">Cookies</h2>
             <p className="muted">
-              cozy job tracker uses a session cookie to keep you signed in. No tracking cookies,
-              no third-party cookies. Just the one that makes login work.
+              cozy job tracker uses a session cookie to keep you signed in. No tracking cookies, no
+              third-party cookies. Just the one that makes login work.
             </p>
           </section>
 

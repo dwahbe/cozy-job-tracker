@@ -132,9 +132,7 @@ export function SortBuilder({ sorts, onSortsChange, columns }: SortBuilderProps)
               <div className="sort-rules">
                 {sorts.map((sort, index) => (
                   <div key={index} className="sort-rule">
-                    <span className="sort-rule-label">
-                      {index === 0 ? 'Sort by' : 'then'}
-                    </span>
+                    <span className="sort-rule-label">{index === 0 ? 'Sort by' : 'then'}</span>
                     <select
                       value={sort.field}
                       onChange={(e) => updateSort(index, { field: e.target.value })}

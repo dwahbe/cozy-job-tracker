@@ -38,9 +38,7 @@ function LoginForm() {
       <div className="container-app max-w-md">
         <div className="card p-8">
           <h1 className="text-2xl font-bold mb-2">Sign in</h1>
-          <p className="muted mb-6">
-            Enter your email to get a magic link. No password needed.
-          </p>
+          <p className="muted mb-6">Enter your email to get a magic link. No password needed.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1.5">

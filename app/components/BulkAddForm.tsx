@@ -263,7 +263,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
             )}
           </span>
           <button type="button" onClick={handleReset} className="btn btn-ghost btn-sm">
-              Start over
+            Start over
           </button>
         </div>
       )}

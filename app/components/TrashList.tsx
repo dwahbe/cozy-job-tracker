@@ -51,7 +51,7 @@ export function TrashList({ items, slug }: TrashListProps) {
   };
 
   const handleEmptyTrash = async () => {
-    if (!confirm('Permanently delete all items in trash? This can\'t be undone.')) return;
+    if (!confirm("Permanently delete all items in trash? This can't be undone.")) return;
 
     setEmptying(true);
     try {

@@ -24,7 +24,9 @@ function useLocalStorage<T extends string>(key: string, fallback: T): [T, (v: T)
     (cb: () => void) => {
       if (!lsListeners.has(key)) lsListeners.set(key, new Set());
       lsListeners.get(key)!.add(cb);
-      const handler = (e: StorageEvent) => { if (e.key === key) cb(); };
+      const handler = (e: StorageEvent) => {
+        if (e.key === key) cb();
+      };
       window.addEventListener('storage', handler);
       return () => {
         lsListeners.get(key)?.delete(cb);
@@ -50,15 +52,24 @@ function useLocalStorage<T extends string>(key: string, fallback: T): [T, (v: T)
 function getSortFieldValue(job: ParsedJob, field: string): string {
   if (field.startsWith('custom:')) return job.customFields[field.slice(7)] || '';
   switch (field) {
-    case 'parsedOn': return job.parsedOn;
-    case 'dueDate': return job.dueDate || '';
-    case 'status': return job.status;
-    case 'title': return job.title;
-    case 'company': return job.company;
-    case 'location': return job.location || '';
-    case 'employmentType': return job.employmentType || '';
-    case 'notes': return job.notes || '';
-    default: return '';
+    case 'parsedOn':
+      return job.parsedOn;
+    case 'dueDate':
+      return job.dueDate || '';
+    case 'status':
+      return job.status;
+    case 'title':
+      return job.title;
+    case 'company':
+      return job.company;
+    case 'location':
+      return job.location || '';
+    case 'employmentType':
+      return job.employmentType || '';
+    case 'notes':
+      return job.notes || '';
+    default:
+      return '';
   }
 }
 
@@ -179,7 +190,10 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
     <div>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="search-wrapper" style={{ width: '280px', minWidth: '140px', flexShrink: 1 }}>
+          <div
+            className="search-wrapper"
+            style={{ width: '280px', minWidth: '140px', flexShrink: 1 }}
+          >
             <svg
               width="14"
               height="14"
@@ -189,7 +203,12 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
               className="search-icon"
             >
               <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path
+                d="M11 11l3.5 3.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
             <input
               type="text"
@@ -205,15 +224,18 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
                 aria-label="Clear search"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="M3 3l6 6M9 3l-6 6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             )}
           </div>
           <p className="muted text-sm whitespace-nowrap" style={{ minWidth: '4.5rem' }}>
-            {isFiltered
-              ? `${filteredJobs.length} of ${jobs.length}`
-              : jobs.length}{' '}
+            {isFiltered ? `${filteredJobs.length} of ${jobs.length}` : jobs.length}{' '}
             {jobs.length === 1 ? 'job' : 'jobs'}
           </p>
         </div>
@@ -228,7 +250,10 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
           <p className="text-lg font-semibold mb-1">No matches</p>
           <p className="muted text-sm">
             Nothing matched &ldquo;{search.trim()}&rdquo; —{' '}
-            <button onClick={() => setSearch('')} className="underline underline-offset-2 hover:text-foreground">
+            <button
+              onClick={() => setSearch('')}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
               clear search
             </button>
           </p>

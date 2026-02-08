@@ -11,7 +11,17 @@ interface FieldUpdate {
 }
 
 function applyFieldToJob(
-  job: { title: string; company: string; link: string; notes: string; dueDate: string; location: string; employmentType: string; status: string; customFields: Record<string, string> },
+  job: {
+    title: string;
+    company: string;
+    link: string;
+    notes: string;
+    dueDate: string;
+    location: string;
+    employmentType: string;
+    status: string;
+    customFields: Record<string, string>;
+  },
   field: string,
   value: string
 ) {
@@ -43,11 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Normalize: support single field or batch fields array
-    const updates: FieldUpdate[] = fields
-      ? fields
-      : field
-        ? [{ field, value: value ?? '' }]
-        : [];
+    const updates: FieldUpdate[] = fields ? fields : field ? [{ field, value: value ?? '' }] : [];
 
     if (updates.length === 0) {
       return NextResponse.json({ error: 'field or fields is required' }, { status: 400 });
