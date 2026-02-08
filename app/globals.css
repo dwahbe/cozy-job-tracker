@@ -35,6 +35,28 @@
   --status-rejected-bg: #fee2e2;
   --status-rejected-text: #991b1b;
 
+  /* Dropdown option colors (soft fill + dark text, matches cozy status style) */
+  --dropdown-gray-bg: #f0eeeb;
+  --dropdown-gray-text: #4b453e;
+  --dropdown-brown-bg: #f5e6d0;
+  --dropdown-brown-text: #78522b;
+  --dropdown-red-bg: #fce0dc;
+  --dropdown-red-text: #9e2b25;
+  --dropdown-orange-bg: #fde5d0;
+  --dropdown-orange-text: #9a4216;
+  --dropdown-yellow-bg: #fef3c7;
+  --dropdown-yellow-text: #854d0e;
+  --dropdown-green-bg: #d9f5e3;
+  --dropdown-green-text: #1a6838;
+  --dropdown-teal-bg: #d2f1ed;
+  --dropdown-teal-text: #166058;
+  --dropdown-blue-bg: #dce8fc;
+  --dropdown-blue-text: #1e3fa0;
+  --dropdown-purple-bg: #ebe4fb;
+  --dropdown-purple-text: #5b2d99;
+  --dropdown-pink-bg: #fce0ee;
+  --dropdown-pink-text: #9d2462;
+
   --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
   --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
 
@@ -661,7 +683,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 9px 12px;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1108,6 +1130,18 @@ a:focus-visible {
   box-shadow: 0 0 0 2px var(--ring);
 }
 
+/* Dropdown option colors — placed after .select / .table-select so fills override */
+.dropdown-gray { background: var(--dropdown-gray-bg); color: var(--dropdown-gray-text); border-color: transparent; }
+.dropdown-brown { background: var(--dropdown-brown-bg); color: var(--dropdown-brown-text); border-color: transparent; }
+.dropdown-red { background: var(--dropdown-red-bg); color: var(--dropdown-red-text); border-color: transparent; }
+.dropdown-orange { background: var(--dropdown-orange-bg); color: var(--dropdown-orange-text); border-color: transparent; }
+.dropdown-yellow { background: var(--dropdown-yellow-bg); color: var(--dropdown-yellow-text); border-color: transparent; }
+.dropdown-green { background: var(--dropdown-green-bg); color: var(--dropdown-green-text); border-color: transparent; }
+.dropdown-teal { background: var(--dropdown-teal-bg); color: var(--dropdown-teal-text); border-color: transparent; }
+.dropdown-blue { background: var(--dropdown-blue-bg); color: var(--dropdown-blue-text); border-color: transparent; }
+.dropdown-purple { background: var(--dropdown-purple-bg); color: var(--dropdown-purple-text); border-color: transparent; }
+.dropdown-pink { background: var(--dropdown-pink-bg); color: var(--dropdown-pink-text); border-color: transparent; }
+
 .table-input::placeholder {
   color: var(--muted-2);
   opacity: 0.6;
@@ -1490,7 +1524,7 @@ a:focus-visible {
   }
 
   .sort-btn {
-    padding: 6px 8px;
+    padding: 9px 8px;
   }
 
   /* Sort popover: full-width bottom sheet style on mobile */

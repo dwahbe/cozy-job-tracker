@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
+import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { celebrateOffer } from '@/lib/confetti';
 
 interface JobCardProps {
@@ -538,7 +539,7 @@ export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
                 <select
                   value={job.customFields[col.name] || ''}
                   onChange={(e) => updateField(col.name, e.target.value)}
-                  className="select w-auto py-1.5 text-sm"
+                  className={`select w-auto py-1.5 text-sm ${dropdownColorClass(col.optionColors?.[job.customFields[col.name]])}`}
                 >
                   <option value="">—</option>
                   {col.options.map((opt) => (

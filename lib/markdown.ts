@@ -7,6 +7,7 @@ export interface Column {
   name: string;
   type: 'text' | 'checkbox' | 'dropdown';
   options?: string[];
+  optionColors?: Record<string, string>; // option value -> color key (e.g. "High" -> "red")
 }
 
 export interface ParsedJob {

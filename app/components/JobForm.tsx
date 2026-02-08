@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 import type { Column } from '@/lib/markdown';
+import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { BulkAddForm } from './BulkAddForm';
 
 interface JobFormProps {
@@ -383,7 +384,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
                         },
                       })
                     }
-                    className="select w-full"
+                    className={`select w-full ${dropdownColorClass(col.optionColors?.[manualJob.customFields[col.name]])}`}
                   >
                     <option value="">—</option>
                     {col.options.map((opt) => (

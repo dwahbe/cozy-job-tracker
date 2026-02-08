@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
+import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { celebrateOffer } from '@/lib/confetti';
 import {
   DndContext,
@@ -704,7 +705,7 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
           <select
             value={job.customFields[customCol.name] || ''}
             onChange={(e) => updateField(job.link, customCol.name, e.target.value)}
-            className="table-select"
+            className={`table-select ${dropdownColorClass(customCol.optionColors?.[job.customFields[customCol.name]])}`}
           >
             <option value="">—</option>
             {customCol.options.map((opt) => (
@@ -747,7 +748,7 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext id="job-table-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="table-wrapper">
         <table className="job-table">
           <thead>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor';
 
 interface AddColumnFormProps {
   slug: string;
@@ -12,7 +13,7 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<'text' | 'checkbox' | 'dropdown'>('text');
-  const [options, setOptions] = useState('');
+  const [options, setOptions] = useState<OptionEntry[]>([{ value: '' }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,22 +23,28 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[] } = {
+      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
         name: name.trim(),
         type,
       };
 
       if (type === 'dropdown') {
-        const opts = options
-          .split(',')
-          .map((o) => o.trim())
-          .filter(Boolean);
+        const opts = options.map((o) => o.value.trim()).filter(Boolean);
         if (opts.length === 0) {
           setError('Dropdown columns need at least one option');
           setLoading(false);
           return;
         }
         column.options = opts;
+        const colors: Record<string, string> = {};
+        for (const o of options) {
+          if (o.value.trim() && o.color) {
+            colors[o.value.trim()] = o.color;
+          }
+        }
+        if (Object.keys(colors).length > 0) {
+          column.optionColors = colors;
+        }
       }
 
       const response = await fetch('/api/add-column', {
@@ -56,7 +63,7 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
       // Reset and close
       setName('');
       setType('text');
-      setOptions('');
+      setOptions([{ value: '' }]);
       setIsOpen(false);
       router.refresh();
     } catch (err) {
@@ -105,16 +112,10 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
         </div>
 
         {type === 'dropdown' && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Options (comma-separated)</label>
-            <input
-              type="text"
-              value={options}
-              onChange={(e) => setOptions(e.target.value)}
-              placeholder="e.g., Low, Medium, High"
-              className="input"
-            />
-          </div>
+          <DropdownOptionsEditor
+            options={options}
+            onChange={setOptions}
+          />
         )}
 
         {error && <div className="callout callout-error">{error}</div>}

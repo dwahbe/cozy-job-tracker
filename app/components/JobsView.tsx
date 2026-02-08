@@ -117,6 +117,14 @@ export function JobsView({
       return [...jobs].sort((a, b) => b.parsedOn.localeCompare(a.parsedOn));
     }
 
+    // Build a lookup of custom dropdown option orders for sorting
+    const dropdownOrders = new Map<string, string[]>();
+    for (const col of columns) {
+      if (col.type === 'dropdown' && col.options) {
+        dropdownOrders.set(`custom:${col.name}`, col.options);
+      }
+    }
+
     return [...jobs].sort((a, b) => {
       for (const rule of sorts) {
         const aVal = getSortFieldValue(a, rule.field);
@@ -138,6 +146,10 @@ export function JobsView({
           else if (aRolling) cmp = -1;
           else if (bRolling) cmp = 1;
           else cmp = aVal.localeCompare(bVal);
+        } else if (dropdownOrders.has(rule.field)) {
+          // Sort custom dropdowns by their defined option order
+          const opts = dropdownOrders.get(rule.field)!;
+          cmp = opts.indexOf(aVal) - opts.indexOf(bVal);
         } else {
           cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
         }
@@ -147,7 +159,7 @@ export function JobsView({
       }
       return 0;
     });
-  }, [jobs, sorts]);
+  }, [jobs, sorts, columns]);
 
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();

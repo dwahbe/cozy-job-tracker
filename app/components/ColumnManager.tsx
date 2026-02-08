@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Column } from '@/lib/markdown';
+import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor';
 
 interface ColumnManagerProps {
   slug: string;
@@ -30,7 +31,7 @@ type EditingColumn = {
   originalName: string;
   name: string;
   type: 'text' | 'checkbox' | 'dropdown';
-  options: string;
+  options: OptionEntry[];
 };
 
 // Sortable column chip component
@@ -135,7 +136,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
   // Add form state
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'text' | 'checkbox' | 'dropdown'>('text');
-  const [newOptions, setNewOptions] = useState('');
+  const [newOptions, setNewOptions] = useState<OptionEntry[]>([{ value: '' }]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,22 +196,28 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[] } = {
+      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
         name: newName.trim(),
         type: newType,
       };
 
       if (newType === 'dropdown') {
-        const opts = newOptions
-          .split(',')
-          .map((o) => o.trim())
-          .filter(Boolean);
+        const opts = newOptions.map((o) => o.value.trim()).filter(Boolean);
         if (opts.length === 0) {
           setError('Dropdown columns need at least one option');
           setLoading(false);
           return;
         }
         column.options = opts;
+        const colors: Record<string, string> = {};
+        for (const o of newOptions) {
+          if (o.value.trim() && o.color) {
+            colors[o.value.trim()] = o.color;
+          }
+        }
+        if (Object.keys(colors).length > 0) {
+          column.optionColors = colors;
+        }
       }
 
       const response = await fetch('/api/add-column', {
@@ -227,7 +234,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
 
       setNewName('');
       setNewType('text');
-      setNewOptions('');
+      setNewOptions([{ value: '' }]);
       setIsAdding(false);
       router.refresh();
     } catch (err) {
@@ -245,22 +252,28 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[] } = {
+      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
         name: editing.name.trim(),
         type: editing.type,
       };
 
       if (editing.type === 'dropdown') {
-        const opts = editing.options
-          .split(',')
-          .map((o) => o.trim())
-          .filter(Boolean);
+        const opts = editing.options.map((o) => o.value.trim()).filter(Boolean);
         if (opts.length === 0) {
           setError('Dropdown columns need at least one option');
           setLoading(false);
           return;
         }
         column.options = opts;
+        const colors: Record<string, string> = {};
+        for (const o of editing.options) {
+          if (o.value.trim() && o.color) {
+            colors[o.value.trim()] = o.color;
+          }
+        }
+        if (Object.keys(colors).length > 0) {
+          column.optionColors = colors;
+        }
       }
 
       const response = await fetch('/api/manage-column', {
@@ -317,7 +330,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       originalName: col.name,
       name: col.name,
       type: col.type,
-      options: col.options?.join(', ') || '',
+      options: col.options?.map((v) => ({ value: v, color: col.optionColors?.[v] })) || [{ value: '' }],
     });
     setIsAdding(false);
     setError(null);
@@ -363,16 +376,10 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             </div>
 
             {editing.type === 'dropdown' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Options (comma-separated)</label>
-                <input
-                  type="text"
-                  value={editing.options}
-                  onChange={(e) => setEditing({ ...editing, options: e.target.value })}
-                  placeholder="e.g., Low, Medium, High"
-                  className="input"
-                />
-              </div>
+              <DropdownOptionsEditor
+                options={editing.options}
+                onChange={(opts) => setEditing({ ...editing, options: opts })}
+              />
             )}
 
             <div className="flex gap-2">
@@ -429,16 +436,10 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             </div>
 
             {newType === 'dropdown' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Options (comma-separated)</label>
-                <input
-                  type="text"
-                  value={newOptions}
-                  onChange={(e) => setNewOptions(e.target.value)}
-                  placeholder="e.g., Low, Medium, High"
-                  className="input"
-                />
-              </div>
+              <DropdownOptionsEditor
+                options={newOptions}
+                onChange={setNewOptions}
+              />
             )}
 
             <div className="flex gap-2">
@@ -472,7 +473,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
 
       {/* Column list with drag and drop */}
       {localColumns.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext id="column-manager-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext
             items={localColumns.map((c) => c.name)}
             strategy={horizontalListSortingStrategy}
