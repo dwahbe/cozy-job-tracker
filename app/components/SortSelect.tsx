@@ -2,11 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { Column } from '@/lib/markdown';
+import type { SortRule } from '@/lib/kv';
 
-export interface SortRule {
-  field: string;
-  direction: 'asc' | 'desc';
-}
+export type { SortRule };
 
 const BUILTIN_SORT_FIELDS = [
   { id: 'parsedOn', label: 'Date added' },

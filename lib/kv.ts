@@ -23,10 +23,16 @@ export interface TrashedJob extends Job {
   deletedAt: string; // ISO date
 }
 
+export interface SortRule {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
 export interface Board {
   title: string;
   columns: Column[];
   columnOrder?: string[]; // Order of columns (built-in IDs + custom names)
+  sortPreference?: SortRule[]; // Synced sort rules
   pin?: string; // bcrypt hash
   jobs: Job[];
   trash?: TrashedJob[]; // Soft-deleted jobs (auto-pruned after 30 days)

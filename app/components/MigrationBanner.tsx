@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export function MigrationBanner({ slug, hasPin }: { slug: string; hasPin?: boolean }) {
+export function MigrationBanner({ slug, hasPin: _hasPin }: { slug: string; hasPin?: boolean }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [claiming, setClaiming] = useState(false);

@@ -109,6 +109,7 @@ export default async function BoardPage({ params }: PageProps) {
             slug={slug}
             columns={board.columns}
             columnOrder={getColumnOrder(board)}
+            initialSortPreference={board.sortPreference}
           />
         </div>
       </main>

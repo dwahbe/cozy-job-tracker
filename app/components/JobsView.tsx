@@ -2,13 +2,13 @@
 
 import { useState, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
+import type { SortRule } from '@/lib/kv';
 import { ViewToggle } from './ViewToggle';
-import { SortBuilder, type SortRule } from './SortSelect';
+import { SortBuilder } from './SortSelect';
 import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
 
 const VIEW_STORAGE_KEY = 'cozy-jobs-view-preference';
-const SORT_STORAGE_KEY = 'cozy-jobs-sort-preference';
 
 const STATUS_ORDER = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
@@ -78,42 +78,37 @@ interface JobsViewProps {
   slug: string;
   columns: Column[];
   columnOrder: string[];
+  initialSortPreference?: SortRule[];
 }
 
-export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
+export function JobsView({
+  jobs,
+  slug,
+  columns,
+  columnOrder,
+  initialSortPreference,
+}: JobsViewProps) {
   const [view, setStoredView] = useLocalStorage<'cards' | 'table'>(VIEW_STORAGE_KEY, 'table');
-  const [sortsRaw, setSortsRaw] = useLocalStorage<string>(SORT_STORAGE_KEY, '[]');
+  const [sorts, setSorts] = useState<SortRule[]>(initialSortPreference ?? []);
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
-  const minHeightRef = useRef<number>(0);
+  const [minHeight, setMinHeight] = useState(0);
 
   const handleViewChange = (newView: 'cards' | 'table') => {
     setStoredView(newView);
   };
 
-  // Parse sort rules from localStorage, with legacy format migration
-  const sorts: SortRule[] = useMemo(() => {
-    try {
-      const parsed = JSON.parse(sortsRaw);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {
-      // Migrate legacy single-sort format
-      const legacy: Record<string, SortRule[]> = {
-        'added-desc': [{ field: 'parsedOn', direction: 'desc' }],
-        'due-asc': [{ field: 'dueDate', direction: 'asc' }],
-        'status-asc': [{ field: 'status', direction: 'asc' }],
-        'status-desc': [{ field: 'status', direction: 'desc' }],
-      };
-      if (legacy[sortsRaw]) return legacy[sortsRaw];
-    }
-    return [];
-  }, [sortsRaw]);
-
   const handleSortsChange = useCallback(
     (newSorts: SortRule[]) => {
-      setSortsRaw(JSON.stringify(newSorts));
+      setSorts(newSorts);
+      // Persist to server
+      fetch('/api/update-sort', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, sortPreference: newSorts }),
+      }).catch(console.error);
     },
-    [setSortsRaw]
+    [slug]
   );
 
   const sortedJobs = useMemo(() => {
@@ -215,10 +210,10 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
               onChange={(e) => {
                 // Capture current height before filtering to prevent page jump
                 if (!search && e.target.value && listRef.current) {
-                  minHeightRef.current = listRef.current.offsetHeight;
+                  setMinHeight(listRef.current.offsetHeight);
                 }
                 if (!e.target.value) {
-                  minHeightRef.current = 0;
+                  setMinHeight(0);
                 }
                 setSearch(e.target.value);
               }}
@@ -228,7 +223,7 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
             {search && (
               <button
                 onClick={() => {
-                  minHeightRef.current = 0;
+                  setMinHeight(0);
                   setSearch('');
                 }}
                 className="search-clear"
@@ -256,7 +251,7 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
         </div>
       </div>
 
-      <div ref={listRef} style={{ minHeight: isFiltered ? minHeightRef.current : undefined }}>
+      <div ref={listRef} style={{ minHeight: isFiltered ? minHeight : undefined }}>
         {filteredJobs.length === 0 && isFiltered ? (
           <div className="card p-10 text-center">
             <p className="text-lg font-semibold mb-1">No matches</p>

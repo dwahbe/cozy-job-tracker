@@ -61,6 +61,7 @@ export default async function BoardPage() {
           slug={userId}
           columns={board.columns}
           columnOrder={getColumnOrder(board)}
+          initialSortPreference={board.sortPreference}
         />
 
         {/* Trash link */}
