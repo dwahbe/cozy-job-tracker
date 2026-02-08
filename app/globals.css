@@ -566,7 +566,34 @@ a:focus-visible {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Sort Select */
+/* Jobs Toolbar */
+.jobs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.jobs-toolbar-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.jobs-toolbar-search {
+  width: 280px;
+  min-width: 140px;
+  flex-shrink: 1;
+}
+
+.jobs-toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* Search input */
 .search-wrapper {
   display: inline-flex;
@@ -1420,12 +1447,36 @@ a:focus-visible {
 
   /* Ensure inputs are readable on mobile */
   .input,
-  .select {
+  .select,
+  .sort-field-select,
+  .sort-dir-select {
     font-size: 16px; /* Prevents iOS zoom on focus */
   }
 
   .btn-sm {
     min-height: auto;
+  }
+
+  /* Toolbar: two-row layout on mobile */
+  .jobs-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .jobs-toolbar-search-row {
+    gap: 0.5rem;
+  }
+
+  .jobs-toolbar-search {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    display: flex;
+  }
+
+  .jobs-toolbar-controls {
+    justify-content: flex-end;
   }
 
   /* Search on mobile */
@@ -1442,12 +1493,39 @@ a:focus-visible {
     padding: 6px 8px;
   }
 
+  /* Sort popover: full-width bottom sheet style on mobile */
   .sort-popover {
-    min-width: 280px;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    min-width: 0;
+  }
+
+  .sort-rule {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  .sort-rule:first-child {
+    padding-top: 4px;
   }
 
   .sort-rule-label {
-    display: none;
+    display: block;
+    flex-basis: 100%;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+
+  .sort-field-select {
+    width: 100%;
+    flex: none;
+  }
+
+  .sort-dir-select {
+    flex: 1;
+    width: auto;
   }
 
   /* Banner: hide "See what's new" text on small screens */

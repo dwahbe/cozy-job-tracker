@@ -61,7 +61,16 @@ export function SortBuilder({ sorts, onSortsChange, columns }: SortBuilderProps)
         setIsOpen(false);
       }
     };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // Close on scroll so the popover doesn't float away from the button
+      const handleScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, { capture: true });
+      };
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 

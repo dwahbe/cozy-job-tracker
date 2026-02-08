@@ -27,7 +27,9 @@ export function UserDropdown() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-foreground/5 transition-colors cursor-pointer"
       >
-        <span className="hidden sm:inline max-w-[180px] truncate">{displayName}</span>
+        <span className="max-w-[120px] sm:max-w-[180px] truncate" suppressHydrationWarning>
+          {displayName}
+        </span>
         <svg
           className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
           fill="none"

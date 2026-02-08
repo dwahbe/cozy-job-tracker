@@ -43,7 +43,7 @@ export default async function BoardPage() {
       <div className="container-app max-w-5xl">
         {/* Header */}
         <header className="mb-6 sm:mb-8">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col items-start sm:flex-row sm:justify-between gap-1 sm:gap-3">
             <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">{board.title}</h1>
             <ImportBoardButton />
           </div>

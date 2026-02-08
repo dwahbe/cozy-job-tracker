@@ -188,12 +188,9 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="search-wrapper"
-            style={{ width: '280px', minWidth: '140px', flexShrink: 1 }}
-          >
+      <div className="jobs-toolbar">
+        <div className="jobs-toolbar-search-row">
+          <div className="search-wrapper jobs-toolbar-search">
             <svg
               width="14"
               height="14"
@@ -234,12 +231,12 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
               </button>
             )}
           </div>
-          <p className="muted text-sm whitespace-nowrap" style={{ minWidth: '4.5rem' }}>
+          <p className="muted text-sm whitespace-nowrap">
             {isFiltered ? `${filteredJobs.length} of ${jobs.length}` : jobs.length}{' '}
             {jobs.length === 1 ? 'job' : 'jobs'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="jobs-toolbar-controls">
           <SortBuilder sorts={sorts} onSortsChange={handleSortsChange} columns={columns} />
           <ViewToggle view={view} onViewChange={handleViewChange} />
         </div>
