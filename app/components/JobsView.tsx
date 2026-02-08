@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { ViewToggle } from './ViewToggle';
-import { SortSelect, type SortOption } from './SortSelect';
+import { SortBuilder, type SortRule } from './SortSelect';
 import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
 
@@ -46,6 +46,22 @@ function useLocalStorage<T extends string>(key: string, fallback: T): [T, (v: T)
   return [stored ?? fallback, setValue];
 }
 
+// Get the value of a field from a job for sorting purposes
+function getSortFieldValue(job: ParsedJob, field: string): string {
+  if (field.startsWith('custom:')) return job.customFields[field.slice(7)] || '';
+  switch (field) {
+    case 'parsedOn': return job.parsedOn;
+    case 'dueDate': return job.dueDate || '';
+    case 'status': return job.status;
+    case 'title': return job.title;
+    case 'company': return job.company;
+    case 'location': return job.location || '';
+    case 'employmentType': return job.employmentType || '';
+    case 'notes': return job.notes || '';
+    default: return '';
+  }
+}
+
 interface JobsViewProps {
   jobs: ParsedJob[];
   slug: string;
@@ -55,53 +71,75 @@ interface JobsViewProps {
 
 export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
   const [view, setStoredView] = useLocalStorage<'cards' | 'table'>(VIEW_STORAGE_KEY, 'table');
-  const [sortBy, setStoredSort] = useLocalStorage<SortOption>(SORT_STORAGE_KEY, 'added-desc');
+  const [sortsRaw, setSortsRaw] = useLocalStorage<string>(SORT_STORAGE_KEY, '[]');
   const [search, setSearch] = useState('');
 
   const handleViewChange = (newView: 'cards' | 'table') => {
     setStoredView(newView);
   };
 
-  const handleSortChange = (newSort: SortOption) => {
-    setStoredSort(newSort);
-  };
+  // Parse sort rules from localStorage, with legacy format migration
+  const sorts: SortRule[] = useMemo(() => {
+    try {
+      const parsed = JSON.parse(sortsRaw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Migrate legacy single-sort format
+      const legacy: Record<string, SortRule[]> = {
+        'added-desc': [{ field: 'parsedOn', direction: 'desc' }],
+        'due-asc': [{ field: 'dueDate', direction: 'asc' }],
+        'status-asc': [{ field: 'status', direction: 'asc' }],
+        'status-desc': [{ field: 'status', direction: 'desc' }],
+      };
+      if (legacy[sortsRaw]) return legacy[sortsRaw];
+    }
+    return [];
+  }, [sortsRaw]);
+
+  const handleSortsChange = useCallback(
+    (newSorts: SortRule[]) => {
+      setSortsRaw(JSON.stringify(newSorts));
+    },
+    [setSortsRaw]
+  );
 
   const sortedJobs = useMemo(() => {
+    // No active sorts — default to newest first
+    if (sorts.length === 0) {
+      return [...jobs].sort((a, b) => b.parsedOn.localeCompare(a.parsedOn));
+    }
+
     return [...jobs].sort((a, b) => {
-      if (sortBy === 'added-desc') {
-        return b.parsedOn.localeCompare(a.parsedOn);
+      for (const rule of sorts) {
+        const aVal = getSortFieldValue(a, rule.field);
+        const bVal = getSortFieldValue(b, rule.field);
+
+        // Empty values always sort to the bottom
+        if (!aVal && !bVal) continue;
+        if (!aVal) return 1;
+        if (!bVal) return -1;
+
+        let cmp: number;
+
+        if (rule.field === 'status') {
+          cmp = STATUS_ORDER.indexOf(aVal) - STATUS_ORDER.indexOf(bVal);
+        } else if (rule.field === 'dueDate') {
+          const aRolling = aVal === 'rolling';
+          const bRolling = bVal === 'rolling';
+          if (aRolling && bRolling) cmp = 0;
+          else if (aRolling) cmp = -1;
+          else if (bRolling) cmp = 1;
+          else cmp = aVal.localeCompare(bVal);
+        } else {
+          cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+        }
+
+        if (rule.direction === 'desc') cmp = -cmp;
+        if (cmp !== 0) return cmp;
       }
-
-      if (sortBy === 'due-asc') {
-        const aIsRolling = a.dueDate === 'rolling';
-        const bIsRolling = b.dueDate === 'rolling';
-        const aHasDate = a.dueDate && !aIsRolling;
-        const bHasDate = b.dueDate && !bIsRolling;
-
-        if (aIsRolling && !bIsRolling) return -1;
-        if (!aIsRolling && bIsRolling) return 1;
-        if (aIsRolling && bIsRolling) return 0;
-
-        if (aHasDate && bHasDate) return a.dueDate.localeCompare(b.dueDate);
-
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-
-        return 0;
-      }
-
-      if (sortBy === 'status-asc') {
-        return STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
-      }
-
-      if (sortBy === 'status-desc') {
-        return STATUS_ORDER.indexOf(b.status) - STATUS_ORDER.indexOf(a.status);
-      }
-
       return 0;
     });
-  }, [jobs, sortBy]);
+  }, [jobs, sorts]);
 
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -180,7 +218,7 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <SortSelect sortBy={sortBy} onSortChange={handleSortChange} />
+          <SortBuilder sorts={sorts} onSortsChange={handleSortsChange} columns={columns} />
           <ViewToggle view={view} onViewChange={handleViewChange} />
         </div>
       </div>

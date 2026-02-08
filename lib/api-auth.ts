@@ -39,6 +39,7 @@ export async function saveBoardAndRevalidate(ctx: BoardContext): Promise<void> {
   if (ctx.isAuth) {
     await saveBoardByUserId(ctx.key, ctx.board);
     revalidatePath('/board');
+    revalidatePath('/trash');
   } else {
     await saveBoard(ctx.key, ctx.board);
     revalidatePath(`/b/${ctx.key}`);

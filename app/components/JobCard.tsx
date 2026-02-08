@@ -245,7 +245,7 @@ export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this job?')) return;
+    if (!confirm('Move this job to trash?')) return;
 
     setDeleting(true);
     try {

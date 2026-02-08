@@ -627,48 +627,208 @@ a:focus-visible {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.sort-select-wrapper {
+/* Sort Builder */
+.sort-btn {
   display: inline-flex;
   align-items: center;
-  position: relative;
+  gap: 6px;
+  padding: 6px 12px;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 3px;
-}
-
-.sort-icon {
-  position: absolute;
-  left: 12px;
-  pointer-events: none;
-  color: var(--muted-2);
-}
-
-.sort-select {
-  appearance: none;
-  background: transparent;
-  border: none;
-  padding: 6px 28px 6px 32px;
   font-size: 0.8rem;
   font-weight: 550;
   color: var(--muted-2);
   cursor: pointer;
-  border-radius: 7px;
   transition: all 150ms ease;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238a6a58' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 6px center;
-  background-repeat: no-repeat;
-  background-size: 16px;
+  white-space: nowrap;
 }
 
-.sort-select:hover {
+.sort-btn:hover {
   color: var(--foreground);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
-.sort-select:focus {
+.sort-btn-active {
+  color: var(--accent);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.sort-btn-active:hover {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.sort-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: white;
+  line-height: 1;
+}
+
+.sort-popover {
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(58, 39, 29, 0.12), 0 2px 8px rgba(58, 39, 29, 0.06);
+  min-width: 340px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  animation: sortPopIn 150ms ease;
+}
+
+@keyframes sortPopIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sort-empty {
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.sort-empty-text {
+  font-size: 0.82rem;
+  color: var(--muted-2);
+  margin-bottom: 10px;
+}
+
+.sort-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sort-rule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 4px;
+  border-radius: 8px;
+  transition: background-color 100ms ease;
+}
+
+.sort-rule:hover {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.sort-rule-label {
+  font-size: 0.75rem;
+  color: var(--muted-3);
+  white-space: nowrap;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.sort-field-select,
+.sort-dir-select {
+  appearance: none;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 6px;
+  padding: 5px 22px 5px 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background: var(--surface-solid);
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238a6a58' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 3px center;
+  background-repeat: no-repeat;
+  background-size: 14px;
+}
+
+.sort-field-select:focus,
+.sort-dir-select:focus {
   outline: none;
-  background-color: var(--surface-solid);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.sort-field-select {
+  flex: 1;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.sort-dir-select {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.sort-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted-3);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 120ms ease;
+}
+
+.sort-remove-btn:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.sort-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 2px;
+  margin-top: 2px;
+  border-top: 1px solid rgba(245, 158, 11, 0.12);
+}
+
+.sort-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 550;
+  color: var(--muted-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.sort-add-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sort-clear-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 120ms ease;
+  margin-left: auto;
+}
+
+.sort-clear-btn:hover {
+  color: var(--danger);
 }
 
 /* Table View */
@@ -1261,16 +1421,21 @@ a:focus-visible {
     font-size: 16px;
   }
 
-  /* Compact sort select - icon only */
-  .sort-select {
-    padding: 6px 24px 6px 28px;
-    color: transparent;
-    width: 52px;
-    height: 32px;
+  /* Sort button: compact on mobile */
+  .sort-btn-label {
+    display: none;
   }
 
-  .sort-select option {
-    color: var(--muted-2);
+  .sort-btn {
+    padding: 6px 8px;
+  }
+
+  .sort-popover {
+    min-width: 280px;
+  }
+
+  .sort-rule-label {
+    display: none;
   }
 
   /* Banner: hide "See what's new" text on small screens */

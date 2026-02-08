@@ -19,12 +19,17 @@ export interface Job {
   customFields: Record<string, string>;
 }
 
+export interface TrashedJob extends Job {
+  deletedAt: string; // ISO date
+}
+
 export interface Board {
   title: string;
   columns: Column[];
   columnOrder?: string[]; // Order of columns (built-in IDs + custom names)
   pin?: string; // bcrypt hash
   jobs: Job[];
+  trash?: TrashedJob[]; // Soft-deleted jobs (auto-pruned after 30 days)
   // Migration fields (Phase 2)
   migratedTo?: string; // userId who claimed this board
   migratedAt?: string; // ISO date of migration
@@ -168,4 +173,17 @@ export async function markBoardMigrated(slug: string, userId: string): Promise<v
  */
 export function resolveBoardKey(userId: string | null, slug: string | null): string | null {
   return userId || slug;
+}
+
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Prune trash items older than 30 days. Returns true if any were removed.
+ */
+export function pruneTrash(board: Board): boolean {
+  if (!board.trash || board.trash.length === 0) return false;
+  const cutoff = Date.now() - TRASH_RETENTION_MS;
+  const before = board.trash.length;
+  board.trash = board.trash.filter((j) => new Date(j.deletedAt).getTime() > cutoff);
+  return board.trash.length !== before;
 }

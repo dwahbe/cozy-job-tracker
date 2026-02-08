@@ -4,6 +4,7 @@ import { JobForm } from '@/app/components/JobForm';
 import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
 import { ImportBoardButton } from '@/app/components/ImportBoardButton';
+import { TrashButton } from '@/app/components/TrashButton';
 import type { ParsedJob } from '@/lib/markdown';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,9 @@ export default async function BoardPage() {
           columns={board.columns}
           columnOrder={getColumnOrder(board)}
         />
+
+        {/* Trash link */}
+        <TrashButton count={board.trash?.length ?? 0} />
       </div>
     </main>
   );

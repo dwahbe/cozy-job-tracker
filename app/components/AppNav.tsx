@@ -25,6 +25,16 @@ export function AppNav() {
             >
               Board
             </Link>
+            <Link
+              href="/trash"
+              className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
+                pathname.startsWith('/trash')
+                  ? 'font-semibold bg-foreground/10'
+                  : 'muted hover:bg-foreground/5'
+              }`}
+            >
+              Trash
+            </Link>
           </nav>
         </div>
         <UserDropdown />

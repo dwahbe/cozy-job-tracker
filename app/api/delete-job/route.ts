@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import type { TrashedJob } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
@@ -19,13 +20,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Find and remove the job
+    // Find the job
     const jobIndex = ctx.board.jobs.findIndex((j) => j.link === jobLink);
     if (jobIndex === -1) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    ctx.board.jobs.splice(jobIndex, 1);
+    // Move to trash instead of permanent delete
+    const [job] = ctx.board.jobs.splice(jobIndex, 1);
+    const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
+
+    if (!ctx.board.trash) ctx.board.trash = [];
+    ctx.board.trash.unshift(trashedJob);
 
     // Save board
     await saveBoardAndRevalidate(ctx);

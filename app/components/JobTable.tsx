@@ -456,7 +456,7 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
   };
 
   const handleDelete = async (jobLink: string) => {
-    if (!confirm('Are you sure you want to delete this job?')) return;
+    if (!confirm('Move this job to trash?')) return;
 
     setDeleting(jobLink);
     try {
