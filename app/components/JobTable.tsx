@@ -80,7 +80,7 @@ function AutoHeightTextarea({
 
 // Built-in column definitions
 const BUILTIN_COLUMNS = [
-  { id: '_title', label: 'Title', thClass: 'th-title', tdClass: 'td-title' },
+  { id: '_title', label: 'Title / Link', thClass: 'th-title', tdClass: 'td-title' },
   { id: '_company', label: 'Company', thClass: 'th-company', tdClass: 'td-company' },
   { id: '_location', label: 'Location', thClass: 'th-location', tdClass: 'td-location' },
   { id: '_type', label: 'Type', thClass: 'th-type', tdClass: 'td-type' },
@@ -93,27 +93,50 @@ type BuiltinColumnId = (typeof BUILTIN_COLUMNS)[number]['id'];
 
 function getFieldValue(job: ParsedJob, field: string): string {
   switch (field.toLowerCase()) {
-    case 'status': return job.status;
-    case 'title': return job.title;
-    case 'company': return job.company;
-    case 'location': return job.location || '';
-    case 'employment type': return job.employmentType || '';
-    case 'notes': return job.notes || '';
-    case 'due date': return job.dueDate || '';
-    default: return job.customFields[field] || '';
+    case 'status':
+      return job.status;
+    case 'title':
+      return job.title;
+    case 'company':
+      return job.company;
+    case 'location':
+      return job.location || '';
+    case 'employment type':
+      return job.employmentType || '';
+    case 'notes':
+      return job.notes || '';
+    case 'due date':
+      return job.dueDate || '';
+    default:
+      return job.customFields[field] || '';
   }
 }
 
 function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
   switch (field.toLowerCase()) {
-    case 'status': job.status = value; break;
-    case 'title': job.title = value; break;
-    case 'company': job.company = value; break;
-    case 'location': job.location = value; break;
-    case 'employment type': job.employmentType = value; break;
-    case 'notes': job.notes = value; break;
-    case 'due date': job.dueDate = value; break;
-    default: job.customFields[field] = value;
+    case 'status':
+      job.status = value;
+      break;
+    case 'title':
+      job.title = value;
+      break;
+    case 'company':
+      job.company = value;
+      break;
+    case 'location':
+      job.location = value;
+      break;
+    case 'employment type':
+      job.employmentType = value;
+      break;
+    case 'notes':
+      job.notes = value;
+      break;
+    case 'due date':
+      job.dueDate = value;
+      break;
+    default:
+      job.customFields[field] = value;
   }
 }
 
@@ -673,15 +696,15 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
           <input
             type="checkbox"
             checked={job.customFields[customCol.name] === 'Yes'}
-                onChange={(e) => updateField(job.link, customCol.name, e.target.checked ? 'Yes' : 'No')}
-                className="table-checkbox"
+            onChange={(e) => updateField(job.link, customCol.name, e.target.checked ? 'Yes' : 'No')}
+            className="table-checkbox"
           />
         )}
         {customCol.type === 'dropdown' && customCol.options && (
           <select
             value={job.customFields[customCol.name] || ''}
-                onChange={(e) => updateField(job.link, customCol.name, e.target.value)}
-                className="table-select"
+            onChange={(e) => updateField(job.link, customCol.name, e.target.value)}
+            className="table-select"
           >
             <option value="">—</option>
             {customCol.options.map((opt) => (
@@ -715,8 +738,8 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
                 return next;
               });
             }}
-                placeholder="..."
-                className="table-input"
+            placeholder="..."
+            className="table-input"
           />
         )}
       </td>

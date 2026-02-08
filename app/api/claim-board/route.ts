@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { auth } from '@/auth';
 import { getBoard, getBoardByUserId, saveBoardByUserId, markBoardMigrated } from '@/lib/kv';
@@ -28,18 +29,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Board already migrated' }, { status: 409 });
   }
 
-  // If PIN-protected, verify the PIN
+  // If PIN-protected, verify via auth cookie (already entered PIN) or provided PIN
   if (legacyBoard.pin) {
-    if (!pin || typeof pin !== 'string') {
-      return NextResponse.json(
-        { error: 'This board is PIN-protected. Please enter the PIN.' },
-        { status: 403 }
-      );
-    }
+    const cookieStore = await cookies();
+    const authCookie = cookieStore.get(`board_${slug}_auth`);
+    const alreadyVerified = authCookie?.value === 'verified';
 
-    const pinValid = await bcrypt.compare(pin, legacyBoard.pin);
-    if (!pinValid) {
-      return NextResponse.json({ error: 'Incorrect PIN' }, { status: 403 });
+    if (!alreadyVerified) {
+      if (!pin || typeof pin !== 'string') {
+        return NextResponse.json(
+          { error: 'This board is PIN-protected. Please enter the PIN.', pinRequired: true },
+          { status: 403 }
+        );
+      }
+
+      const pinValid = await bcrypt.compare(pin, legacyBoard.pin);
+      if (!pinValid) {
+        return NextResponse.json({ error: 'Incorrect PIN', pinRequired: true }, { status: 403 });
+      }
     }
   }
 
@@ -61,7 +68,12 @@ export async function POST(request: Request) {
     await saveBoardByUserId(userId, existingBoard);
   } else {
     // First claim: copy the legacy board as-is (without PIN)
-    const { pin: _pin, migratedTo: _migratedTo, migratedAt: _migratedAt, ...boardData } = legacyBoard;
+    const {
+      pin: _pin,
+      migratedTo: _migratedTo,
+      migratedAt: _migratedAt,
+      ...boardData
+    } = legacyBoard;
     await saveBoardByUserId(userId, boardData);
   }
 

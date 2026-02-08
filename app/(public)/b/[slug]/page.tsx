@@ -85,7 +85,7 @@ export default async function BoardPage({ params }: PageProps) {
       <main className="page">
         <div className="container-app max-w-5xl">
           {/* Migration Banner */}
-          <MigrationBanner slug={slug} />
+          <MigrationBanner slug={slug} hasPin={!!board.pin} />
 
           {/* Header */}
           <header className="mb-6 sm:mb-8">
