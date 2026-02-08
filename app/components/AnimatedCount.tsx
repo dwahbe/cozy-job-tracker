@@ -43,10 +43,7 @@ export function AnimatedCount({ value }: { value: number }) {
   }, [value]);
 
   return (
-    <span
-      ref={ref}
-      className="font-semibold text-orange-500 tabular-nums"
-    >
+    <span ref={ref} className="font-semibold text-orange-500 tabular-nums">
       {display}
     </span>
   );
