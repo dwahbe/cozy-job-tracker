@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { useState, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { ViewToggle } from './ViewToggle';
 import { SortBuilder, type SortRule } from './SortSelect';
@@ -84,6 +84,8 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
   const [view, setStoredView] = useLocalStorage<'cards' | 'table'>(VIEW_STORAGE_KEY, 'table');
   const [sortsRaw, setSortsRaw] = useLocalStorage<string>(SORT_STORAGE_KEY, '[]');
   const [search, setSearch] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
+  const minHeightRef = useRef<number>(0);
 
   const handleViewChange = (newView: 'cards' | 'table') => {
     setStoredView(newView);
@@ -210,13 +212,25 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                // Capture current height before filtering to prevent page jump
+                if (!search && e.target.value && listRef.current) {
+                  minHeightRef.current = listRef.current.offsetHeight;
+                }
+                if (!e.target.value) {
+                  minHeightRef.current = 0;
+                }
+                setSearch(e.target.value);
+              }}
               placeholder="Search jobs..."
               className="search-input"
             />
             {search && (
               <button
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  minHeightRef.current = 0;
+                  setSearch('');
+                }}
                 className="search-clear"
                 aria-label="Clear search"
               >
@@ -242,28 +256,30 @@ export function JobsView({ jobs, slug, columns, columnOrder }: JobsViewProps) {
         </div>
       </div>
 
-      {filteredJobs.length === 0 && isFiltered ? (
-        <div className="card p-10 text-center">
-          <p className="text-lg font-semibold mb-1">No matches</p>
-          <p className="muted text-sm">
-            Nothing matched &ldquo;{search.trim()}&rdquo; —{' '}
-            <button
-              onClick={() => setSearch('')}
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              clear search
-            </button>
-          </p>
-        </div>
-      ) : view === 'cards' ? (
-        <div className="space-y-4">
-          {filteredJobs.map((job) => (
-            <JobCard key={job.link} job={job} slug={slug} columns={columns} />
-          ))}
-        </div>
-      ) : (
-        <JobTable jobs={filteredJobs} slug={slug} columns={columns} columnOrder={columnOrder} />
-      )}
+      <div ref={listRef} style={{ minHeight: isFiltered ? minHeightRef.current : undefined }}>
+        {filteredJobs.length === 0 && isFiltered ? (
+          <div className="card p-10 text-center">
+            <p className="text-lg font-semibold mb-1">No matches</p>
+            <p className="muted text-sm">
+              Nothing matched &ldquo;{search.trim()}&rdquo; —{' '}
+              <button
+                onClick={() => setSearch('')}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                clear search
+              </button>
+            </p>
+          </div>
+        ) : view === 'cards' ? (
+          <div className="space-y-4">
+            {filteredJobs.map((job) => (
+              <JobCard key={job.link} job={job} slug={slug} columns={columns} />
+            ))}
+          </div>
+        ) : (
+          <JobTable jobs={filteredJobs} slug={slug} columns={columns} columnOrder={columnOrder} />
+        )}
+      </div>
     </div>
   );
 }
