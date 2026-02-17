@@ -20,7 +20,7 @@ export default function DataPolicyPage() {
             ← Back home
           </Link>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Data policy</h1>
-          <p className="text-base muted">Last updated: February 8, 2026</p>
+          <p className="text-base muted">Last updated: February 17, 2026</p>
         </div>
 
         {/* Content */}
@@ -66,6 +66,34 @@ export default function DataPolicyPage() {
             <p className="muted">
               cozy job tracker uses a session cookie to keep you signed in. No tracking cookies, no
               third-party cookies. Just the one that makes login work.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Chrome extension</h2>
+            <p className="muted mb-3">
+              The cozy job tracker Chrome extension lets you save job postings to your board with one
+              click. Here&apos;s what it accesses:
+            </p>
+            <ul className="muted space-y-2 list-disc pl-5">
+              <li>
+                <strong>Session cookie</strong> — the extension reads your existing
+                cozyjobtracker.com session cookie to verify you&apos;re signed in. It doesn&apos;t
+                create or modify any cookies.
+              </li>
+              <li>
+                <strong>Current page URL</strong> — when you click &quot;Add to board&quot;, the URL
+                of the page you&apos;re on is sent to cozyjobtracker.com to parse the job posting.
+                No other browsing data is collected.
+              </li>
+              <li>
+                <strong>Local cache</strong> — your email is cached in the browser so the popup loads
+                faster. This cache is automatically cleared when you close the browser.
+              </li>
+            </ul>
+            <p className="muted mt-3">
+              The extension doesn&apos;t track your browsing, run on pages in the background, or
+              collect any data beyond what&apos;s described above.
             </p>
           </section>
 
