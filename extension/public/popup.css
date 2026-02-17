@@ -1,0 +1,327 @@
+/* Match the cozy job tracker web app look */
+:root {
+  --background: #fffaf3;
+  --background-2: #fff2e2;
+  --foreground: #3a271d;
+  --muted: #6a4a3a;
+  --muted-2: #7c5c4a;
+  --muted-3: #a08978;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-solid: #ffffff;
+  --border: rgba(245, 158, 11, 0.28);
+  --accent: #d97706;
+  --accent-2: #f59e0b;
+  --accent-soft: rgba(245, 158, 11, 0.1);
+  --ring: rgba(245, 158, 11, 0.28);
+  --success: #059669;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(239, 68, 68, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-full: 999px;
+  --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 340px;
+  min-height: 200px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#app {
+  padding: 16px;
+}
+
+/* State visibility */
+.state {
+  display: block;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Center content layout (for loading, signed-out, adding, success, error) */
+.center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 20px 8px;
+}
+
+/* Logo */
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.logo-sm {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--muted-2);
+}
+
+/* Header (ready state) */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* User row */
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.user-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--muted-3);
+  flex-shrink: 0;
+}
+
+.user-email {
+  font-size: 12px;
+  color: var(--muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* URL card */
+.url-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.url-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-3);
+  margin-bottom: 4px;
+}
+
+.url-text {
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+  line-height: 1.4;
+  max-height: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+  user-select: none;
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: translateY(0.5px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: white;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  box-shadow: 0 8px 18px rgba(234, 88, 12, 0.18);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 10px 22px rgba(234, 88, 12, 0.24);
+}
+
+.btn-soft {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border);
+}
+
+.btn-soft:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.btn-ghost {
+  color: var(--muted-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 550;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.btn-ghost:hover {
+  color: var(--foreground);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+/* Spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(245, 158, 11, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Adding state */
+.adding-text {
+  font-size: 13px;
+  color: var(--muted-2);
+}
+
+/* Success state */
+.success-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--success-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--success);
+}
+
+.success-title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.success-company {
+  font-size: 13px;
+  color: var(--muted-2);
+  margin-top: -4px;
+}
+
+.success-warning {
+  font-size: 12px;
+  color: var(--muted-2);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  width: 100%;
+  text-align: left;
+}
+
+.success-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Error state */
+.error-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--danger-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--danger);
+}
+
+.error-message {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 280px;
+}

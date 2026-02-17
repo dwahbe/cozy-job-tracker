@@ -196,7 +196,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
+      const column: {
+        name: string;
+        type: string;
+        options?: string[];
+        optionColors?: Record<string, string>;
+      } = {
         name: newName.trim(),
         type: newType,
       };
@@ -252,7 +257,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
+      const column: {
+        name: string;
+        type: string;
+        options?: string[];
+        optionColors?: Record<string, string>;
+      } = {
         name: editing.name.trim(),
         type: editing.type,
       };
@@ -330,7 +340,9 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       originalName: col.name,
       name: col.name,
       type: col.type,
-      options: col.options?.map((v) => ({ value: v, color: col.optionColors?.[v] })) || [{ value: '' }],
+      options: col.options?.map((v) => ({ value: v, color: col.optionColors?.[v] })) || [
+        { value: '' },
+      ],
     });
     setIsAdding(false);
     setError(null);
@@ -436,10 +448,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
             </div>
 
             {newType === 'dropdown' && (
-              <DropdownOptionsEditor
-                options={newOptions}
-                onChange={setNewOptions}
-              />
+              <DropdownOptionsEditor options={newOptions} onChange={setNewOptions} />
             )}
 
             <div className="flex gap-2">
@@ -473,7 +482,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
 
       {/* Column list with drag and drop */}
       {localColumns.length > 0 && (
-        <DndContext id="column-manager-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          id="column-manager-dnd"
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
           <SortableContext
             items={localColumns.map((c) => c.name)}
             strategy={horizontalListSortingStrategy}

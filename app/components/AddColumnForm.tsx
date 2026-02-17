@@ -23,7 +23,12 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
     setError(null);
 
     try {
-      const column: { name: string; type: string; options?: string[]; optionColors?: Record<string, string> } = {
+      const column: {
+        name: string;
+        type: string;
+        options?: string[];
+        optionColors?: Record<string, string>;
+      } = {
         name: name.trim(),
         type,
       };
@@ -111,12 +116,7 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
           </select>
         </div>
 
-        {type === 'dropdown' && (
-          <DropdownOptionsEditor
-            options={options}
-            onChange={setOptions}
-          />
-        )}
+        {type === 'dropdown' && <DropdownOptionsEditor options={options} onChange={setOptions} />}
 
         {error && <div className="callout callout-error">{error}</div>}
 

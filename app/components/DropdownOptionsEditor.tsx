@@ -58,7 +58,12 @@ function ColorPickerPopover({
           title="No color"
         >
           {!selectedColor && (
-            <svg className="w-3 h-3 text-muted-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <svg
+              className="w-3 h-3 text-muted-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeWidth={2.5} d="M18 6L6 18" />
             </svg>
           )}
@@ -74,7 +79,10 @@ function ColorPickerPopover({
             className="w-5 h-5 rounded-full shrink-0 transition-transform hover:scale-110"
             style={{
               background: DROPDOWN_COLOR_SWATCHES[color],
-              boxShadow: selectedColor === color ? `0 0 0 2px var(--surface-solid), 0 0 0 4px ${DROPDOWN_COLOR_SWATCHES[color]}` : 'none',
+              boxShadow:
+                selectedColor === color
+                  ? `0 0 0 2px var(--surface-solid), 0 0 0 4px ${DROPDOWN_COLOR_SWATCHES[color]}`
+                  : 'none',
             }}
             title={color.charAt(0).toUpperCase() + color.slice(1)}
           />
@@ -144,7 +152,12 @@ export function DropdownOptionsEditor({ options, onChange }: DropdownOptionsEdit
                 title="Remove option"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             )}

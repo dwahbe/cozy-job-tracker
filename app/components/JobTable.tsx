@@ -748,7 +748,12 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
   };
 
   return (
-    <DndContext id="job-table-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      id="job-table-dnd"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <div className="table-wrapper">
         <table className="job-table">
           <thead>

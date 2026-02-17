@@ -1131,16 +1131,56 @@ a:focus-visible {
 }
 
 /* Dropdown option colors — placed after .select / .table-select so fills override */
-.dropdown-gray { background: var(--dropdown-gray-bg); color: var(--dropdown-gray-text); border-color: transparent; }
-.dropdown-brown { background: var(--dropdown-brown-bg); color: var(--dropdown-brown-text); border-color: transparent; }
-.dropdown-red { background: var(--dropdown-red-bg); color: var(--dropdown-red-text); border-color: transparent; }
-.dropdown-orange { background: var(--dropdown-orange-bg); color: var(--dropdown-orange-text); border-color: transparent; }
-.dropdown-yellow { background: var(--dropdown-yellow-bg); color: var(--dropdown-yellow-text); border-color: transparent; }
-.dropdown-green { background: var(--dropdown-green-bg); color: var(--dropdown-green-text); border-color: transparent; }
-.dropdown-teal { background: var(--dropdown-teal-bg); color: var(--dropdown-teal-text); border-color: transparent; }
-.dropdown-blue { background: var(--dropdown-blue-bg); color: var(--dropdown-blue-text); border-color: transparent; }
-.dropdown-purple { background: var(--dropdown-purple-bg); color: var(--dropdown-purple-text); border-color: transparent; }
-.dropdown-pink { background: var(--dropdown-pink-bg); color: var(--dropdown-pink-text); border-color: transparent; }
+.dropdown-gray {
+  background: var(--dropdown-gray-bg);
+  color: var(--dropdown-gray-text);
+  border-color: transparent;
+}
+.dropdown-brown {
+  background: var(--dropdown-brown-bg);
+  color: var(--dropdown-brown-text);
+  border-color: transparent;
+}
+.dropdown-red {
+  background: var(--dropdown-red-bg);
+  color: var(--dropdown-red-text);
+  border-color: transparent;
+}
+.dropdown-orange {
+  background: var(--dropdown-orange-bg);
+  color: var(--dropdown-orange-text);
+  border-color: transparent;
+}
+.dropdown-yellow {
+  background: var(--dropdown-yellow-bg);
+  color: var(--dropdown-yellow-text);
+  border-color: transparent;
+}
+.dropdown-green {
+  background: var(--dropdown-green-bg);
+  color: var(--dropdown-green-text);
+  border-color: transparent;
+}
+.dropdown-teal {
+  background: var(--dropdown-teal-bg);
+  color: var(--dropdown-teal-text);
+  border-color: transparent;
+}
+.dropdown-blue {
+  background: var(--dropdown-blue-bg);
+  color: var(--dropdown-blue-text);
+  border-color: transparent;
+}
+.dropdown-purple {
+  background: var(--dropdown-purple-bg);
+  color: var(--dropdown-purple-text);
+  border-color: transparent;
+}
+.dropdown-pink {
+  background: var(--dropdown-pink-bg);
+  color: var(--dropdown-pink-text);
+  border-color: transparent;
+}
 
 .table-input::placeholder {
   color: var(--muted-2);
