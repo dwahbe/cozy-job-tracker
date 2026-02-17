@@ -1,8 +1,8 @@
 # cozy job tracker 🌱
 
-calm tracking for a noisy job search.
+Calm tracking for a noisy job search.
 
-I built this because job hunting is stressful enough without fighting your tracking tool. paste a job url, it pulls the details, and you get a clean board to track everything. that's basically it.
+I built this because job hunting is stressful enough without fighting your tracking tool. Paste a job url, it pulls the details, and you get a clean board to track everything. That's basically it.
 
 ## what it does
 
@@ -13,7 +13,7 @@ I built this because job hunting is stressful enough without fighting your track
 - **notes & due dates** — keep track of deadlines and details without a separate app
 - **share your board** — send a public link to a friend who's also in the thick of it
 
-no AI cover letter generators, no LinkedIn integrations, no "career coaching." just a clean board for keeping track of where you applied.
+No AI cover letter generators, no LinkedIn integrations, no "career coaching." just a clean board for keeping track of where you applied.
 
 ## stack
 
@@ -25,4 +25,4 @@ MIT — please give credit when appropriate :)
 
 ---
 
-📬 send this to your unemployed friend
+📬 Send this to your unemployed friends
