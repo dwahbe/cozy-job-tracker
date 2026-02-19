@@ -8,18 +8,19 @@ export type ChangelogEntry = {
 };
 
 export const changelog: ChangelogEntry[] = [
-  {
-    date: 'Feb 17, 2026',
-    title: 'Chrome extension',
-    emoji: '🧩',
-    tag: 'new',
-    description:
-      'Save job postings to your board without leaving the page. Just click the extension icon, hit "Add to board", and the job title, company, location, and details are parsed and saved automatically.',
-    link: {
-      url: 'https://chromewebstore.google.com/detail/cozy-job-tracker/jnkjaboanaihkoiidmpjolldkgkbpllm',
-      text: 'Get it on the Chrome Web Store',
-    },
-  },
+  // TODO: Uncomment when Chrome extension is approved
+  // {
+  //   date: 'Feb 20, 2026',
+  //   title: 'Chrome extension',
+  //   emoji: '🧩',
+  //   tag: 'new',
+  //   description:
+  //     'Save job postings to your board without leaving the page. Just click the extension icon, hit "Add to board", and the job title, company, location, and details are parsed and saved automatically.',
+  //   link: {
+  //     url: 'https://chromewebstore.google.com/detail/cozy-job-tracker/jnkjaboanaihkoiidmpjolldkgkbpllm',
+  //     text: 'Get it on the Chrome Web Store',
+  //   },
+  // },
   {
     date: 'Feb 8, 2026',
     title: 'Multi-column sorting',
