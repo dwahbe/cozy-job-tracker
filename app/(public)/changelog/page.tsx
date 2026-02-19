@@ -47,7 +47,22 @@ export default function ChangelogPage() {
                   <span className="changelog-emoji">{entry.emoji}</span>
                   {entry.title}
                 </h2>
-                <p className="changelog-entry-desc">{entry.description}</p>
+                <p className="changelog-entry-desc">
+                  {entry.description}
+                  {entry.link && (
+                    <>
+                      {' '}
+                      <a
+                        href={entry.link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
+                      >
+                        {entry.link.text} →
+                      </a>
+                    </>
+                  )}
+                </p>
               </div>
             </article>
           ))}

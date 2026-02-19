@@ -85,8 +85,56 @@ function getFriendlyNetworkError(message: string): string {
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-export async function fetchPage(url: string): Promise<FetchPageResult> {
+const FETCH_TIMEOUT_MS = 10_000;
+const MAX_REDIRECT_DEPTH = 3;
+
+function isPrivateUrl(urlString: string): boolean {
+  try {
+    const { hostname } = new URL(urlString);
+    const host = hostname.replace(/^\[|\]$/g, '');
+
+    if (host === 'localhost' || host === '::1') return true;
+
+    const parts = host.split('.').map(Number);
+    if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
+      const [a, b] = parts;
+      if (a === 0 || a === 10 || a === 127) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+    }
+
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult> {
   const fetchedAt = new Date().toISOString();
+
+  if (isPrivateUrl(url)) {
+    return {
+      finalUrl: url,
+      title: null,
+      text: '',
+      fetchedAt,
+      fetchError: 'This URL points to an internal address and cannot be accessed.',
+      errorType: 'network_error',
+    };
+  }
+
+  if (depth > MAX_REDIRECT_DEPTH) {
+    return {
+      finalUrl: url,
+      title: null,
+      text: '',
+      fetchedAt,
+      fetchError: 'Too many redirects. Try using manual entry instead.',
+      errorType: 'network_error',
+    };
+  }
+
   const isLinkedInJob = url.includes('linkedin.com/jobs/view/');
 
   try {
@@ -98,6 +146,7 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
         'Accept-Language': 'en-US,en;q=0.5',
       },
       redirect: isLinkedInJob ? 'manual' : 'follow',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     // Check for LinkedIn expired job redirect
@@ -122,7 +171,8 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
       }
       // If it's a different redirect, follow it manually
       return fetchPage(
-        redirectUrl.startsWith('http') ? redirectUrl : `https://www.linkedin.com${redirectUrl}`
+        redirectUrl.startsWith('http') ? redirectUrl : `https://www.linkedin.com${redirectUrl}`,
+        depth + 1
       );
     }
 
@@ -165,36 +215,50 @@ export async function fetchPage(url: string): Promise<FetchPageResult> {
     $('script[type="application/ld+json"]').each((_, el) => {
       try {
         const jsonText = $(el).html();
-        if (jsonText) {
-          const data = JSON.parse(jsonText);
-          // Extract relevant fields from JobPosting schema
-          if (data['@type'] === 'JobPosting') {
-            const parts: string[] = [];
-            if (data.title) parts.push(`Title: ${data.title}`);
-            if (data.description) parts.push(`Description: ${data.description}`);
-            if (data.employmentType) parts.push(`Employment Type: ${data.employmentType}`);
-            if (data.datePosted) parts.push(`Date Posted: ${data.datePosted}`);
-            if (data.jobLocation?.address) {
-              const addr = data.jobLocation.address;
-              const loc = [addr.addressLocality, addr.addressRegion, addr.addressCountry]
-                .filter(Boolean)
-                .join(', ');
-              if (loc) parts.push(`Location: ${loc}`);
-            }
-            if (data.hiringOrganization?.name)
-              parts.push(`Company: ${data.hiringOrganization.name}`);
-            if (data.baseSalary) {
-              const salary = data.baseSalary;
-              if (salary.value) {
-                const salaryStr =
-                  typeof salary.value === 'object'
-                    ? `${salary.value.minValue || ''}-${salary.value.maxValue || ''} ${salary.currency || ''}`
-                    : `${salary.value} ${salary.currency || ''}`;
-                parts.push(`Salary: ${salaryStr}`);
-              }
-            }
-            jsonLdText = parts.join('\n');
+        if (!jsonText) return;
+
+        const data = JSON.parse(jsonText);
+
+        // Find JobPosting from various JSON-LD structures
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let jobPosting: any = null;
+        if (data['@type'] === 'JobPosting') {
+          jobPosting = data;
+        } else if (Array.isArray(data['@graph'])) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          jobPosting = data['@graph'].find((item: any) => item['@type'] === 'JobPosting');
+        } else if (Array.isArray(data)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          jobPosting = data.find((item: any) => item['@type'] === 'JobPosting');
+        }
+
+        if (jobPosting) {
+          const parts: string[] = [];
+          if (jobPosting.title) parts.push(`Title: ${jobPosting.title}`);
+          if (jobPosting.description) parts.push(`Description: ${jobPosting.description}`);
+          if (jobPosting.employmentType)
+            parts.push(`Employment Type: ${jobPosting.employmentType}`);
+          if (jobPosting.datePosted) parts.push(`Date Posted: ${jobPosting.datePosted}`);
+          if (jobPosting.jobLocation?.address) {
+            const addr = jobPosting.jobLocation.address;
+            const loc = [addr.addressLocality, addr.addressRegion, addr.addressCountry]
+              .filter(Boolean)
+              .join(', ');
+            if (loc) parts.push(`Location: ${loc}`);
           }
+          if (jobPosting.hiringOrganization?.name)
+            parts.push(`Company: ${jobPosting.hiringOrganization.name}`);
+          if (jobPosting.baseSalary) {
+            const salary = jobPosting.baseSalary;
+            if (salary.value) {
+              const salaryStr =
+                typeof salary.value === 'object'
+                  ? `${salary.value.minValue || ''}-${salary.value.maxValue || ''} ${salary.currency || ''}`
+                  : `${salary.value} ${salary.currency || ''}`;
+              parts.push(`Salary: ${salaryStr}`);
+            }
+          }
+          jsonLdText = parts.join('\n');
         }
       } catch {
         // Ignore JSON parse errors

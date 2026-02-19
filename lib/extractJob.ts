@@ -14,6 +14,8 @@ export interface RawExtraction {
   notes: ExtractionField;
 }
 
+const openai = new OpenAI();
+
 const SYSTEM_PROMPT = `You are a job posting data extractor. Extract structured information from job posting text.
 
 CRITICAL RULES:
@@ -32,7 +34,7 @@ Extract these fields:
   - If a specific date is mentioned, format as YYYY-MM-DD
   - If the posting EXPLICITLY states "rolling basis", "rolling admissions", "no deadline", "open until filled", or similar phrases indicating there is no fixed deadline, set value to "rolling"
   - Only set to "rolling" if the text explicitly mentions this - do NOT assume rolling if no date is mentioned
-- notes: Any other notable information (salary, benefits, requirements summary)
+- notes: Concise supplementary details — prioritize: salary/compensation range, remote/hybrid/onsite policy if not already in location, visa sponsorship status. Keep to 2-3 short phrases max. Do NOT repeat the title, company, or location.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -49,32 +51,42 @@ export async function extractJob(
   title: string | null,
   finalUrl: string
 ): Promise<RawExtraction> {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
   const userPrompt = `Page title: ${title || 'Unknown'}
 URL: ${finalUrl}
 
 Job posting text:
 ${text.slice(0, 15000)}`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    response_format: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ],
-    temperature: 0,
-    max_tokens: 1000,
-  });
+  let lastError: unknown;
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error('No response from OpenAI');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 1000,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error('No response from OpenAI');
+
+      return JSON.parse(content) as RawExtraction;
+    } catch (error) {
+      lastError = error;
+      const isRetryable =
+        error instanceof OpenAI.APIError && [429, 500, 503].includes(error.status);
+      if (attempt === 0 && isRetryable) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      throw error;
+    }
   }
 
-  const parsed = JSON.parse(content) as RawExtraction;
-  return parsed;
+  throw lastError;
 }

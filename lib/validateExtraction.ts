@@ -12,6 +12,10 @@ export interface ValidatedJob {
   finalUrl: string;
 }
 
+function normalizeWhitespace(str: string): string {
+  return str.replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Validates that extraction evidence exists in the source text
  * and that values are contained within their evidence.
@@ -23,38 +27,32 @@ export function validateExtraction(
   fetchedAt: string,
   finalUrl: string
 ): ValidatedJob {
-  const lowerText = sourceText.toLowerCase();
+  const normalizedText = normalizeWhitespace(sourceText.toLowerCase());
 
   function validateField(
     field: { value: string | null; evidence: string | null },
     skipValueCheck = false
   ): string | null {
-    // If value is null, keep it null
     if (field.value === null) {
       return null;
     }
 
-    // If evidence is null, force value to null
     if (field.evidence === null) {
       return null;
     }
 
-    // Check if evidence exists in source text (case-insensitive)
-    const lowerEvidence = field.evidence.toLowerCase();
-    if (!lowerText.includes(lowerEvidence)) {
+    const normalizedEvidence = normalizeWhitespace(field.evidence.toLowerCase());
+    if (!normalizedText.includes(normalizedEvidence)) {
       return null;
     }
 
-    // Check if value is found within evidence (case-insensitive)
-    // Skip this check for fields like dates where formatting may differ
     if (!skipValueCheck) {
       const lowerValue = field.value.toLowerCase();
-      if (!lowerEvidence.includes(lowerValue)) {
+      if (!normalizedEvidence.includes(lowerValue)) {
         return null;
       }
     }
 
-    // Validation passed, return the value
     return field.value;
   }
 
@@ -63,7 +61,7 @@ export function validateExtraction(
   const validatedLocation = validateField(extraction.location);
   const validatedEmploymentType = validateField(extraction.employment_type);
   const validatedDueDate = validateField(extraction.due_date, true); // Skip value check - date formatting varies
-  const validatedNotes = validateField(extraction.notes);
+  const validatedNotes = validateField(extraction.notes, true);
 
   // isVerified is true if at least title AND company have verified evidence
   const isVerified = validatedTitle !== null && validatedCompany !== null;

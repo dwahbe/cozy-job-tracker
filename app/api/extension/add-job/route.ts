@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import { getBoardByUserId, saveBoardByUserId, generateJobId, type Job } from '@/lib/kv';
+import { getBoardByUserId, saveBoardByUserId, createJobFromValidation } from '@/lib/kv';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -57,26 +57,7 @@ export async function POST(req: NextRequest) {
       pageResult.finalUrl
     );
 
-    // Build custom fields with defaults
-    const customFields: Record<string, string> = {};
-    for (const col of board.columns) {
-      customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
-    }
-
-    const newJob: Job = {
-      id: generateJobId(),
-      title: validatedJob.title || 'Unknown Position',
-      company: validatedJob.company || 'Unknown Company',
-      link: validatedJob.finalUrl,
-      location: validatedJob.location || 'Not listed',
-      employmentType: validatedJob.employment_type || 'Not listed',
-      notes: validatedJob.notes || '',
-      status: 'Saved',
-      dueDate: validatedJob.due_date || '',
-      parsedOn: validatedJob.fetchedAt.split('T')[0],
-      verified: validatedJob.isVerified ? 'Yes' : 'No',
-      customFields,
-    };
+    const newJob = createJobFromValidation(validatedJob, board.columns);
 
     board.jobs.push(newJob);
     await saveBoardByUserId(user.userId, board);

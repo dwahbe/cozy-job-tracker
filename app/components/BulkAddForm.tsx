@@ -89,7 +89,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
           const response = await fetch('/api/parse-job', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: initial[idx].url }),
+            body: JSON.stringify({ url: initial[idx].url, slug }),
           });
 
           if (abortRef.current) return;

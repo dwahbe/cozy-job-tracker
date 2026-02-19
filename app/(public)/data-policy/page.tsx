@@ -72,8 +72,8 @@ export default function DataPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold mb-2">Chrome extension</h2>
             <p className="muted mb-3">
-              The cozy job tracker Chrome extension lets you save job postings to your board with one
-              click. Here&apos;s what it accesses:
+              The cozy job tracker Chrome extension lets you save job postings to your board with
+              one click. Here&apos;s what it accesses:
             </p>
             <ul className="muted space-y-2 list-disc pl-5">
               <li>
@@ -87,8 +87,8 @@ export default function DataPolicyPage() {
                 No other browsing data is collected.
               </li>
               <li>
-                <strong>Local cache</strong> — your email is cached in the browser so the popup loads
-                faster. This cache is automatically cleared when you close the browser.
+                <strong>Local cache</strong> — your email is cached in the browser so the popup
+                loads faster. This cache is automatically cleared when you close the browser.
               </li>
             </ul>
             <p className="muted mt-3">

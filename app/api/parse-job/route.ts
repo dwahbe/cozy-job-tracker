@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { getBoard } from '@/lib/kv';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
 
 export const runtime = 'nodejs';
 
+const SLUG_REGEX = /^[a-z0-9-]+$/;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
+    const { url, slug } = body;
+
+    // Require auth session or valid legacy slug
+    const session = await auth();
+    if (!session?.user?.id) {
+      if (!slug || !SLUG_REGEX.test(slug)) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const board = await getBoard(slug);
+      if (!board) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });

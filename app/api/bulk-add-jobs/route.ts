@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateJobId, type Job } from '@/lib/kv';
+import { createJobFromValidation } from '@/lib/kv';
 import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
@@ -36,31 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    const today = new Date().toISOString().split('T')[0];
-
-    // Create all jobs in one pass
-    const newJobs: Job[] = jobs.map((job) => {
-      // Build custom fields with defaults
-      const customFields: Record<string, string> = {};
-      for (const col of ctx.board.columns) {
-        customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
-      }
-
-      return {
-        id: generateJobId(),
-        title: job.title || 'Unknown Position',
-        company: job.company || 'Unknown Company',
-        link: job.finalUrl,
-        location: job.location || 'Not listed',
-        employmentType: job.employment_type || 'Not listed',
-        notes: job.notes || '',
-        status: 'Saved',
-        dueDate: job.due_date || '',
-        parsedOn: job.fetchedAt?.split('T')[0] || today,
-        verified: job.isVerified ? 'Yes' : 'No',
-        customFields,
-      };
-    });
+    const newJobs = jobs.map((job) => createJobFromValidation(job, ctx.board.columns));
 
     ctx.board.jobs.push(...newJobs);
     await saveBoardAndRevalidate(ctx);

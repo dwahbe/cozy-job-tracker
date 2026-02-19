@@ -1,5 +1,6 @@
 import { kv } from '@vercel/kv';
 import type { Column } from './markdown';
+import type { ValidatedJob } from './validateExtraction';
 
 /**
  * Board data structure for KV storage
@@ -114,6 +115,31 @@ export async function deleteBoard(slug: string): Promise<void> {
  */
 export function generateJobId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Create a Job from a validated URL extraction result
+ */
+export function createJobFromValidation(validatedJob: ValidatedJob, columns: Column[]): Job {
+  const customFields: Record<string, string> = {};
+  for (const col of columns) {
+    customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
+  }
+
+  return {
+    id: generateJobId(),
+    title: validatedJob.title || 'Unknown Position',
+    company: validatedJob.company || 'Unknown Company',
+    link: validatedJob.finalUrl,
+    location: validatedJob.location || 'Not listed',
+    employmentType: validatedJob.employment_type || 'Not listed',
+    notes: validatedJob.notes || '',
+    status: 'Saved',
+    dueDate: validatedJob.due_date || '',
+    parsedOn: validatedJob.fetchedAt.split('T')[0],
+    verified: validatedJob.isVerified ? 'Yes' : 'No',
+    customFields,
+  };
 }
 
 // ============================================================

@@ -771,7 +771,7 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
           </thead>
           <tbody>
             {jobs.map((job) => (
-              <tr key={job.link} className={deleting === job.link ? 'row-deleting' : ''}>
+              <tr key={job.id} className={deleting === job.link ? 'row-deleting' : ''}>
                 {localOrder.map((colId) => renderCell(job, colId))}
                 <td className="td-date">
                   <span className="date-text">{job.parsedOn}</span>

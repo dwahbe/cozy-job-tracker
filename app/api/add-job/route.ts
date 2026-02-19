@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateJobId, type Job } from '@/lib/kv';
+import { generateJobId, createJobFromValidation, type Job } from '@/lib/kv';
 import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
@@ -45,46 +45,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Build custom fields with defaults, merging any provided values
-    const customFields: Record<string, string> = {};
-    for (const col of ctx.board.columns) {
-      const defaultValue = col.type === 'checkbox' ? 'No' : '';
-      const providedValue = manualJob?.customFields?.[col.name];
-      customFields[col.name] = providedValue ?? defaultValue;
+    let newJob: Job;
+
+    if (manualJob) {
+      const customFields: Record<string, string> = {};
+      for (const col of ctx.board.columns) {
+        const defaultValue = col.type === 'checkbox' ? 'No' : '';
+        const providedValue = manualJob.customFields?.[col.name];
+        customFields[col.name] = providedValue ?? defaultValue;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      newJob = {
+        id: generateJobId(),
+        title: manualJob.title,
+        company: manualJob.company,
+        link: manualJob.link || '',
+        location: manualJob.location || 'Not listed',
+        employmentType: manualJob.employmentType || 'Not listed',
+        notes: manualJob.notes || '',
+        status: 'Saved',
+        dueDate: '',
+        parsedOn: today,
+        verified: 'Manual',
+        customFields,
+      };
+    } else {
+      newJob = createJobFromValidation(job!, ctx.board.columns);
     }
-
-    const today = new Date().toISOString().split('T')[0];
-
-    // Create the new job
-    const newJob: Job = manualJob
-      ? {
-          id: generateJobId(),
-          title: manualJob.title,
-          company: manualJob.company,
-          link: manualJob.link || '',
-          location: manualJob.location || 'Not listed',
-          employmentType: manualJob.employmentType || 'Not listed',
-          notes: manualJob.notes || '',
-          status: 'Saved',
-          dueDate: '',
-          parsedOn: today,
-          verified: 'Manual',
-          customFields,
-        }
-      : {
-          id: generateJobId(),
-          title: job!.title || 'Unknown Position',
-          company: job!.company || 'Unknown Company',
-          link: job!.finalUrl,
-          location: job!.location || 'Not listed',
-          employmentType: job!.employment_type || 'Not listed',
-          notes: job!.notes || '',
-          status: 'Saved',
-          dueDate: job!.due_date || '',
-          parsedOn: job!.fetchedAt.split('T')[0],
-          verified: job!.isVerified ? 'Yes' : 'No',
-          customFields,
-        };
 
     // Add job to board
     ctx.board.jobs.push(newJob);
