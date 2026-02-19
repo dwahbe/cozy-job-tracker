@@ -51,11 +51,62 @@
         <button id="btn-add" class="btn btn-primary btn-full">Add to board</button>
       </div>
 
-      <!-- Adding -->
+      <!-- Adding (parsing) -->
       <div id="state-adding" class="state hidden">
         <div class="center-content">
           <div class="spinner"></div>
           <p class="adding-text">Parsing job posting...</p>
+        </div>
+      </div>
+
+      <!-- Preview (parsed, not yet saved) -->
+      <div id="state-preview" class="state hidden">
+        <div class="header">
+          <div class="logo-sm">cozy job tracker</div>
+        </div>
+        <p class="preview-heading">Preview</p>
+        <div class="preview-card">
+          <div class="preview-row">
+            <span class="preview-label">Title</span>
+            <span class="preview-value" id="preview-title"></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Company</span>
+            <span class="preview-value" id="preview-company"></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Location</span>
+            <span class="preview-value" id="preview-location"></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Type</span>
+            <span class="preview-value" id="preview-type"></span>
+          </div>
+          <div class="preview-row hidden" id="preview-due-date-row">
+            <span class="preview-label">Due date</span>
+            <span class="preview-value" id="preview-due-date"></span>
+          </div>
+          <div class="preview-row hidden" id="preview-notes-row">
+            <span class="preview-label">Notes</span>
+            <span class="preview-value" id="preview-notes"></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Verified</span>
+            <span class="preview-value" id="preview-verified"></span>
+          </div>
+        </div>
+        <div class="preview-warning hidden" id="preview-warning"></div>
+        <div class="preview-actions">
+          <button id="btn-confirm" class="btn btn-primary btn-full">Add to board</button>
+          <button id="btn-discard" class="btn btn-soft btn-full">Discard</button>
+        </div>
+      </div>
+
+      <!-- Saving (after confirm) -->
+      <div id="state-saving" class="state hidden">
+        <div class="center-content">
+          <div class="spinner"></div>
+          <p class="adding-text">Adding to board...</p>
         </div>
       </div>
 
@@ -76,7 +127,6 @@
           </div>
           <p class="success-title" id="success-title"></p>
           <p class="success-company" id="success-company"></p>
-          <div class="success-warning hidden" id="success-warning"></div>
           <div class="success-actions">
             <a id="link-board" class="btn btn-primary btn-sm" href="#">View board</a>
             <button id="btn-add-another" class="btn btn-soft btn-sm">Add another</button>

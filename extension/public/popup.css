@@ -302,6 +302,78 @@ body {
   margin-top: 4px;
 }
 
+/* Preview state */
+.preview-heading {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.preview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.preview-row {
+  display: flex;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.preview-row + .preview-row {
+  border-top: 1px solid rgba(245, 158, 11, 0.12);
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted-3);
+  width: 56px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.preview-value {
+  font-size: 12px;
+  color: var(--foreground);
+  line-height: 1.4;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.preview-value.not-found {
+  color: var(--muted-3);
+  font-style: italic;
+}
+
+.preview-value.verified-yes {
+  color: var(--success);
+}
+
+.preview-value.verified-partial {
+  color: var(--accent);
+}
+
+.preview-warning {
+  font-size: 12px;
+  color: var(--muted-2);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.preview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* Error state */
 .error-icon {
   width: 40px;

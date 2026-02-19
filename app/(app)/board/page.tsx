@@ -5,6 +5,7 @@ import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
 import { ImportBoardButton } from '@/app/components/ImportBoardButton';
 import { TrashButton } from '@/app/components/TrashButton';
+import { RefreshOnFocus } from '@/app/components/RefreshOnFocus';
 import type { ParsedJob } from '@/lib/markdown';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,7 @@ export default async function BoardPage() {
 
   return (
     <main className="page">
+      <RefreshOnFocus />
       <div className="container-app max-w-5xl">
         {/* Header */}
         <header className="mb-6 sm:mb-8">
