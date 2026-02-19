@@ -11,6 +11,7 @@ export interface Column {
 }
 
 export interface ParsedJob {
+  id: string;
   title: string;
   company: string;
   link: string;

@@ -7,9 +7,10 @@ const MIN_REFRESH_INTERVAL = 5000;
 
 export function RefreshOnFocus() {
   const router = useRouter();
-  const lastRefresh = useRef(Date.now());
+  const lastRefresh = useRef(0);
 
   useEffect(() => {
+    lastRefresh.current = Date.now();
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const now = Date.now();

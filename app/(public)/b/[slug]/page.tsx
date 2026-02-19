@@ -66,6 +66,7 @@ export default async function BoardPage({ params }: PageProps) {
 
   // Convert KV jobs to ParsedJob format for compatibility with existing components
   const jobs: ParsedJob[] = board.jobs.map((job) => ({
+    id: job.id,
     title: job.title,
     company: job.company,
     link: job.link,
