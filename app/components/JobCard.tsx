@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
@@ -10,6 +10,8 @@ interface JobCardProps {
   job: ParsedJob;
   slug: string;
   columns: Column[];
+  highlight?: boolean;
+  onHighlightDone?: () => void;
 }
 
 interface EditableFields {
@@ -192,9 +194,16 @@ const statusColor = (status: string) =>
     Rejected: 'status-rejected',
   })[status] || 'status-saved';
 
-export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
+export function JobCard({ job: serverJob, slug, columns, highlight, onHighlightDone }: JobCardProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const highlightRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && highlight) {
+      requestAnimationFrame(() => {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [highlight]);
   const [textFields, setTextFields] = useState<Record<string, string>>({});
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -442,7 +451,11 @@ export function JobCard({ job: serverJob, slug, columns }: JobCardProps) {
   }
 
   return (
-    <div className="card card-hover p-6">
+    <div
+      ref={highlight ? highlightRef : undefined}
+      className={`card card-hover p-6${highlight ? ' card-highlight' : ''}`}
+      onAnimationEnd={highlight ? onHighlightDone : undefined}
+    >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
           <h3 className="font-semibold text-lg tracking-tight">{job.title}</h3>

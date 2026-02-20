@@ -9,6 +9,29 @@ import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
 
 const VIEW_STORAGE_KEY = 'cozy-jobs-view-preference';
+const HIGHLIGHT_KEY = 'cozy-highlight-job';
+const HIGHLIGHT_EVENT = 'cozy-highlight-change';
+
+export function setHighlightJob(jobId: string) {
+  sessionStorage.setItem(HIGHLIGHT_KEY, jobId);
+  window.dispatchEvent(new Event(HIGHLIGHT_EVENT));
+}
+
+function clearHighlightJob() {
+  sessionStorage.removeItem(HIGHLIGHT_KEY);
+  window.dispatchEvent(new Event(HIGHLIGHT_EVENT));
+}
+
+function useHighlightJob(): [string | null, () => void] {
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener(HIGHLIGHT_EVENT, cb);
+    return () => window.removeEventListener(HIGHLIGHT_EVENT, cb);
+  }, []);
+  const getSnapshot = useCallback(() => sessionStorage.getItem(HIGHLIGHT_KEY), []);
+  const getServerSnapshot = useCallback(() => null, []);
+  const value = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return [value, clearHighlightJob];
+}
 
 const STATUS_ORDER = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
@@ -93,6 +116,7 @@ export function JobsView({
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const [minHeight, setMinHeight] = useState(0);
+  const [highlightJobId, clearHighlight] = useHighlightJob();
 
   const handleViewChange = (newView: 'cards' | 'table') => {
     setStoredView(newView);
@@ -280,11 +304,25 @@ export function JobsView({
         ) : view === 'cards' ? (
           <div className="space-y-4">
             {filteredJobs.map((job) => (
-              <JobCard key={job.link} job={job} slug={slug} columns={columns} />
+              <JobCard
+                key={job.link}
+                job={job}
+                slug={slug}
+                columns={columns}
+                highlight={job.id === highlightJobId}
+                onHighlightDone={clearHighlight}
+              />
             ))}
           </div>
         ) : (
-          <JobTable jobs={filteredJobs} slug={slug} columns={columns} columnOrder={columnOrder} />
+          <JobTable
+            jobs={filteredJobs}
+            slug={slug}
+            columns={columns}
+            columnOrder={columnOrder}
+            highlightJobId={highlightJobId}
+            onHighlightDone={clearHighlight}
+          />
         )}
       </div>
     </div>

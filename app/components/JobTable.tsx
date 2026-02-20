@@ -182,6 +182,8 @@ interface JobTableProps {
   slug: string;
   columns: Column[];
   columnOrder: string[];
+  highlightJobId?: string | null;
+  onHighlightDone?: () => void;
 }
 
 const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
@@ -319,7 +321,14 @@ function DueDatePicker({
   );
 }
 
-export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTableProps) {
+export function JobTable({
+  jobs: serverJobs,
+  slug,
+  columns,
+  columnOrder,
+  highlightJobId,
+  onHighlightDone,
+}: JobTableProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [textFields, setTextFields] = useState<Record<string, Record<string, string>>>({});
@@ -327,6 +336,18 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
   const [editValue, setEditValue] = useState('');
   const [localOrder, setLocalOrder] = useState(columnOrder);
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, Record<string, string>>>({});
+  const highlightRef = useCallback(
+    (node: HTMLTableRowElement | null) => {
+      if (node) {
+        requestAnimationFrame(() => {
+          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    },
+    // Re-run when the highlighted job changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [highlightJobId]
+  );
 
   // Create a map of custom columns for quick lookup
   const customColumnMap = new Map(columns.map((c) => [c.name, c]));
@@ -770,32 +791,40 @@ export function JobTable({ jobs: serverJobs, slug, columns, columnOrder }: JobTa
             </tr>
           </thead>
           <tbody>
-            {jobs.map((job) => (
-              <tr key={job.id} className={deleting === job.link ? 'row-deleting' : ''}>
-                {localOrder.map((colId) => renderCell(job, colId))}
-                <td className="td-date">
-                  <span className="date-text">{job.parsedOn}</span>
-                </td>
-                <td className="td-actions">
-                  <button
-                    onClick={() => handleDelete(job.link)}
-                    disabled={deleting === job.link}
-                    className="delete-btn"
-                    title="Delete job"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path
-                        d="M2 3.5h10M5.5 3.5V2a1 1 0 011-1h1a1 1 0 011 1v1.5M11 3.5V12a1 1 0 01-1 1H4a1 1 0 01-1-1V3.5"
-                        stroke="currentColor"
-                        strokeWidth="1.25"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {jobs.map((job) => {
+              const isHighlighted = job.id === highlightJobId;
+              return (
+                <tr
+                  key={job.id}
+                  ref={isHighlighted ? highlightRef : undefined}
+                  className={`${deleting === job.link ? 'row-deleting' : ''} ${isHighlighted ? 'row-highlight' : ''}`}
+                  onAnimationEnd={isHighlighted ? onHighlightDone : undefined}
+                >
+                  {localOrder.map((colId) => renderCell(job, colId))}
+                  <td className="td-date">
+                    <span className="date-text">{job.parsedOn}</span>
+                  </td>
+                  <td className="td-actions">
+                    <button
+                      onClick={() => handleDelete(job.link)}
+                      disabled={deleting === job.link}
+                      className="delete-btn"
+                      title="Delete job"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                          d="M2 3.5h10M5.5 3.5V2a1 1 0 011-1h1a1 1 0 011 1v1.5M11 3.5V12a1 1 0 01-1 1H4a1 1 0 01-1-1V3.5"
+                          stroke="currentColor"
+                          strokeWidth="1.25"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

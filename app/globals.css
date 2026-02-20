@@ -973,6 +973,42 @@ a:focus-visible {
   pointer-events: none;
 }
 
+/* New-job highlight animation */
+@keyframes row-highlight-fade {
+  0% {
+    background-color: rgba(245, 158, 11, 0.28);
+  }
+  50% {
+    background-color: rgba(245, 158, 11, 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.job-table tbody tr.row-highlight {
+  animation: row-highlight-fade 2.5s ease-out;
+}
+
+@keyframes card-highlight-fade {
+  0% {
+    box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.55), var(--shadow);
+    border-color: rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), var(--shadow);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  100% {
+    box-shadow: var(--shadow);
+    border-color: var(--border);
+  }
+}
+
+.card.card-highlight {
+  animation: card-highlight-fade 2.5s ease-out;
+}
+
 /* Table cells */
 .th-title {
   min-width: 180px;

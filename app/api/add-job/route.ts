@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Save board
     await saveBoardAndRevalidate(ctx);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, jobId: newJob.id });
   } catch (error) {
     console.error('Add job error:', error);
     return NextResponse.json(

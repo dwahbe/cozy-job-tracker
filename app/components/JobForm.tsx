@@ -6,6 +6,7 @@ import type { ValidatedJob } from '@/lib/validateExtraction';
 import type { Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { BulkAddForm } from './BulkAddForm';
+import { setHighlightJob } from './JobsView';
 
 interface JobFormProps {
   slug: string;
@@ -99,10 +100,10 @@ export function JobForm({ slug, columns }: JobFormProps) {
         return;
       }
 
-      // Reset form and refresh page
       setUrl('');
       setParsedJob(null);
       setFetchWarning(null);
+      if (data.jobId) setHighlightJob(data.jobId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add job');
@@ -132,8 +133,8 @@ export function JobForm({ slug, columns }: JobFormProps) {
         return;
       }
 
-      // Reset form and refresh page
       setManualJob(emptyManualJob);
+      if (data.jobId) setHighlightJob(data.jobId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add job');
