@@ -5,6 +5,19 @@ export const metadata: Metadata = {
   title: 'data policy — cozy job tracker',
   description:
     'How cozy job tracker handles your data. The short version: nothing weird happens with it.',
+  openGraph: {
+    title: 'data policy — cozy job tracker',
+    description:
+      'How cozy job tracker handles your data. The short version: nothing weird happens with it.',
+    images: [{ url: '/api/og/data-policy', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'data policy — cozy job tracker',
+    description:
+      'How cozy job tracker handles your data. The short version: nothing weird happens with it.',
+    images: ['/api/og/data-policy'],
+  },
 };
 
 export default function DataPolicyPage() {

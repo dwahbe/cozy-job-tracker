@@ -6,6 +6,17 @@ import { ChangelogFeedbackCTA } from './ChangelogFeedbackCTA';
 export const metadata: Metadata = {
   title: "what's new — cozy job tracker",
   description: 'The latest updates and improvements to cozy job tracker.',
+  openGraph: {
+    title: "what's new — cozy job tracker",
+    description: 'The latest updates and improvements to cozy job tracker.',
+    images: [{ url: '/api/og/changelog', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "what's new — cozy job tracker",
+    description: 'The latest updates and improvements to cozy job tracker.',
+    images: ['/api/og/changelog'],
+  },
 };
 
 const tagLabels: Record<string, string> = {
