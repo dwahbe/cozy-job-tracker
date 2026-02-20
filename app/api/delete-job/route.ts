@@ -7,11 +7,10 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, jobLink } = body as { slug: string; jobLink: string };
+    const { slug, jobLink, jobId } = body as { slug: string; jobLink?: string; jobId?: string };
 
-    // Validate jobLink
-    if (!jobLink) {
-      return NextResponse.json({ error: 'jobLink is required' }, { status: 400 });
+    if (!jobLink && !jobId) {
+      return NextResponse.json({ error: 'jobLink or jobId is required' }, { status: 400 });
     }
 
     // Resolve board (auth session or legacy slug)
@@ -20,8 +19,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Find the job
-    const jobIndex = ctx.board.jobs.findIndex((j) => j.link === jobLink);
+    // Find the job — prefer id (always unique), fall back to link
+    const jobIndex = ctx.board.jobs.findIndex(
+      (j) => (jobId && j.id === jobId) || (jobLink && j.link === jobLink)
+    );
     if (jobIndex === -1) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }

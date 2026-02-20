@@ -477,15 +477,15 @@ export function JobTable({
     }
   };
 
-  const handleDelete = async (jobLink: string) => {
+  const handleDelete = async (jobId: string, jobLink: string) => {
     if (!confirm('Move this job to trash?')) return;
 
-    setDeleting(jobLink);
+    setDeleting(jobId);
     try {
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobLink }),
+        body: JSON.stringify({ slug, jobId, jobLink: jobLink || undefined }),
       });
 
       if (response.ok) {
@@ -797,7 +797,7 @@ export function JobTable({
                 <tr
                   key={job.id}
                   ref={isHighlighted ? highlightRef : undefined}
-                  className={`${deleting === job.link ? 'row-deleting' : ''} ${isHighlighted ? 'row-highlight' : ''}`}
+                  className={`${deleting === job.id ? 'row-deleting' : ''} ${isHighlighted ? 'row-highlight' : ''}`}
                   onAnimationEnd={isHighlighted ? onHighlightDone : undefined}
                 >
                   {localOrder.map((colId) => renderCell(job, colId))}
@@ -806,8 +806,8 @@ export function JobTable({
                   </td>
                   <td className="td-actions">
                     <button
-                      onClick={() => handleDelete(job.link)}
-                      disabled={deleting === job.link}
+                      onClick={() => handleDelete(job.id, job.link)}
+                      disabled={deleting === job.id}
                       className="delete-btn"
                       title="Delete job"
                     >

@@ -285,7 +285,7 @@ export function JobCard({ job: serverJob, slug, columns, highlight, onHighlightD
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobLink: serverJob.link }),
+        body: JSON.stringify({ slug, jobId: serverJob.id, jobLink: serverJob.link || undefined }),
       });
 
       if (response.ok) {
