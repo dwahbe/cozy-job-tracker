@@ -992,11 +992,15 @@ a:focus-visible {
 
 @keyframes card-highlight-fade {
   0% {
-    box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.55), var(--shadow);
+    box-shadow:
+      0 0 0 2.5px rgba(245, 158, 11, 0.55),
+      var(--shadow);
     border-color: rgba(245, 158, 11, 0.6);
   }
   50% {
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), var(--shadow);
+    box-shadow:
+      0 0 0 2px rgba(245, 158, 11, 0.2),
+      var(--shadow);
     border-color: rgba(245, 158, 11, 0.3);
   }
   100% {

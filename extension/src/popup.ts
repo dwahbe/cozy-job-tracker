@@ -2,7 +2,15 @@ const API_BASE = 'https://cozyjobtracker.com';
 
 // --- State management ---
 
-type AppState = 'loading' | 'signed-out' | 'ready' | 'adding' | 'preview' | 'saving' | 'success' | 'error';
+type AppState =
+  | 'loading'
+  | 'signed-out'
+  | 'ready'
+  | 'adding'
+  | 'preview'
+  | 'saving'
+  | 'success'
+  | 'error';
 
 interface ValidatedJob {
   title: string | null;

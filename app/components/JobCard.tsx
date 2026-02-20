@@ -194,16 +194,25 @@ const statusColor = (status: string) =>
     Rejected: 'status-rejected',
   })[status] || 'status-saved';
 
-export function JobCard({ job: serverJob, slug, columns, highlight, onHighlightDone }: JobCardProps) {
+export function JobCard({
+  job: serverJob,
+  slug,
+  columns,
+  highlight,
+  onHighlightDone,
+}: JobCardProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-  const highlightRef = useCallback((node: HTMLDivElement | null) => {
-    if (node && highlight) {
-      requestAnimationFrame(() => {
-        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    }
-  }, [highlight]);
+  const highlightRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node && highlight) {
+        requestAnimationFrame(() => {
+          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    },
+    [highlight]
+  );
   const [textFields, setTextFields] = useState<Record<string, string>>({});
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
