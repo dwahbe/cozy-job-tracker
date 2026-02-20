@@ -28,7 +28,7 @@ export function SiteHeader() {
                     : 'muted hover:bg-foreground/5'
                 }`}
               >
-                Board
+                Job board
               </Link>
             </nav>
           )}

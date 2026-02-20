@@ -23,7 +23,7 @@ export function AppNav() {
                   : 'muted hover:bg-foreground/5'
               }`}
             >
-              Board
+              Job board
             </Link>
             <Link
               href="/trash"

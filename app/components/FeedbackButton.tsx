@@ -127,7 +127,7 @@ export function FeedbackButton({ className }: { className?: string }) {
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Ideas, bugs, love notes..."
+                    placeholder="Bugs, feature requests, love notes..."
                     className="feedback-textarea"
                     rows={4}
                     disabled={status === 'sending'}

@@ -28,43 +28,19 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* How it works */}
+        {/* How it works + Why this exists */}
         <div className="mb-12 sm:mb-16 space-y-4">
           <h2 className="text-lg font-semibold">Here&apos;s how it works</h2>
           <p className="muted">
-            Paste a job posting URL and it pulls the title, company, location, type — all of it. Add
-            your own columns, track statuses & due dates, and jot down notes. If you&apos;re sitting
-            on a pile of bookmarks, paste up to 50 URLs at once.
+            Paste a job posting URL and cozy job tracker pulls the title, company, location, etc.
+            Add your own columns, track statuses & due dates, and jot down notes. If you&apos;re
+            sitting on a pile of bookmarks, paste up to 50 URLs at once.
           </p>
           <p className="muted">
             That&apos;s basically it. No AI cover letter generators, no LinkedIn integrations, no
             &ldquo;career coaching.&rdquo; Just a clean board for keeping track of where you
             applied.
           </p>
-        </div>
-
-        {/* Legacy Board Migration -- TEMPORARY */}
-        {boardCount > 0 && (
-          <div className="card p-6 mb-12 sm:mb-16 border-2 border-foreground/15">
-            <h2 className="text-xl font-semibold mb-2">Already have a board?</h2>
-            <p className="muted mb-5">
-              cozy job tracker now has email accounts — your board is safe and waiting. Sign in to
-              claim it and keep your data secure, or access it directly below.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-5">
-              <Link href="/login" className="btn btn-primary text-sm text-center">
-                Sign in &amp; import your board
-              </Link>
-            </div>
-            <div>
-              <p className="text-sm muted mb-2">Or go to your board directly:</p>
-              <LegacyBoardAccess />
-            </div>
-          </div>
-        )}
-
-        {/* Why this exists */}
-        <div>
           <p className="muted">
             I built this because job hunting is stressful enough without fighting your tracking
             tool. It&apos;s free, it&apos;s{' '}
@@ -87,6 +63,26 @@ export default async function HomePage() {
           </p>
           <p className="muted mt-2">—Dylan</p>
         </div>
+
+        {/* Legacy Board Migration -- TEMPORARY */}
+        {boardCount > 0 && (
+          <div className="card p-6 border-2 border-foreground/15">
+            <h2 className="text-xl font-semibold mb-2">Already have a board?</h2>
+            <p className="muted mb-5">
+              cozy job tracker now has email accounts — your board is safe and waiting. Sign in to
+              claim it and keep your data secure, or access it directly below.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              <Link href="/login" className="btn btn-primary text-sm text-center">
+                Sign in &amp; import your board
+              </Link>
+            </div>
+            <div>
+              <p className="text-sm muted mb-2">Or go to your board directly:</p>
+              <LegacyBoardAccess />
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
