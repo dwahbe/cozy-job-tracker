@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://cozyjobtracker.com'),
   title: 'cozy job tracker',
   description: 'calm tracking for a noisy job search',
   openGraph: {

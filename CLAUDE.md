@@ -2,7 +2,7 @@
 
 ## Project overview
 
-cozy job tracker — a calm job search tracking app. Next.js App Router, TypeScript, Tailwind CSS, Vercel KV (Upstash Redis), NextAuth v5 magic link auth. Deployed on Vercel.
+cozy job tracker — a calm job search tracking app. Next.js App Router, TypeScript, Tailwind CSS, Vercel KV (Upstash Redis), NextAuth v5 magic link auth. Deployed on Vercel at https://cozyjobtracker.com.
 
 ## Commands
 
