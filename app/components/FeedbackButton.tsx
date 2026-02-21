@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export function FeedbackButton({ className }: { className?: string }) {
+interface FeedbackButtonProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export function FeedbackButton({ className, children }: FeedbackButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -84,7 +89,7 @@ export function FeedbackButton({ className }: { className?: string }) {
         }
         aria-label="Send feedback"
       >
-        {className ? 'Send feedback' : '💬 Send feedback'}
+        {children || (className ? 'Send feedback' : '💬 Send feedback')}
       </button>
 
       {isOpen &&
