@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import {
   ACCESS_TOKEN_TTL,
   consumeAuthCode,
@@ -17,7 +18,7 @@ const CORS_HEADERS = {
 };
 
 function oauthError(error: string, description: string, status = 400) {
-  return Response.json(
+  return NextResponse.json(
     { error, error_description: description },
     { status, headers: CORS_HEADERS }
   );
@@ -99,7 +100,7 @@ async function issueTokens(userId: string, clientId: string, scope: string) {
     storeRefreshToken(refreshToken, tokenPayload),
   ]);
 
-  return Response.json(
+  return NextResponse.json(
     {
       access_token: accessToken,
       token_type: 'Bearer',

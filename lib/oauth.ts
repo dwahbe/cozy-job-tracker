@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
