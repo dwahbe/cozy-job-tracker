@@ -20,18 +20,27 @@ bun run format:check # Prettier check
 ```
 app/
 ├── (app)/           # Authenticated routes: /board, /settings, /trash
-├── (public)/        # Public routes: /, /login, /changelog, /data-policy
-├── api/             # REST API route handlers
+├── (public)/        # Public routes: /, /login, /changelog, /data-policy, /b/[slug]
+├── api/
+│   ├── [transport]/ # MCP server endpoint (Streamable HTTP)
+│   ├── extension/   # Chrome extension API (add-job, board, me, parse-job, etc.)
+│   └── oauth/       # OAuth token + revoke endpoints
+├── oauth/authorize/ # OAuth consent page + server action
+├── .well-known/     # OAuth discovery metadata (RFC 9728 + RFC 8414)
 ├── components/      # Shared React components
-├── globals.css      # Tailwind + custom design system
+├── globals.css      # Tailwind v4 + custom design system
 ├── layout.tsx       # Root layout
 lib/
-├── kv.ts            # Data types (Job, Board, Column) and KV access
+├── kv.ts            # Data types (Job, Board, SortRule) and KV access
 ├── dal.ts           # Data access layer, verifySession()
 ├── api-auth.ts      # API route auth helpers (resolveBoard, saveBoardAndRevalidate)
-├── actions.ts       # Server actions
+├── oauth.ts         # OAuth helpers (PKCE, tokens, client metadata)
+├── extension-auth.ts # Chrome extension token validation
+├── extractJob.ts    # AI job extraction (OpenAI)
+├── markdown.ts      # Column type definition, re-exported by kv.ts
 auth.ts              # NextAuth config (Resend provider, Upstash adapter)
 proxy.ts             # Middleware for route protection
+extension/           # Chrome extension source (separate package)
 ```
 
 ## Architecture
@@ -41,17 +50,26 @@ proxy.ts             # Middleware for route protection
 - **Auth**: NextAuth v5 beta with Resend magic links. `verifySession()` in `lib/dal.ts` protects server components (redirects to `/login`). `resolveBoard()` in `lib/api-auth.ts` protects API routes
 - **Database**: Vercel KV (Upstash Redis). No ORM — direct KV with typed helpers in `lib/kv.ts`. Keys: `board:{userId}` (auth) or `board:{slug}` (legacy)
 - **State**: React hooks only (no Redux/Zustand). Optimistic updates with rollback. `useLocalStorage` hook with cross-tab sync
-- **AI**: OpenAI gpt-4o-mini parses job URLs into structured data
+- **AI**: OpenAI gpt-4o-mini parses job URLs into structured data (`lib/extractJob.ts`)
+- **MCP**: Remote MCP server at `/api/mcp` (Streamable HTTP via `mcp-handler`). OAuth 2.1 auth flow with PKCE — users authorize via a consent page, tokens stored in Redis. Tools: `list_jobs`, `get_job`, `add_job`, `update_job`, `delete_job`, `search_jobs`, `get_board_summary`, `parse_job_url`
+- **Chrome extension**: Separate package in `extension/`. Communicates via `/api/extension/*` routes, authenticated with extension tokens (`lib/extension-auth.ts`)
 - **Legacy boards**: slug-based with optional PIN protection, being migrated to auth-based
 
 ## Data model
 
-Core types in `lib/kv.ts`:
+Core types in `lib/kv.ts` (Column defined in `lib/markdown.ts`, re-exported):
 
-- **Board**: `title`, `columns`, `columnOrder`, `sortPreference`, `jobs[]`, `trash[]`, `pin`
-- **Job**: `id`, `title`, `company`, `link`, `location`, `employmentType`, `notes`, `status`, `dueDate`, `customFields`
+- **Job**: `id`, `title`, `company`, `link`, `location`, `employmentType`, `notes`, `status`, `dueDate`, `parsedOn`, `verified`, `customFields`
 - **TrashedJob**: extends Job with `deletedAt` (auto-pruned after 30 days)
+- **SortRule**: `field`, `direction` ('asc' | 'desc')
+- **Board**: `title`, `columns`, `columnOrder`, `sortPreference: SortRule[]`, `jobs[]`, `trash[]`, `pin`, `migratedTo?`, `migratedAt?`
 - **Column**: `name`, `type` ('text' | 'checkbox' | 'dropdown'), `options`, `optionColors`
+
+OAuth keys in Redis (defined in `lib/oauth.ts`):
+
+- `oauth:code:{code}` — short-lived auth code (10 min TTL)
+- `oauth:access:{token}` — access token (90 day TTL)
+- `oauth:refresh:{token}` — refresh token (1 year TTL)
 
 ## Coding conventions
 

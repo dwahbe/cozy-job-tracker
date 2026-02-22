@@ -94,9 +94,7 @@ function HandDrawnArrow({
       : 'M 200 10 C 170 12, 80 8, 30 30 Q 10 42, 15 58';
 
   const arrowHead =
-    direction === 'down-right'
-      ? 'M 188 50 L 194 64 L 202 52'
-      : 'M 22 50 L 16 64 L 8 52';
+    direction === 'down-right' ? 'M 188 50 L 194 64 L 202 52' : 'M 22 50 L 16 64 L 8 52';
 
   return (
     <svg ref={ref} viewBox="0 0 210 72" className="hiw-arrow-h" aria-hidden="true">
@@ -334,7 +332,9 @@ function DummyTable() {
 export function HowItWorks() {
   return (
     <section className="hiw">
-      <h2 className="hiw-heading" style={{ fontSize: '1.35rem' }}>Here&apos;s how it works</h2>
+      <h2 className="hiw-heading" style={{ fontSize: '1.35rem' }}>
+        Here&apos;s how it works
+      </h2>
 
       <div className="hiw-steps">
         <StepCard

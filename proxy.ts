@@ -23,7 +23,12 @@ export default async function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from login to their board
+  // Exception: if callbackUrl points to /oauth, honor the OAuth flow instead
   if (isAuthRoute && session?.user) {
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+    if (callbackUrl?.startsWith('/oauth')) {
+      return NextResponse.redirect(new URL(callbackUrl, request.url));
+    }
     return NextResponse.redirect(new URL('/board', request.url));
   }
 
