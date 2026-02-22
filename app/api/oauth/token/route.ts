@@ -25,19 +25,24 @@ function oauthError(error: string, description: string, status = 400) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const params = new URLSearchParams(body);
-  const grantType = params.get('grant_type');
+  try {
+    const body = await req.text();
+    const params = new URLSearchParams(body);
+    const grantType = params.get('grant_type');
 
-  if (grantType === 'authorization_code') {
-    return handleAuthorizationCode(params);
+    if (grantType === 'authorization_code') {
+      return handleAuthorizationCode(params);
+    }
+
+    if (grantType === 'refresh_token') {
+      return handleRefreshToken(params);
+    }
+
+    return oauthError('unsupported_grant_type', `Unsupported grant_type: ${grantType}`);
+  } catch (e) {
+    console.error('[oauth/token]', e);
+    return oauthError('server_error', String(e), 500);
   }
-
-  if (grantType === 'refresh_token') {
-    return handleRefreshToken(params);
-  }
-
-  return oauthError('unsupported_grant_type', `Unsupported grant_type: ${grantType}`);
 }
 
 async function handleAuthorizationCode(params: URLSearchParams) {
