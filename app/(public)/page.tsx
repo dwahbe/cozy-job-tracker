@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { listLegacyBoards } from '@/lib/kv';
 import { LegacyBoardAccess } from '@/app/components/LegacyBoardAccess';
 import { AnimatedCount } from '@/app/components/AnimatedCount';
+import { HowItWorks } from '@/app/components/HowItWorks';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,61 +12,60 @@ export default async function HomePage() {
 
   return (
     <main className="page">
-      <div className="container-app max-w-xl">
-        {/* Hero */}
-        <div className="mb-12 sm:mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-            Track your job hunt, stress-free 🌱
-          </h1>
-          <p className="text-base sm:text-lg muted mb-8">
-            A simple board for tracking where you&apos;ve applied. Paste a URL, get a job card.
-          </p>
-          <div className="flex flex-col sm:flex-row items-start gap-3">
-            <Link href="/login" className="btn btn-primary text-base px-6 py-2.5">
-              Start tracking
-            </Link>
-            <p className="text-sm muted sm:self-center">No password needed — just your email</p>
-          </div>
+      {/* Hero */}
+      <div className="container-app max-w-xl mb-2 sm:mb-4">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+          Track your job hunt, stress-free 🌱
+        </h1>
+        <p className="text-base sm:text-lg muted mb-8">
+          A simple board for tracking the jobs you&apos;re applying to. Paste a job URL, we
+          parse it, and add it to your board with one click.
+        </p>
+        <div className="flex flex-col sm:flex-row items-start gap-3">
+          <Link href="/login" className="btn btn-primary text-base px-6 py-2.5">
+            Create your board
+          </Link>
+          <p className="text-sm muted sm:self-center">Free forever. No ads, no spam.</p>
         </div>
+      </div>
 
-        {/* How it works + Why this exists */}
-        <div className="mb-12 sm:mb-16 space-y-4">
-          <h2 className="text-lg font-semibold">Here&apos;s how it works</h2>
-          <p className="muted">
-            Paste a job posting URL and cozy job tracker pulls the title, company, location, etc.
-            Add your own columns, track statuses & due dates, and jot down notes. If you&apos;re
-            sitting on a pile of bookmarks, paste up to 50 URLs at once.
-          </p>
-          <p className="muted">
-            That&apos;s basically it. No AI cover letter generators, no LinkedIn integrations, no
-            &ldquo;career coaching.&rdquo; Just a clean board for keeping track of where you
-            applied.
-          </p>
-          <p className="muted">
-            I built this because job hunting is stressful enough without fighting your tracking
-            tool. It&apos;s free, it&apos;s{' '}
-            <a
-              href="https://github.com/dwahbe/cozy-job-tracker"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
-            >
-              open source
-            </a>
-            , and I use it myself.
-            {boardCount > 0 && (
-              <>
-                {' '}
-                Currently it&apos;s me and <AnimatedCount value={boardCount} /> other
-                {boardCount === 1 ? '' : 's'}. Come join us!
-              </>
-            )}
-          </p>
-          <p className="muted mt-2">—Dylan</p>
-        </div>
+      {/* How it works — visual 1-2-3 */}
+      <div className="container-app max-w-3xl mb-2 sm:mb-4">
+        <HowItWorks />
+      </div>
 
-        {/* Legacy Board Migration -- TEMPORARY */}
-        {boardCount > 0 && (
+      {/* Why this exists */}
+      <div className="container-app max-w-xl mb-10 sm:mb-14 space-y-4">
+        <p className="muted">
+          That&apos;s basically it. No AI cover letter generators, no LinkedIn integrations, no
+          &ldquo;career coaching.&rdquo; Just a clean board for keeping track of where you applied.
+        </p>
+        <p className="muted">
+          I built this because job hunting is stressful enough without fighting your tracking tool.
+          It&apos;s free, it&apos;s{' '}
+          <a
+            href="https://github.com/dwahbe/cozy-job-tracker"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
+          >
+            open source
+          </a>
+          , and I use it myself.
+          {boardCount > 0 && (
+            <>
+              {' '}
+              Currently it&apos;s me and <AnimatedCount value={boardCount} /> other
+              {boardCount === 1 ? '' : 's'}. Come join us!
+            </>
+          )}
+        </p>
+        <p className="muted mt-2">—Dylan</p>
+      </div>
+
+      {/* Legacy Board Migration -- TEMPORARY */}
+      {boardCount > 0 && (
+        <div className="container-app max-w-xl mb-16 sm:mb-20">
           <div className="card p-6 border-2 border-foreground/15">
             <h2 className="text-xl font-semibold mb-2">Already have a board?</h2>
             <p className="muted mb-5">
@@ -82,8 +82,8 @@ export default async function HomePage() {
               <LegacyBoardAccess />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
