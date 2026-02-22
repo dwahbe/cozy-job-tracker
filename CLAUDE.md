@@ -24,9 +24,9 @@ app/
 ├── api/
 │   ├── [transport]/ # MCP server endpoint (Streamable HTTP)
 │   ├── extension/   # Chrome extension API (add-job, board, me, parse-job, etc.)
-│   └── oauth/       # OAuth token + revoke endpoints
+│   ├── oauth/       # OAuth token + revoke endpoints
+│   └── well-known/  # OAuth discovery metadata (rewritten from /.well-known/)
 ├── oauth/authorize/ # OAuth consent page + server action
-├── .well-known/     # OAuth discovery metadata (RFC 9728 + RFC 8414)
 ├── components/      # Shared React components
 ├── globals.css      # Tailwind v4 + custom design system
 ├── layout.tsx       # Root layout
