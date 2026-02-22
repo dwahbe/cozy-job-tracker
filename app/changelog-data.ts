@@ -9,10 +9,21 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: 'Feb 22, 2026',
+    title: 'AI chat integration',
+    emoji: '🤖',
+    tag: 'new',
+    description:
+      'You can now connect your board to the AI assistant of your choice — like Claude or ChatGPT. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
+    link: {
+      url: '/settings',
+      text: 'Set it up in settings',
+    },
+  },
+  {
     date: 'Feb 19, 2026',
     title: 'Chrome extension',
     emoji: '🧩',
-    tag: 'new',
     description:
       'Save job postings to your board without leaving the page. Just click the extension icon, hit "Add to board", and the job title, company, location, and details are parsed and saved automatically.',
     link: {
