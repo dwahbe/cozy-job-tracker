@@ -16,9 +16,7 @@ export function McpSection() {
   return (
     <div className="card p-6">
       <h2 className="text-lg font-semibold mb-1">MCP server</h2>
-      <p className="muted text-sm mb-4">
-        Connect your job board to AI assistants like Claude or ChatGPT.
-      </p>
+      <p className="muted text-sm mb-4">Connect your job board to AI assistants like Claude.</p>
 
       <div className="space-y-3">
         <div>
