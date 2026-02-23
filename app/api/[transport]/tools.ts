@@ -162,7 +162,7 @@ export const toolDefinitions: ToolDef[] = [
     config: {
       title: 'Update a job',
       description:
-        'Update fields on an existing job. Provide the job ID and whichever fields you want to change.',
+        'Update fields on an existing job. Provide the job ID and whichever fields you want to change. Use customFields to set custom column values by column name.',
       inputSchema: {
         jobId: z.string().describe('The job ID to update'),
         title: z.string().optional().describe('New job title'),
@@ -176,11 +176,18 @@ export const toolDefinitions: ToolDef[] = [
           .optional()
           .describe('New status: Saved, Applied, Interview, Offer, or Rejected'),
         dueDate: z.string().optional().describe('New due date (YYYY-MM-DD)'),
+        customFields: z
+          .record(z.string())
+          .optional()
+          .describe(
+            'Custom column values to update, keyed by column name. For checkbox columns use "Yes"/"No". For dropdown columns use one of the allowed options.'
+          ),
       },
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
-      const { jobId, ...fields } = args as {
+      const { jobId, customFields, ...fields } = args as {
         jobId: string;
+        customFields?: Record<string, string>;
         title?: string;
         company?: string;
         link?: string;
@@ -197,11 +204,35 @@ export const toolDefinitions: ToolDef[] = [
       const job = board.jobs.find((j) => j.id === jobId);
       if (!job) return txt(`Job "${jobId}" not found.`, true);
 
-      const updates = Object.entries(fields).filter(([, v]) => v !== undefined);
-      if (updates.length === 0) return txt('No fields to update.', true);
+      const standardUpdates = Object.entries(fields).filter(([, v]) => v !== undefined);
+      const hasCustom = customFields && Object.keys(customFields).length > 0;
 
-      for (const [key, value] of updates) {
+      if (standardUpdates.length === 0 && !hasCustom) {
+        return txt('No fields to update.', true);
+      }
+
+      for (const [key, value] of standardUpdates) {
         (job as unknown as Record<string, unknown>)[key] = value;
+      }
+
+      if (hasCustom) {
+        const colMap = new Map(board.columns.map((c) => [c.name, c]));
+        for (const [name, value] of Object.entries(customFields)) {
+          const col = colMap.get(name);
+          if (!col) return txt(`Custom column "${name}" does not exist on this board.`, true);
+
+          if (col.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
+            return txt(`Column "${name}" is a checkbox — use "Yes" or "No".`, true);
+          }
+          if (col.type === 'dropdown' && col.options && !col.options.includes(value)) {
+            return txt(
+              `Column "${name}" only accepts: ${col.options.join(', ')}. Got "${value}".`,
+              true
+            );
+          }
+
+          job.customFields[name] = value;
+        }
       }
 
       await saveBoardByUserId(userId, board);

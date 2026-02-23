@@ -54,7 +54,13 @@ async function handleAuthorizationCode(params: URLSearchParams) {
   const codeVerifier = params.get('code_verifier');
 
   if (!code || !clientId || !redirectUri || !codeVerifier) {
-    console.log('[oauth/token] missing params: code=%s clientId=%s uri=%s verifier=%s', !!code, !!clientId, !!redirectUri, !!codeVerifier);
+    console.log(
+      '[oauth/token] missing params: code=%s clientId=%s uri=%s verifier=%s',
+      !!code,
+      !!clientId,
+      !!redirectUri,
+      !!codeVerifier
+    );
     return oauthError('invalid_request', 'Missing required parameters.');
   }
 
@@ -65,12 +71,20 @@ async function handleAuthorizationCode(params: URLSearchParams) {
   }
 
   if (codeData.clientId !== clientId) {
-    console.log('[oauth/token] client_id mismatch: stored=%s received=%s', codeData.clientId, clientId);
+    console.log(
+      '[oauth/token] client_id mismatch: stored=%s received=%s',
+      codeData.clientId,
+      clientId
+    );
     return oauthError('invalid_grant', 'client_id does not match.');
   }
 
   if (codeData.redirectUri !== redirectUri) {
-    console.log('[oauth/token] redirect_uri mismatch: stored=%s received=%s', codeData.redirectUri, redirectUri);
+    console.log(
+      '[oauth/token] redirect_uri mismatch: stored=%s received=%s',
+      codeData.redirectUri,
+      redirectUri
+    );
     return oauthError('invalid_grant', 'redirect_uri does not match.');
   }
 
