@@ -212,7 +212,7 @@ function BrowserChrome({ url, children }: { url: string; children: React.ReactNo
 
 function JobListingMockup() {
   return (
-    <BrowserChrome url="indeed.com/jobs">
+    <BrowserChrome url="linkedin.com/jobs">
       <div className="mock-listing">
         <div className="mock-listing-item">
           <div className="mock-listing-logo mock-listing-logo-alt2">H</div>
