@@ -24,8 +24,7 @@ app/
 ├── api/
 │   ├── [transport]/ # MCP server endpoint (Streamable HTTP)
 │   ├── extension/   # Chrome extension API (add-job, board, me, parse-job, etc.)
-│   ├── oauth/       # OAuth token + revoke endpoints
-│   └── well-known/  # OAuth discovery metadata (rewritten from /.well-known/)
+│   └── oauth/       # OAuth token + revoke endpoints
 ├── oauth/authorize/ # OAuth consent page + server action
 ├── components/      # Shared React components
 ├── globals.css      # Tailwind v4 + custom design system
@@ -37,9 +36,13 @@ lib/
 ├── oauth.ts         # OAuth helpers (PKCE, tokens, client metadata)
 ├── extension-auth.ts # Chrome extension token validation
 ├── extractJob.ts    # AI job extraction (OpenAI)
+├── fetchPage.ts     # Fetch + parse webpage HTML (used by extractJob and MCP)
+├── validateExtraction.ts # Validate/normalize AI extraction output
+├── confetti.ts      # Confetti animation helper
+├── dropdown-colors.ts # Color mappings for dropdown column options
 ├── markdown.ts      # Column type definition, re-exported by kv.ts
 auth.ts              # NextAuth config (Resend provider, Upstash adapter)
-proxy.ts             # Middleware for route protection
+proxy.ts             # Middleware: route protection + /.well-known/ OAuth metadata
 extension/           # Chrome extension source (separate package)
 ```
 
