@@ -1558,6 +1558,11 @@ a:focus-visible {
   color: #d97706;
 }
 
+.changelog-tag-beta {
+  background: rgba(168, 85, 247, 0.12);
+  color: #7c3aed;
+}
+
 .changelog-entry-title {
   font-size: 1.25rem;
   font-weight: 700;

@@ -12,7 +12,7 @@ const handler = createMcpHandler(
     }
   },
   { serverInfo: { name: 'cozy-job-tracker', version: '0.1.0' } },
-  { basePath: '/api', disableSse: true }
+  { basePath: '/api', disableSse: true, verboseLogs: true }
 );
 
 const authedHandler = withMcpAuth(

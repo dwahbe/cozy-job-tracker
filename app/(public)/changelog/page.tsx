@@ -23,6 +23,7 @@ const tagLabels: Record<string, string> = {
   new: 'new',
   improvement: 'improvement',
   fix: 'fix',
+  beta: 'beta',
 };
 
 export default function ChangelogPage() {

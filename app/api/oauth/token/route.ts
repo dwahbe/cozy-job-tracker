@@ -30,6 +30,8 @@ export async function POST(req: Request) {
     const params = new URLSearchParams(body);
     const grantType = params.get('grant_type');
 
+    console.log('[oauth/token] grant_type=%s client_id=%s', grantType, params.get('client_id'));
+
     if (grantType === 'authorization_code') {
       return handleAuthorizationCode(params);
     }
@@ -52,26 +54,32 @@ async function handleAuthorizationCode(params: URLSearchParams) {
   const codeVerifier = params.get('code_verifier');
 
   if (!code || !clientId || !redirectUri || !codeVerifier) {
+    console.log('[oauth/token] missing params: code=%s clientId=%s uri=%s verifier=%s', !!code, !!clientId, !!redirectUri, !!codeVerifier);
     return oauthError('invalid_request', 'Missing required parameters.');
   }
 
   const codeData = await consumeAuthCode(code);
   if (!codeData) {
+    console.log('[oauth/token] auth code invalid or expired');
     return oauthError('invalid_grant', 'Authorization code is invalid or expired.');
   }
 
   if (codeData.clientId !== clientId) {
+    console.log('[oauth/token] client_id mismatch: stored=%s received=%s', codeData.clientId, clientId);
     return oauthError('invalid_grant', 'client_id does not match.');
   }
 
   if (codeData.redirectUri !== redirectUri) {
+    console.log('[oauth/token] redirect_uri mismatch: stored=%s received=%s', codeData.redirectUri, redirectUri);
     return oauthError('invalid_grant', 'redirect_uri does not match.');
   }
 
   if (!verifyPkce(codeVerifier, codeData.codeChallenge)) {
+    console.log('[oauth/token] PKCE failed');
     return oauthError('invalid_grant', 'PKCE verification failed.');
   }
 
+  console.log('[oauth/token] success, issuing tokens for user=%s', codeData.userId);
   return issueTokens(codeData.userId, codeData.clientId, codeData.scope);
 }
 

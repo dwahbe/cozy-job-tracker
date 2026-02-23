@@ -3,7 +3,7 @@ export type ChangelogEntry = {
   title: string;
   emoji: string;
   description: string;
-  tag?: 'new' | 'improvement' | 'fix';
+  tag?: 'new' | 'improvement' | 'fix' | 'beta';
   link?: { url: string; text: string };
 };
 
@@ -12,7 +12,7 @@ export const changelog: ChangelogEntry[] = [
     date: 'Feb 22, 2026',
     title: 'AI chat integration',
     emoji: '🤖',
-    tag: 'new',
+    tag: 'beta',
     description:
       'You can now connect your board to the AI assistant of your choice — like Claude or ChatGPT. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
     link: {
