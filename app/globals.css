@@ -1938,7 +1938,7 @@ a:focus-visible {
     rgba(245, 158, 11, 0.08) 60%,
     transparent 100%
   );
-  animation: parseShimmer 2s ease-in-out infinite;
+  animation: parseShimmer 2s ease-in-out 1 forwards;
 }
 
 @keyframes parseShimmer {
