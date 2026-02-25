@@ -73,6 +73,7 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
     null
   );
   const [customTypes, setCustomTypes] = useState<Record<number, InferredColumnType>>({});
+  const [dropdownOptionDrafts, setDropdownOptionDrafts] = useState<Record<number, string>>({});
 
   const [error, setError] = useState<string | null>(null);
 
@@ -85,6 +86,8 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
       setRows([]);
       setMapping([]);
       setImportResult(null);
+      setCustomTypes({});
+      setDropdownOptionDrafts({});
     }
   };
 
@@ -156,10 +159,16 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
       setMapping(autoMapped);
 
       const inferred: Record<number, InferredColumnType> = {};
+      const initialDropdownDrafts: Record<number, string> = {};
       for (let i = 0; i < data.headers.length; i++) {
-        inferred[i] = inferColumnType(data.rows.map((row: string[]) => row[i] || ''));
+        const inferredType = inferColumnType(data.rows.map((row: string[]) => row[i] || ''));
+        inferred[i] = inferredType;
+        if (inferredType.type === 'dropdown' && inferredType.options) {
+          initialDropdownDrafts[i] = inferredType.options.join(', ');
+        }
       }
       setCustomTypes(inferred);
+      setDropdownOptionDrafts(initialDropdownDrafts);
 
       setImportStep('mapping');
     } catch (err) {
@@ -178,21 +187,26 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
   };
 
   const updateCustomType = (index: number, type: InferredColumnType['type']) => {
-    setCustomTypes((prev) => {
-      const previous = prev[index];
-      const inferredOptions =
-        previous?.options?.length || type !== 'dropdown'
-          ? previous?.options
-          : inferColumnType(rows.map((row) => row[index] || '')).options;
+    const previous = customTypes[index];
+    const inferredOptions =
+      previous?.options?.length || type !== 'dropdown'
+        ? previous?.options
+        : inferColumnType(rows.map((row) => row[index] || '')).options;
 
-      return {
+    setCustomTypes((prev) => ({
+      ...prev,
+      [index]:
+        type === 'dropdown'
+          ? { type, options: inferredOptions || [] }
+          : { type, ...(previous?.options ? { options: previous.options } : {}) },
+    }));
+
+    if (type === 'dropdown') {
+      setDropdownOptionDrafts((prev) => ({
         ...prev,
-        [index]:
-          type === 'dropdown'
-            ? { type, options: inferredOptions || [] }
-            : { type, ...(previous?.options ? { options: previous.options } : {}) },
-      };
-    });
+        [index]: prev[index] ?? (inferredOptions || []).join(', '),
+      }));
+    }
   };
 
   const handleImport = async () => {
@@ -508,16 +522,18 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
                               </label>
                               <input
                                 type="text"
-                                value={customType.options?.join(', ') ?? ''}
-                                onChange={(e) =>
+                                value={dropdownOptionDrafts[index] ?? customType.options?.join(', ') ?? ''}
+                                onChange={(e) => {
+                                  const draft = e.target.value;
+                                  setDropdownOptionDrafts((prev) => ({ ...prev, [index]: draft }));
                                   setCustomTypes((prev) => ({
                                     ...prev,
                                     [index]: {
                                       type: 'dropdown',
-                                      options: parseDropdownOptions(e.target.value),
+                                      options: parseDropdownOptions(draft),
                                     },
-                                  }))
-                                }
+                                  }));
+                                }}
                                 placeholder="e.g. Hot, Warm, Cold"
                                 className="input w-full text-sm"
                               />
