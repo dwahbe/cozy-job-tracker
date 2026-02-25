@@ -43,6 +43,16 @@ function extractUrls(text: string): string[] {
   return urls;
 }
 
+async function parseJsonResponse(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 export function BulkAddForm({ slug }: BulkAddFormProps) {
   const router = useRouter();
   const [input, setInput] = useState('');
@@ -94,22 +104,31 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
 
           if (abortRef.current) return;
 
-          const data = await response.json();
+          const data = await parseJsonResponse(response);
 
           if (!response.ok) {
+            const errorMessage =
+              typeof data.error === 'string' && data.error.length > 0
+                ? data.error
+                : 'Failed to parse';
             setEntries((prev) => {
               const next = [...prev];
               next[idx] = {
                 ...next[idx],
                 status: 'failed',
-                error: data.error || 'Failed to parse',
+                error: errorMessage,
               };
               return next;
             });
           } else {
+            const parsedJob = data.job as ValidatedJob | undefined;
             setEntries((prev) => {
               const next = [...prev];
-              next[idx] = { ...next[idx], status: 'success', job: data.job };
+              if (!parsedJob) {
+                next[idx] = { ...next[idx], status: 'failed', error: 'Failed to parse' };
+                return next;
+              }
+              next[idx] = { ...next[idx], status: 'success', job: parsedJob };
               return next;
             });
           }

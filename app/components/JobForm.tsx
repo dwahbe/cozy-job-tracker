@@ -33,6 +33,16 @@ const emptyManualJob: ManualJob = {
   customFields: {},
 };
 
+async function parseJsonResponse(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 export function JobForm({ slug, columns }: JobFormProps) {
   const router = useRouter();
   const [mode, setMode] = useState<'url' | 'manual' | 'bulk'>('url');
@@ -60,16 +70,28 @@ export function JobForm({ slug, columns }: JobFormProps) {
         body: JSON.stringify({ url, slug }),
       });
 
-      const data = await response.json();
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        setError(data.error || 'Failed to parse job');
-        setErrorType(data.errorType || null);
+        const errorMessage =
+          typeof data.error === 'string' && data.error.length > 0
+            ? data.error
+            : 'Failed to parse job';
+        const nextErrorType =
+          typeof data.errorType === 'string' && data.errorType.length > 0 ? data.errorType : null;
+        setError(errorMessage);
+        setErrorType(nextErrorType);
         return;
       }
 
-      setParsedJob(data.job);
-      if (data.fetchWarning) {
+      if (!data.job) {
+        setError('Failed to parse job');
+        setErrorType('network_error');
+        return;
+      }
+
+      setParsedJob(data.job as ValidatedJob);
+      if (typeof data.fetchWarning === 'string' && data.fetchWarning.length > 0) {
         setFetchWarning(data.fetchWarning);
       }
     } catch (err) {

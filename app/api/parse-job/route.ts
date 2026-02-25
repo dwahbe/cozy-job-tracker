@@ -6,6 +6,7 @@ import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
 
 export const runtime = 'nodejs';
+export const maxDuration = 30;
 
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 
@@ -40,7 +41,14 @@ export async function POST(request: NextRequest) {
     // Fetch the page
     const pageResult = await fetchPage(url);
 
-    if (pageResult.fetchError && pageResult.text.length === 0) {
+    const shouldFailFast =
+      !!pageResult.fetchError &&
+      (pageResult.text.length === 0 ||
+        pageResult.errorType === 'bot_protection' ||
+        pageResult.errorType === 'http_error' ||
+        pageResult.errorType === 'network_error');
+
+    if (shouldFailFast) {
       return NextResponse.json(
         {
           error: pageResult.fetchError,
