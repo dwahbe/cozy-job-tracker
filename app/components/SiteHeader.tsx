@@ -92,6 +92,16 @@ export function SiteHeader() {
               >
                 Job board
               </Link>
+              <Link
+                href="/network"
+                className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
+                  pathname.startsWith('/network')
+                    ? 'font-semibold bg-foreground/10'
+                    : 'muted hover:bg-foreground/5'
+                }`}
+              >
+                Network
+              </Link>
             </nav>
           )}
         </div>

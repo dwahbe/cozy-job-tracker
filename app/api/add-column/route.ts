@@ -4,7 +4,7 @@ import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
-const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown'];
+const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown', 'date'];
 
 export async function POST(request: NextRequest) {
   try {

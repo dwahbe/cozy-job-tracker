@@ -5,7 +5,7 @@
 
 export interface Column {
   name: string;
-  type: 'text' | 'checkbox' | 'dropdown';
+  type: 'text' | 'checkbox' | 'dropdown' | 'date';
   options?: string[];
   optionColors?: Record<string, string>; // option value -> color key (e.g. "High" -> "red")
 }

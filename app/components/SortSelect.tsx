@@ -6,7 +6,7 @@ import type { SortRule } from '@/lib/kv';
 
 export type { SortRule };
 
-const BUILTIN_SORT_FIELDS = [
+const DEFAULT_BUILTIN_FIELDS = [
   { id: 'parsedOn', label: 'Date added' },
   { id: 'dueDate', label: 'Due date' },
   { id: 'status', label: 'Status' },
@@ -21,16 +21,22 @@ interface SortBuilderProps {
   sorts: SortRule[];
   onSortsChange: (sorts: SortRule[]) => void;
   columns: Column[];
+  builtinFields?: { id: string; label: string }[];
 }
 
-export function SortBuilder({ sorts, onSortsChange, columns }: SortBuilderProps) {
+export function SortBuilder({
+  sorts,
+  onSortsChange,
+  columns,
+  builtinFields = DEFAULT_BUILTIN_FIELDS,
+}: SortBuilderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
 
   const allFields = [
-    ...BUILTIN_SORT_FIELDS,
+    ...builtinFields,
     ...columns.map((c) => ({ id: `custom:${c.name}`, label: c.name })),
   ];
 

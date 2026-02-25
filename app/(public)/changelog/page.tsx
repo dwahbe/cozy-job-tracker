@@ -59,22 +59,49 @@ export default function ChangelogPage() {
                   <span className="changelog-emoji">{entry.emoji}</span>
                   {entry.title}
                 </h2>
-                <p className="changelog-entry-desc">
-                  {entry.description}
-                  {entry.link && (
-                    <>
-                      {' '}
-                      <a
-                        href={entry.link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
-                      >
-                        {entry.link.text} →
-                      </a>
-                    </>
-                  )}
-                </p>
+                {Array.isArray(entry.description) ? (
+                  <div className="changelog-entry-desc">
+                    <p>{entry.description[0]}</p>
+                    <ul className="list-disc pl-5 my-2 space-y-1">
+                      {entry.description.slice(1, -1).map((item, j) => (
+                        <li key={j}>{item}</li>
+                      ))}
+                    </ul>
+                    <p>
+                      {entry.description[entry.description.length - 1]}
+                      {entry.link && (
+                        <>
+                          {' '}
+                          <a
+                            href={entry.link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
+                          >
+                            {entry.link.text} →
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="changelog-entry-desc">
+                    {entry.description}
+                    {entry.link && (
+                      <>
+                        {' '}
+                        <a
+                          href={entry.link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
+                        >
+                          {entry.link.text} →
+                        </a>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
             </article>
           ))}

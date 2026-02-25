@@ -2,12 +2,27 @@ export type ChangelogEntry = {
   date: string;
   title: string;
   emoji: string;
-  description: string;
+  description: string | string[];
   tag?: 'new' | 'improvement' | 'fix' | 'beta';
   link?: { url: string; text: string };
 };
 
 export const changelog: ChangelogEntry[] = [
+  {
+    date: 'Feb 23, 2026',
+    title: 'Professional network tab',
+    emoji: '🤝',
+    tag: 'beta',
+    description: [
+      "I got some great feedback from a few users that their job search spreadsheet had a people tab too. Recruiters, old coworkers, friends at companies you're interested in. cozy job tracker couldn't really replace that sheet until it could track people. The new Network tab can:",
+      'Track contacts with name, company, title, LinkedIn, and status',
+      'Add custom columns like you can on the Job board',
+      'Import from Google Sheets with auto-detected column mapping',
+      'Inline editing, drag-and-drop columns, search, and multi-sort',
+      'Link people to jobs on your board',
+      "This is in beta and I'll be refining it and adding more. Let me know what's missing!",
+    ],
+  },
   {
     date: 'Feb 22, 2026',
     title: 'AI chat integration',

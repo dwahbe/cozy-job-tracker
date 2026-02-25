@@ -12,7 +12,7 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
-  const [type, setType] = useState<'text' | 'checkbox' | 'dropdown'>('text');
+  const [type, setType] = useState<'text' | 'checkbox' | 'dropdown' | 'date'>('text');
   const [options, setOptions] = useState<OptionEntry[]>([{ value: '' }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,12 +107,13 @@ export function AddColumnForm({ slug }: AddColumnFormProps) {
           <label className="block text-sm font-medium mb-1">Type</label>
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as 'text' | 'checkbox' | 'dropdown')}
+            onChange={(e) => setType(e.target.value as 'text' | 'checkbox' | 'dropdown' | 'date')}
             className="select"
           >
             <option value="text">Text</option>
             <option value="checkbox">Checkbox (Yes/No)</option>
             <option value="dropdown">Dropdown</option>
+            <option value="date">Date</option>
           </select>
         </div>
 

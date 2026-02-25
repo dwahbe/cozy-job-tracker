@@ -197,10 +197,12 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
 
     // Check for bot protection before processing
     if (detectBotProtection(html, title)) {
+      // Still include OG description for meta-tag extraction fallback
+      const ogDesc = $('meta[property="og:description"]').attr('content')?.trim() || '';
       return {
         finalUrl: response.url || url,
         title,
-        text: '',
+        text: ogDesc,
         fetchedAt,
         fetchError: 'This site blocks automatic access. Please use manual entry instead.',
         errorType: 'bot_protection',
@@ -281,7 +283,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
     // Combine all extracted text, preferring structured data
     const textParts: string[] = [];
     if (jsonLdText) textParts.push(jsonLdText);
-    if (ogDescription && ogDescription.length > 100) textParts.push(ogDescription);
+    if (ogDescription && ogDescription.length > 30) textParts.push(ogDescription);
     if (bodyText.length > 100) textParts.push(bodyText);
 
     const text = textParts.join('\n\n---\n\n');

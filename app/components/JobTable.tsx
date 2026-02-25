@@ -334,6 +334,7 @@ export function JobTable({
   const [textFields, setTextFields] = useState<Record<string, Record<string, string>>>({});
   const [editingCell, setEditingCell] = useState<{ jobLink: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [editLinkValue, setEditLinkValue] = useState('');
   const [localOrder, setLocalOrder] = useState(columnOrder);
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, Record<string, string>>>({});
   const highlightRef = useCallback(
@@ -498,9 +499,15 @@ export function JobTable({
     }
   };
 
-  const startEditing = (jobLink: string, field: string, currentValue: string) => {
+  const startEditing = (
+    jobLink: string,
+    field: string,
+    currentValue: string,
+    currentLinkUrl?: string
+  ) => {
     setEditingCell({ jobLink, field });
     setEditValue(currentValue);
+    setEditLinkValue(currentLinkUrl ?? '');
   };
 
   const saveEdit = async (jobLink: string, field: string, originalValue: string) => {
@@ -510,9 +517,43 @@ export function JobTable({
     }
   };
 
+  const saveTitleAndLink = async (jobLink: string, originalTitle: string, originalLink: string) => {
+    setEditingCell(null);
+    const titleChanged = editValue !== originalTitle;
+    const linkChanged = editLinkValue !== originalLink;
+    if (!titleChanged && !linkChanged) return;
+
+    const fields: { field: string; value: string }[] = [];
+    if (titleChanged) fields.push({ field: 'Title', value: editValue });
+    if (linkChanged) fields.push({ field: 'Link', value: editLinkValue });
+
+    for (const f of fields) {
+      setPendingUpdates((prev) => ({
+        ...prev,
+        [jobLink]: { ...prev[jobLink], [f.field]: f.value },
+      }));
+    }
+
+    try {
+      const response = await fetch('/api/update-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, jobLink, fields }),
+      });
+      if (response.ok) {
+        router.refresh();
+      } else {
+        for (const f of fields) revertPendingUpdate(jobLink, f.field);
+      }
+    } catch {
+      for (const f of fields) revertPendingUpdate(jobLink, f.field);
+    }
+  };
+
   const cancelEdit = () => {
     setEditingCell(null);
     setEditValue('');
+    setEditLinkValue('');
   };
 
   const handleKeyDown = (
@@ -547,16 +588,12 @@ export function JobTable({
     value,
     placeholder = '—',
     className = '',
-    isLink = false,
-    linkHref = '',
   }: {
     jobLink: string;
     field: string;
     value: string;
     placeholder?: string;
     className?: string;
-    isLink?: boolean;
-    linkHref?: string;
   }) => {
     if (isEditing(jobLink, field)) {
       return (
@@ -574,31 +611,6 @@ export function JobTable({
     const displayValue = value || placeholder;
     const isEmpty = !value;
 
-    if (isLink && value) {
-      return (
-        <div className="flex items-center gap-1.5 group/cell">
-          <a href={linkHref} target="_blank" rel="noopener noreferrer" className="job-link">
-            {displayValue}
-          </a>
-          <button
-            onClick={() => startEditing(jobLink, field, value)}
-            className="opacity-0 group-hover/cell:opacity-100 p-0.5 hover:bg-black/5 rounded transition-opacity"
-            title="Edit"
-          >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-muted-3">
-              <path
-                d="M10.5 1.5l2 2-7.5 7.5H3v-2l7.5-7.5zM8.5 3.5l2 2"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-      );
-    }
-
     return (
       <span
         onClick={() => startEditing(jobLink, field, value)}
@@ -606,6 +618,92 @@ export function JobTable({
       >
         {displayValue}
       </span>
+    );
+  };
+
+  const TitleLinkCell = ({ job }: { job: ParsedJob }) => {
+    const editing = isEditing(job.link, 'Title');
+
+    if (editing) {
+      return (
+        <div className="flex flex-col gap-1.5">
+          <AutoHeightTextarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                saveTitleAndLink(job.link, job.title, job.link);
+              } else if (e.key === 'Escape') {
+                cancelEdit();
+              }
+            }}
+            onBlur={() => {}}
+            className="inline-edit"
+            autoFocus
+          />
+          <div className="flex items-center gap-1">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              className="shrink-0 text-muted-3"
+            >
+              <path
+                d="M6.5 11.5h-2a3 3 0 010-6h2M9.5 4.5h2a3 3 0 010 6h-2M5 8h6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              type="text"
+              value={editLinkValue}
+              onChange={(e) => setEditLinkValue(e.target.value)}
+              onBlur={() => saveTitleAndLink(job.link, job.title, job.link)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  saveTitleAndLink(job.link, job.title, job.link);
+                } else if (e.key === 'Escape') {
+                  cancelEdit();
+                }
+              }}
+              placeholder="https://..."
+              className="inline-edit text-xs w-full"
+              style={{ color: 'var(--muted-3)', boxShadow: 'none' }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1.5 group/cell">
+        {job.title ? (
+          <a href={job.link} target="_blank" rel="noopener noreferrer" className="job-link">
+            {job.title}
+          </a>
+        ) : (
+          <span className="text-muted-3">—</span>
+        )}
+        <button
+          onClick={() => startEditing(job.link, 'Title', job.title, job.link)}
+          className="opacity-0 group-hover/cell:opacity-100 p-0.5 hover:bg-black/5 rounded transition-opacity"
+          title="Edit title & link"
+        >
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-muted-3">
+            <path
+              d="M10.5 1.5l2 2-7.5 7.5H3v-2l7.5-7.5zM8.5 3.5l2 2"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
     );
   };
 
@@ -633,13 +731,7 @@ export function JobTable({
         case '_title':
           return (
             <td key={colId} className={col.tdClass}>
-              <EditableCell
-                jobLink={job.link}
-                field="Title"
-                value={job.title}
-                isLink
-                linkHref={job.link}
-              />
+              <TitleLinkCell job={job} />
             </td>
           );
         case '_company':
@@ -735,6 +827,12 @@ export function JobTable({
               </option>
             ))}
           </select>
+        )}
+        {customCol.type === 'date' && (
+          <DueDatePicker
+            value={job.customFields[customCol.name] || ''}
+            onChange={(v) => updateField(job.link, customCol.name, v)}
+          />
         )}
         {customCol.type === 'text' && (
           <input

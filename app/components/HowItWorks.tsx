@@ -258,8 +258,8 @@ function ParseMockup() {
       </div>
       <motion.div
         className="parse-result"
-        initial={{ opacity: 0, height: 0 }}
-        animate={isInView ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.4 }}
       >
         <div className="parse-result-inner">
@@ -370,7 +370,7 @@ export function HowItWorks() {
         <StepCard
           step={3}
           title="Added to your board!"
-          description="Customize with statuses, notes, due dates, and your own columns. That's it — no fluff."
+          description="Customize with statuses, notes, due dates, and your own columns."
           index={2}
           align="full"
         >

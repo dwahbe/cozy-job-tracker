@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   DndContext,
   closestCenter,
@@ -22,9 +21,24 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Column } from '@/lib/markdown';
 import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor';
 
-interface ColumnManagerProps {
-  slug: string;
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface BoardColumnManagerProps {
   columns: Column[];
+  prebuiltColumns?: Column[];
+  prebuiltDescriptions?: Record<string, string>;
+  extraToggles?: {
+    label: string;
+    description: string;
+    active: boolean;
+    onToggle: () => void;
+  }[];
+  onAddColumn: (column: Column) => Promise<boolean>;
+  onEditColumn: (oldName: string, column: Column) => Promise<boolean>;
+  onDeleteColumn: (name: string) => Promise<boolean>;
+  onReorderColumns: (names: string[]) => Promise<boolean>;
 }
 
 type EditingColumn = {
@@ -34,7 +48,10 @@ type EditingColumn = {
   options: OptionEntry[];
 };
 
-// Sortable column chip component
+// ---------------------------------------------------------------------------
+// Sortable chip
+// ---------------------------------------------------------------------------
+
 function SortableColumnChip({
   column,
   onEdit,
@@ -58,7 +75,6 @@ function SortableColumnChip({
 
   return (
     <div ref={setNodeRef} style={style} className="chip group flex items-center gap-2 pr-1">
-      {/* Drag handle */}
       <button
         {...attributes}
         {...listeners}
@@ -121,14 +137,25 @@ function SortableColumnChip({
   );
 }
 
-export function ColumnManager({ slug, columns }: ColumnManagerProps) {
-  const router = useRouter();
+// ---------------------------------------------------------------------------
+// BoardColumnManager
+// ---------------------------------------------------------------------------
+
+export function BoardColumnManager({
+  columns,
+  prebuiltColumns,
+  prebuiltDescriptions,
+  extraToggles,
+  onAddColumn,
+  onEditColumn,
+  onDeleteColumn,
+  onReorderColumns,
+}: BoardColumnManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editing, setEditing] = useState<EditingColumn | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deletingCol, setDeletingCol] = useState<string | null>(null);
   const [localColumns, setLocalColumns] = useState(columns);
 
-  // Sync local state when columns prop changes
   useEffect(() => {
     setLocalColumns(columns);
   }, [columns]);
@@ -141,198 +168,132 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Drag and drop sensors
+  // DnD
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Handle drag end - reorder custom columns
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (over && active.id !== over.id) {
-      const oldIndex = localColumns.findIndex((col) => col.name === active.id);
-      const newIndex = localColumns.findIndex((col) => col.name === over.id);
+      const oldIndex = localColumns.findIndex((c) => c.name === active.id);
+      const newIndex = localColumns.findIndex((c) => c.name === over.id);
+      const reordered = arrayMove(localColumns, oldIndex, newIndex);
+      setLocalColumns(reordered);
 
-      const newColumns = arrayMove(localColumns, oldIndex, newIndex);
-      setLocalColumns(newColumns);
-
-      // Save new order to server
-      try {
-        const response = await fetch('/api/manage-column', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug,
-            columnOrder: newColumns.map((c) => c.name),
-          }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          setError(data.error || 'Failed to reorder columns');
-          setLocalColumns(columns); // Revert on error
-          return;
-        }
-
-        router.refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to reorder columns');
-        setLocalColumns(columns); // Revert on error
+      const ok = await onReorderColumns(reordered.map((c) => c.name));
+      if (!ok) {
+        setLocalColumns(columns);
+        setError('Failed to reorder columns');
       }
     }
   };
 
+  // Prebuilt columns
+  const addedNames = new Set(columns.map((c) => c.name));
+  const availablePrebuilt = prebuiltColumns?.filter((c) => !addedNames.has(c.name)) ?? [];
+
+  const handleAddPrebuilt = async (col: Column) => {
+    setError(null);
+    setLoading(true);
+    const ok = await onAddColumn(col);
+    if (!ok) setError('Failed to add column');
+    setLoading(false);
+  };
+
+  // Add custom column
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    try {
-      const column: {
-        name: string;
-        type: string;
-        options?: string[];
-        optionColors?: Record<string, string>;
-      } = {
-        name: newName.trim(),
-        type: newType,
-      };
+    const column: Column = {
+      name: newName.trim(),
+      type: newType,
+    };
 
-      if (newType === 'dropdown') {
-        const opts = newOptions.map((o) => o.value.trim()).filter(Boolean);
-        if (opts.length === 0) {
-          setError('Dropdown columns need at least one option');
-          setLoading(false);
-          return;
-        }
-        column.options = opts;
-        const colors: Record<string, string> = {};
-        for (const o of newOptions) {
-          if (o.value.trim() && o.color) {
-            colors[o.value.trim()] = o.color;
-          }
-        }
-        if (Object.keys(colors).length > 0) {
-          column.optionColors = colors;
-        }
-      }
-
-      const response = await fetch('/api/add-column', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, column }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Failed to add column');
+    if (newType === 'dropdown') {
+      const opts = newOptions.map((o) => o.value.trim()).filter(Boolean);
+      if (opts.length === 0) {
+        setError('Dropdown columns need at least one option');
+        setLoading(false);
         return;
       }
+      column.options = opts;
+      const colors: Record<string, string> = {};
+      for (const o of newOptions) {
+        if (o.value.trim() && o.color) {
+          colors[o.value.trim()] = o.color;
+        }
+      }
+      if (Object.keys(colors).length > 0) {
+        column.optionColors = colors;
+      }
+    }
 
+    const ok = await onAddColumn(column);
+    if (ok) {
       setNewName('');
       setNewType('text');
       setNewOptions([{ value: '' }]);
       setIsAdding(false);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add column');
-    } finally {
-      setLoading(false);
+    } else {
+      setError('Failed to add column');
     }
+    setLoading(false);
   };
 
+  // Edit column
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-
     setLoading(true);
     setError(null);
 
-    try {
-      const column: {
-        name: string;
-        type: string;
-        options?: string[];
-        optionColors?: Record<string, string>;
-      } = {
-        name: editing.name.trim(),
-        type: editing.type,
-      };
+    const column: Column = {
+      name: editing.name.trim(),
+      type: editing.type,
+    };
 
-      if (editing.type === 'dropdown') {
-        const opts = editing.options.map((o) => o.value.trim()).filter(Boolean);
-        if (opts.length === 0) {
-          setError('Dropdown columns need at least one option');
-          setLoading(false);
-          return;
-        }
-        column.options = opts;
-        const colors: Record<string, string> = {};
-        for (const o of editing.options) {
-          if (o.value.trim() && o.color) {
-            colors[o.value.trim()] = o.color;
-          }
-        }
-        if (Object.keys(colors).length > 0) {
-          column.optionColors = colors;
-        }
-      }
-
-      const response = await fetch('/api/manage-column', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, oldName: editing.originalName, column }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Failed to update column');
+    if (editing.type === 'dropdown') {
+      const opts = editing.options.map((o) => o.value.trim()).filter(Boolean);
+      if (opts.length === 0) {
+        setError('Dropdown columns need at least one option');
+        setLoading(false);
         return;
       }
-
-      setEditing(null);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update column');
-    } finally {
-      setLoading(false);
+      column.options = opts;
+      const colors: Record<string, string> = {};
+      for (const o of editing.options) {
+        if (o.value.trim() && o.color) {
+          colors[o.value.trim()] = o.color;
+        }
+      }
+      if (Object.keys(colors).length > 0) {
+        column.optionColors = colors;
+      }
     }
+
+    const ok = await onEditColumn(editing.originalName, column);
+    if (ok) {
+      setEditing(null);
+    } else {
+      setError('Failed to update column');
+    }
+    setLoading(false);
   };
 
+  // Delete column
   const handleDelete = async (columnName: string) => {
-    if (!confirm(`Delete column "${columnName}"? This will remove this field from all jobs.`)) {
+    if (!confirm(`Delete column "${columnName}"? This will remove this field from all entries.`)) {
       return;
     }
-
-    setDeleting(columnName);
+    setDeletingCol(columnName);
     setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/manage-column?slug=${encodeURIComponent(slug)}&name=${encodeURIComponent(columnName)}`,
-        { method: 'DELETE' }
-      );
-
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Failed to delete column');
-        return;
-      }
-
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete column');
-    } finally {
-      setDeleting(null);
-    }
+    const ok = await onDeleteColumn(columnName);
+    if (!ok) setError('Failed to delete column');
+    setDeletingCol(null);
   };
 
   const startEdit = (col: Column) => {
@@ -348,9 +309,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
   };
 
+  // Determine if we should show the prebuilt/custom panel
+  const hasPrebuilt = availablePrebuilt.length > 0;
+  const hasToggles = extraToggles && extraToggles.some((t) => !t.active);
+
   return (
     <div className="mb-6 sm:mb-8">
-      {/* Error message */}
       {error && <div className="callout callout-error mb-3">{error}</div>}
 
       {/* Edit form */}
@@ -368,7 +332,6 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                 className="input"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1">Type</label>
               <select
@@ -387,14 +350,12 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                 <option value="date">Date</option>
               </select>
             </div>
-
             {editing.type === 'dropdown' && (
               <DropdownOptionsEditor
                 options={editing.options}
                 onChange={(opts) => setEditing({ ...editing, options: opts })}
               />
             )}
-
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -422,6 +383,47 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       {isAdding ? (
         <div className="card p-5 mb-3">
           <h3 className="text-base font-semibold mb-3">Add custom column</h3>
+
+          {/* Prebuilt columns section */}
+          {(hasPrebuilt || hasToggles) && (
+            <div className="mb-4">
+              <p className="text-xs font-medium muted uppercase tracking-wider mb-2">Pre-built</p>
+              <div className="space-y-1.5">
+                {availablePrebuilt.map((col) => (
+                  <button
+                    key={col.name}
+                    onClick={() => handleAddPrebuilt(col)}
+                    disabled={loading}
+                    className="prebuilt-col-btn"
+                  >
+                    <div>
+                      <span className="prebuilt-col-name">{col.name}</span>
+                      <span className="prebuilt-col-type block">
+                        {prebuiltDescriptions?.[col.name] || col.type}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {extraToggles
+                  ?.filter((t) => !t.active)
+                  .map((toggle) => (
+                    <button
+                      key={toggle.label}
+                      onClick={toggle.onToggle}
+                      disabled={loading}
+                      className="prebuilt-col-btn"
+                    >
+                      <div>
+                        <span className="prebuilt-col-name">{toggle.label}</span>
+                        <span className="prebuilt-col-type block">{toggle.description}</span>
+                      </div>
+                    </button>
+                  ))}
+              </div>
+              <p className="text-xs font-medium muted uppercase tracking-wider mb-2 mt-4">Custom</p>
+            </div>
+          )}
+
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
               <label className="block text-sm font-medium mb-1">Column name</label>
@@ -432,9 +434,9 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                 placeholder="e.g., Salary, Referral"
                 required
                 className="input"
+                autoFocus
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1">Type</label>
               <select
@@ -450,11 +452,9 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                 <option value="date">Date</option>
               </select>
             </div>
-
             {newType === 'dropdown' && (
               <DropdownOptionsEditor options={newOptions} onChange={setNewOptions} />
             )}
-
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -484,10 +484,10 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         )
       )}
 
-      {/* Column list with drag and drop */}
-      {localColumns.length > 0 && (
+      {/* Column chips with DnD + active toggle chips */}
+      {(localColumns.length > 0 || extraToggles?.some((t) => t.active)) && (
         <DndContext
-          id="column-manager-dnd"
+          id="board-column-manager-dnd"
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -503,9 +503,35 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
                   column={col}
                   onEdit={() => startEdit(col)}
                   onDelete={() => handleDelete(col.name)}
-                  isDeleting={deleting === col.name}
+                  isDeleting={deletingCol === col.name}
                 />
               ))}
+              {extraToggles
+                ?.filter((t) => t.active)
+                .map((toggle) => (
+                  <div key={toggle.label} className="chip flex items-center gap-2 pr-1">
+                    <span className="font-medium">{toggle.label}</span>
+                    <button
+                      onClick={toggle.onToggle}
+                      className="p-1 rounded hover:bg-danger-soft active:bg-danger-soft text-danger"
+                      title={`Remove ${toggle.label}`}
+                    >
+                      <svg
+                        className="w-3.5 h-3.5 sm:w-3 sm:h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
             </div>
           </SortableContext>
         </DndContext>
