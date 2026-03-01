@@ -19,14 +19,14 @@ export function PublicHeader() {
           {session?.user ? (
             <Link
               href="/board"
-              className="text-sm font-medium px-3 py-1.5 rounded-md bg-foreground text-background hover:opacity-90 transition-opacity"
+              className="btn btn-primary text-sm"
             >
               my board
             </Link>
           ) : (
             <Link
               href="/login"
-              className="text-sm font-medium px-3 py-1.5 rounded-md bg-foreground text-background hover:opacity-90 transition-opacity"
+              className="btn btn-primary text-sm"
             >
               sign in
             </Link>
