@@ -231,10 +231,7 @@ export function SiteHeader() {
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="btn btn-primary btn-sm"
-                >
+                <Link href="/login" className="btn btn-primary btn-sm">
                   Sign in
                 </Link>
               )}

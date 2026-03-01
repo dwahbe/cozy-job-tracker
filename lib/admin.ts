@@ -55,7 +55,9 @@ export async function getAdminStats(): Promise<AdminStats> {
 
   // Fetch all user records first so we know the real user IDs
   const userRecords = await Promise.all(userRecordKeys.map((k) => kv.get<AdapterUser>(k)));
-  const knownUserIds = new Set(userRecords.filter((u): u is AdapterUser => u !== null).map((u) => u.id));
+  const knownUserIds = new Set(
+    userRecords.filter((u): u is AdapterUser => u !== null).map((u) => u.id)
+  );
 
   // Separate auth boards (key matches a known userId) from legacy slug boards
   const allBoardIds = boardKeys.map((k) => k.replace('board:', ''));

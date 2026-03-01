@@ -266,7 +266,9 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
   const visibleHeaders = headers
     .map((header, i) => ({ header, index: i }))
     .filter(({ index }) => !emptyColumns.has(index));
-  const customColumnsToConfigure = visibleHeaders.filter(({ index }) => mapping[index] === 'custom');
+  const customColumnsToConfigure = visibleHeaders.filter(
+    ({ index }) => mapping[index] === 'custom'
+  );
   const mappedCount = mapping.filter((m, i) => m !== 'skip' && !emptyColumns.has(i)).length;
   const previewRows = rows.slice(0, 3);
 
@@ -522,7 +524,11 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
                               </label>
                               <input
                                 type="text"
-                                value={dropdownOptionDrafts[index] ?? customType.options?.join(', ') ?? ''}
+                                value={
+                                  dropdownOptionDrafts[index] ??
+                                  customType.options?.join(', ') ??
+                                  ''
+                                }
                                 onChange={(e) => {
                                   const draft = e.target.value;
                                   setDropdownOptionDrafts((prev) => ({ ...prev, [index]: draft }));

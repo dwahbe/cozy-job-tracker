@@ -17,17 +17,11 @@ export function PublicHeader() {
             what&apos;s new
           </Link>
           {session?.user ? (
-            <Link
-              href="/board"
-              className="btn btn-primary text-sm"
-            >
+            <Link href="/board" className="btn btn-primary text-sm">
               my board
             </Link>
           ) : (
-            <Link
-              href="/login"
-              className="btn btn-primary text-sm"
-            >
+            <Link href="/login" className="btn btn-primary text-sm">
               sign in
             </Link>
           )}

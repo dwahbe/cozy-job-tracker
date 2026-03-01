@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-        <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
         <SessionProvider>
           <SiteHeader />
           {children}
