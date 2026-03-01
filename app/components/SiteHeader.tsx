@@ -72,10 +72,11 @@ export function SiteHeader() {
   }, [activeDropdown, closeDropdown]);
 
   const displayName = session?.user?.name || session?.user?.email || 'Account';
+  const isAppPage = /^\/(board|network|settings|trash)(\/|$)/.test(pathname);
 
   return (
-    <header className="topbar">
-      <div className="container-app h-14 flex items-center justify-between">
+    <header className={`topbar${isAppPage ? '' : ' topbar-sticky'}`}>
+      <nav className="topbar-pill">
         <div className="flex items-center gap-6">
           <Link href="/" className="brand">
             cozy job tracker
@@ -253,7 +254,7 @@ export function SiteHeader() {
         </div>
 
         <MobileMenu />
-      </div>
+      </nav>
     </header>
   );
 }

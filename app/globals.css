@@ -1,27 +1,27 @@
 @import 'tailwindcss';
 
 :root {
-  /* Warm, cozy light theme (default) */
-  --background: #fffaf3; /* warm cream */
-  --background-2: #fff2e2; /* peachy cream */
-  --foreground: #3a271d; /* warm cocoa */
-  --muted: #6a4a3a;
-  --muted-2: #7c5c4a;
-  --muted-3: #a08978; /* extra-light, for placeholders & disabled */
-  --surface: rgba(255, 255, 255, 0.88);
+  /* Refined amber — clean + professional */
+  --background: #fafaf8;
+  --background-2: #f5f4f1;
+  --foreground: #1c1917;
+  --muted: #57534e;
+  --muted-2: #78716c;
+  --muted-3: #a8a29e;
+  --surface: rgba(255, 255, 255, 0.92);
   --surface-solid: #ffffff;
-  --surface-hover: rgba(245, 158, 11, 0.06);
-  --border: rgba(245, 158, 11, 0.28); /* amber */
-  --accent: #d97706; /* amber-600 */
-  --accent-2: #f59e0b; /* amber-500 */
-  --accent-soft: rgba(245, 158, 11, 0.1);
-  --ring: rgba(245, 158, 11, 0.28);
+  --surface-hover: rgba(217, 119, 6, 0.04);
+  --border: rgba(217, 119, 6, 0.18);
+  --accent: #b45309;
+  --accent-2: #d97706;
+  --accent-soft: rgba(217, 119, 6, 0.07);
+  --ring: rgba(217, 119, 6, 0.22);
 
   /* Semantic colors */
   --success: #059669;
-  --success-soft: rgba(16, 185, 129, 0.1);
+  --success-soft: rgba(5, 150, 105, 0.08);
   --danger: #dc2626;
-  --danger-soft: rgba(239, 68, 68, 0.1);
+  --danger-soft: rgba(220, 38, 38, 0.08);
 
   /* Status colors */
   --status-saved-bg: #fef3c7;
@@ -35,9 +35,9 @@
   --status-rejected-bg: #fee2e2;
   --status-rejected-text: #991b1b;
 
-  /* Dropdown option colors (soft fill + dark text, matches cozy status style) */
-  --dropdown-gray-bg: #f0eeeb;
-  --dropdown-gray-text: #4b453e;
+  /* Dropdown option colors */
+  --dropdown-gray-bg: #f0efed;
+  --dropdown-gray-text: #44403c;
   --dropdown-brown-bg: #f5e6d0;
   --dropdown-brown-text: #78522b;
   --dropdown-red-bg: #fce0dc;
@@ -57,30 +57,30 @@
   --dropdown-pink-bg: #fce0ee;
   --dropdown-pink-text: #9d2462;
 
-  --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
-  --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
+  --shadow: 0 10px 26px rgba(28, 25, 23, 0.06);
+  --shadow-hover: 0 14px 34px rgba(28, 25, 23, 0.09);
 
   /* Radius scale */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
   --radius-full: 999px;
   --radius: var(--radius-lg); /* default */
 
-  /* Accent tint scale (for backgrounds, borders, hovers that reference the accent) */
-  --accent-tint-subtle: rgba(245, 158, 11, 0.04);
-  --accent-tint-light: rgba(245, 158, 11, 0.06);
-  --accent-tint-medium: rgba(245, 158, 11, 0.12);
-  --accent-tint-border: rgba(245, 158, 11, 0.22);
-  --accent-tint-strong: rgba(245, 158, 11, 0.55);
+  /* Accent tint scale */
+  --accent-tint-subtle: rgba(217, 119, 6, 0.03);
+  --accent-tint-light: rgba(217, 119, 6, 0.05);
+  --accent-tint-medium: rgba(217, 119, 6, 0.08);
+  --accent-tint-border: rgba(217, 119, 6, 0.15);
+  --accent-tint-strong: rgba(217, 119, 6, 0.4);
 
   /* Background gradient tint colors */
-  --gradient-1: rgba(245, 158, 11, 0.18);
-  --gradient-2: rgba(251, 191, 36, 0.14);
+  --gradient-1: rgba(217, 119, 6, 0.08);
+  --gradient-2: rgba(217, 119, 6, 0.05);
 
   /* Topbar background */
-  --topbar-bg: rgba(255, 250, 243, 0.75);
-  --topbar-border: rgba(245, 158, 11, 0.18);
+  --topbar-bg: rgba(250, 250, 248, 0.8);
+  --topbar-border: rgba(217, 119, 6, 0.12);
 }
 
 /* ===== Theme: Berry Pop (bold + confident) ===== */
@@ -327,33 +327,33 @@ html[data-theme='forest'] {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Force a light, warm palette even when the OS prefers dark. */
-    --background: #fffaf3;
-    --background-2: #fff2e2;
-    --foreground: #3a271d;
-    --muted: #6a4a3a;
-    --muted-2: #7c5c4a;
-    --muted-3: #a08978;
-    --surface: rgba(255, 255, 255, 0.9);
+    /* Force the refined light palette even when the OS prefers dark. */
+    --background: #fafaf8;
+    --background-2: #f5f4f1;
+    --foreground: #1c1917;
+    --muted: #57534e;
+    --muted-2: #78716c;
+    --muted-3: #a8a29e;
+    --surface: rgba(255, 255, 255, 0.92);
     --surface-solid: #ffffff;
-    --surface-hover: rgba(245, 158, 11, 0.06);
-    --border: rgba(245, 158, 11, 0.28);
-    --accent: #d97706;
-    --accent-2: #f59e0b;
-    --accent-soft: rgba(245, 158, 11, 0.1);
-    --ring: rgba(245, 158, 11, 0.28);
+    --surface-hover: rgba(217, 119, 6, 0.04);
+    --border: rgba(217, 119, 6, 0.18);
+    --accent: #b45309;
+    --accent-2: #d97706;
+    --accent-soft: rgba(217, 119, 6, 0.07);
+    --ring: rgba(217, 119, 6, 0.22);
     --success: #059669;
-    --success-soft: rgba(16, 185, 129, 0.1);
+    --success-soft: rgba(5, 150, 105, 0.08);
     --danger: #dc2626;
-    --danger-soft: rgba(239, 68, 68, 0.1);
-    --shadow: 0 10px 26px rgba(58, 39, 29, 0.08);
-    --shadow-hover: 0 14px 34px rgba(58, 39, 29, 0.1);
+    --danger-soft: rgba(220, 38, 38, 0.08);
+    --shadow: 0 10px 26px rgba(28, 25, 23, 0.06);
+    --shadow-hover: 0 14px 34px rgba(28, 25, 23, 0.09);
   }
 }
 
 html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -371,19 +371,19 @@ body {
     'Apple Color Emoji',
     'Segoe UI Emoji';
   background:
-    radial-gradient(900px 450px at 20% -10%, rgba(245, 158, 11, 0.18), transparent 60%),
-    radial-gradient(900px 450px at 85% 0%, rgba(251, 191, 36, 0.14), transparent 55%),
+    radial-gradient(900px 450px at 20% -10%, var(--gradient-1), transparent 60%),
+    radial-gradient(900px 450px at 85% 0%, var(--gradient-2), transparent 55%),
     linear-gradient(180deg, var(--background-2), var(--background));
 }
 
 ::selection {
-  background: rgba(245, 158, 11, 0.35);
+  background: rgba(217, 119, 6, 0.25);
 }
 
 /* Links */
 a {
   color: var(--accent);
-  text-decoration-color: rgba(234, 88, 12, 0.35);
+  text-decoration-color: rgba(180, 83, 9, 0.35);
   text-underline-offset: 3px;
 }
 
@@ -405,17 +405,36 @@ a:focus-visible {
 }
 
 .page {
-  min-height: calc(100dvh - 3.5rem);
+  min-height: calc(100dvh - 4rem);
   padding: 4rem 0 12rem;
 }
 
 .topbar {
+  position: relative;
+  z-index: 50;
+  padding: 0.75rem 1rem 0;
+  pointer-events: none;
+}
+
+.topbar-sticky {
   position: sticky;
   top: 0;
-  z-index: 50;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 250, 243, 0.75);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+}
+
+.topbar-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 64rem;
+  margin: 0 auto;
+  height: 3.25rem;
+  padding: 0 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--topbar-border);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+  pointer-events: auto;
 }
 
 .brand {
@@ -450,7 +469,7 @@ a:focus-visible {
 .card-hover:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-hover);
-  border-color: rgba(245, 158, 11, 0.55);
+  border-color: rgba(217, 119, 6, 0.55);
 }
 
 .btn {
@@ -488,11 +507,11 @@ a:focus-visible {
 .btn-primary {
   color: white;
   background: linear-gradient(135deg, var(--accent-2), var(--accent));
-  box-shadow: 0 12px 22px rgba(234, 88, 12, 0.18);
+  box-shadow: 0 12px 22px rgba(180, 83, 9, 0.18);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 16px 28px rgba(234, 88, 12, 0.22);
+  box-shadow: 0 16px 28px rgba(180, 83, 9, 0.22);
 }
 
 .btn-soft {
@@ -515,7 +534,7 @@ a:focus-visible {
   border-radius: var(--radius-md);
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.22);
   color: var(--foreground);
   transition:
     box-shadow 160ms ease,
@@ -528,7 +547,7 @@ a:focus-visible {
   border-radius: var(--radius-md);
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.22);
   color: var(--foreground);
   transition:
     box-shadow 160ms ease,
@@ -537,13 +556,13 @@ a:focus-visible {
 }
 
 .input::placeholder {
-  color: rgba(106, 74, 58, 0.6);
+  color: rgba(87, 83, 78, 0.6);
 }
 
 .input:focus,
 .select:focus {
   outline: none;
-  border-color: rgba(245, 158, 11, 0.75);
+  border-color: rgba(217, 119, 6, 0.75);
   box-shadow: 0 0 0 4px var(--ring);
 }
 
@@ -555,7 +574,7 @@ a:focus-visible {
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(217, 119, 6, 0.18);
   color: var(--muted);
 }
 
@@ -573,9 +592,9 @@ a:focus-visible {
 }
 
 .callout-warn {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.28);
-  color: rgba(120, 53, 15, 0.95);
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(217, 119, 6, 0.28);
+  color: rgba(146, 64, 14, 0.95);
 }
 
 .btn-sm {
@@ -614,7 +633,7 @@ a:focus-visible {
 .bulk-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(245, 158, 11, 0.25);
+  border: 2px solid rgba(217, 119, 6, 0.25);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: bulkSpin 600ms linear infinite;
@@ -651,7 +670,7 @@ a:focus-visible {
 .feedback-trigger:hover {
   color: var(--foreground);
   background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(217, 119, 6, 0.4);
 }
 
 .feedback-overlay {
@@ -661,7 +680,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(58, 39, 29, 0.25);
+  background: rgba(28, 25, 23, 0.25);
   backdrop-filter: blur(4px);
   animation: fadeIn 150ms ease;
 }
@@ -737,7 +756,7 @@ a:focus-visible {
 }
 
 .feedback-close:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(217, 119, 6, 0.1);
   color: var(--foreground);
 }
 
@@ -746,7 +765,7 @@ a:focus-visible {
   border-radius: 12px;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.22);
   color: var(--foreground);
   font-family: inherit;
   font-size: 0.95rem;
@@ -758,12 +777,12 @@ a:focus-visible {
 }
 
 .feedback-textarea::placeholder {
-  color: rgba(106, 74, 58, 0.5);
+  color: rgba(87, 83, 78, 0.5);
 }
 
 .feedback-textarea:focus {
   outline: none;
-  border-color: rgba(245, 158, 11, 0.75);
+  border-color: rgba(217, 119, 6, 0.75);
   box-shadow: 0 0 0 4px var(--ring);
 }
 
@@ -935,17 +954,17 @@ a:focus-visible {
 .sort-btn:hover {
   color: var(--foreground);
   background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(217, 119, 6, 0.4);
 }
 
 .sort-btn-active {
   color: var(--accent);
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.4);
 }
 
 .sort-btn-active:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(217, 119, 6, 0.12);
 }
 
 .sort-count {
@@ -968,8 +987,8 @@ a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow:
-    0 8px 30px rgba(58, 39, 29, 0.12),
-    0 2px 8px rgba(58, 39, 29, 0.06);
+    0 8px 30px rgba(28, 25, 23, 0.12),
+    0 2px 8px rgba(28, 25, 23, 0.06);
   min-width: 340px;
   max-width: calc(100vw - 16px);
   padding: 6px;
@@ -1014,7 +1033,7 @@ a:focus-visible {
 }
 
 .sort-rule:hover {
-  background: rgba(245, 158, 11, 0.04);
+  background: rgba(217, 119, 6, 0.04);
 }
 
 .sort-rule-label {
@@ -1028,7 +1047,7 @@ a:focus-visible {
 .sort-field-select,
 .sort-dir-select {
   appearance: none;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   border-radius: 6px;
   padding: 5px 22px 5px 8px;
   font-size: 0.78rem;
@@ -1039,7 +1058,7 @@ a:focus-visible {
   transition:
     border-color 120ms ease,
     box-shadow 120ms ease;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238a6a58' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2378716c' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 3px center;
   background-repeat: no-repeat;
   background-size: 14px;
@@ -1048,7 +1067,7 @@ a:focus-visible {
 .sort-field-select:focus,
 .sort-dir-select:focus {
   outline: none;
-  border-color: rgba(245, 158, 11, 0.5);
+  border-color: rgba(217, 119, 6, 0.5);
   box-shadow: 0 0 0 2px var(--ring);
 }
 
@@ -1089,7 +1108,7 @@ a:focus-visible {
   justify-content: space-between;
   padding: 6px 4px 2px;
   margin-top: 2px;
-  border-top: 1px solid rgba(245, 158, 11, 0.12);
+  border-top: 1px solid rgba(217, 119, 6, 0.12);
 }
 
 .sort-add-btn {
@@ -1167,7 +1186,7 @@ a:focus-visible {
   font-size: 0.75rem;
   letter-spacing: 0.01em;
   color: var(--muted);
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(217, 119, 6, 0.06);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   user-select: none;
@@ -1180,7 +1199,7 @@ a:focus-visible {
 }
 
 .job-table th[style]:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(217, 119, 6, 0.12);
 }
 
 .job-table th[style]:active {
@@ -1189,7 +1208,7 @@ a:focus-visible {
 
 .job-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.12);
   vertical-align: middle;
 }
 
@@ -1202,7 +1221,7 @@ a:focus-visible {
 }
 
 .job-table tbody tr:hover {
-  background: rgba(245, 158, 11, 0.04);
+  background: rgba(217, 119, 6, 0.04);
 }
 
 .job-table tbody tr.row-deleting {
@@ -1213,10 +1232,10 @@ a:focus-visible {
 /* New-job highlight animation */
 @keyframes row-highlight-fade {
   0% {
-    background-color: rgba(245, 158, 11, 0.28);
+    background-color: rgba(217, 119, 6, 0.28);
   }
   50% {
-    background-color: rgba(245, 158, 11, 0.12);
+    background-color: rgba(217, 119, 6, 0.12);
   }
   100% {
     background-color: transparent;
@@ -1230,15 +1249,15 @@ a:focus-visible {
 @keyframes card-highlight-fade {
   0% {
     box-shadow:
-      0 0 0 2.5px rgba(245, 158, 11, 0.55),
+      0 0 0 2.5px rgba(217, 119, 6, 0.55),
       var(--shadow);
-    border-color: rgba(245, 158, 11, 0.6);
+    border-color: rgba(217, 119, 6, 0.6);
   }
   50% {
     box-shadow:
-      0 0 0 2px rgba(245, 158, 11, 0.2),
+      0 0 0 2px rgba(217, 119, 6, 0.2),
       var(--shadow);
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(217, 119, 6, 0.3);
   }
   100% {
     box-shadow: var(--shadow);
@@ -1333,7 +1352,7 @@ a:focus-visible {
   font-size: 0.8rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(217, 119, 6, 0.15);
   cursor: pointer;
   appearance: none;
   background-color: var(--surface-solid);
@@ -1388,7 +1407,7 @@ a:focus-visible {
   padding: 4px 8px;
   font-size: 0.8rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   background: var(--surface-solid);
   width: 100%;
   min-width: 80px;
@@ -1526,7 +1545,7 @@ a:focus-visible {
 }
 
 .edit-btn:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(217, 119, 6, 0.1);
   color: var(--accent);
 }
 
@@ -1560,7 +1579,7 @@ a:focus-visible {
   padding: 4px 8px;
   font-size: 0.8rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   background: var(--surface-solid);
   cursor: pointer;
   color: var(--foreground);
@@ -1599,7 +1618,7 @@ a:focus-visible {
 }
 
 .hamburger-btn:hover {
-  background: rgba(245, 158, 11, 0.08);
+  background: rgba(217, 119, 6, 0.08);
 }
 
 .hamburger-line {
@@ -1658,7 +1677,7 @@ a:focus-visible {
 }
 
 .mobile-menu-item:hover {
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(217, 119, 6, 0.06);
 }
 
 /* Topbar what's new link */
@@ -1669,20 +1688,20 @@ a:focus-visible {
   text-decoration: none;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.18);
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.18);
   transition: all 150ms ease;
 }
 
 .topbar-whats-new:hover {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(217, 119, 6, 0.15);
+  border-color: rgba(217, 119, 6, 0.35);
 }
 
 /* What's New Banner */
 .whats-new-banner {
-  background: rgba(245, 158, 11, 0.07);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+  background: rgba(217, 119, 6, 0.07);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.18);
   animation: bannerSlideDown 250ms ease;
 }
 
@@ -1754,7 +1773,7 @@ a:focus-visible {
 }
 
 .whats-new-close:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(217, 119, 6, 0.12);
   color: var(--foreground);
 }
 
@@ -1770,7 +1789,7 @@ a:focus-visible {
   grid-template-columns: 120px 1fr;
   gap: 1.5rem;
   padding: 1.5rem 0;
-  border-top: 1px solid rgba(245, 158, 11, 0.18);
+  border-top: 1px solid rgba(217, 119, 6, 0.18);
 }
 
 .changelog-row:first-child {
@@ -1816,7 +1835,7 @@ a:focus-visible {
 }
 
 .changelog-tag-fix {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(217, 119, 6, 0.12);
   color: #d97706;
 }
 
@@ -1848,8 +1867,8 @@ a:focus-visible {
   margin-top: 2.5rem;
   text-align: center;
   padding: 2rem 1.5rem;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.12));
-  border: 1px dashed rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.08), rgba(217, 119, 6, 0.12));
+  border: 1px dashed rgba(217, 119, 6, 0.35);
   border-radius: var(--radius);
 }
 
@@ -2009,7 +2028,7 @@ a:focus-visible {
   align-items: center;
   gap: 0.6rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(245, 158, 11, 0.04);
+  background: rgba(217, 119, 6, 0.04);
   border-bottom: 1px solid var(--border);
 }
 
@@ -2040,7 +2059,7 @@ a:focus-visible {
   font-size: 0.72rem;
   color: var(--muted-3);
   background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(217, 119, 6, 0.15);
   border-radius: 6px;
   padding: 3px 10px;
   flex: 1;
@@ -2067,7 +2086,7 @@ a:focus-visible {
   gap: 0.65rem;
   padding: 0.55rem 0.65rem;
   border-radius: 10px;
-  border: 1px solid rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(217, 119, 6, 0.18);
   background: rgba(255, 255, 255, 0.6);
   transition: border-color 150ms ease;
 }
@@ -2148,7 +2167,7 @@ a:focus-visible {
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.22);
   font-size: 0.78rem;
   min-width: 0;
   overflow: hidden;
@@ -2173,7 +2192,7 @@ a:focus-visible {
   border-radius: var(--radius-full);
   padding: 0.55rem 1rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
+  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.15);
 }
 
 .parse-result {
@@ -2182,7 +2201,7 @@ a:focus-visible {
 .parse-result-inner {
   position: relative;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.22);
   background: var(--surface-solid);
   padding: 0.75rem;
   overflow: hidden;
@@ -2194,9 +2213,9 @@ a:focus-visible {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(245, 158, 11, 0.08) 40%,
-    rgba(245, 158, 11, 0.15) 50%,
-    rgba(245, 158, 11, 0.08) 60%,
+    rgba(217, 119, 6, 0.08) 40%,
+    rgba(217, 119, 6, 0.15) 50%,
+    rgba(217, 119, 6, 0.08) 60%,
     transparent 100%
   );
   animation: parseShimmer 2s ease-in-out 1 forwards;
@@ -2261,14 +2280,14 @@ a:focus-visible {
   font-size: 0.72rem;
   letter-spacing: 0.01em;
   color: var(--muted);
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(217, 119, 6, 0.06);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .dummy-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.12);
   vertical-align: middle;
 }
 
@@ -2519,7 +2538,7 @@ a:focus-visible {
   font-size: 0.75rem;
   letter-spacing: 0.01em;
   color: var(--muted);
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(217, 119, 6, 0.06);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   user-select: none;
@@ -2531,7 +2550,7 @@ a:focus-visible {
 }
 
 .network-table th[style]:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(217, 119, 6, 0.12);
 }
 
 .network-table th[style]:active {
@@ -2540,7 +2559,7 @@ a:focus-visible {
 
 .network-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.12);
   vertical-align: middle;
 }
 
@@ -2553,7 +2572,7 @@ a:focus-visible {
 }
 
 .network-table tbody tr:hover {
-  background: rgba(245, 158, 11, 0.04);
+  background: rgba(217, 119, 6, 0.04);
 }
 
 .network-table tbody tr.row-deleting {
@@ -2572,9 +2591,9 @@ a:focus-visible {
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    rgba(245, 158, 11, 0.06) 0%,
-    rgba(245, 158, 11, 0.14) 50%,
-    rgba(245, 158, 11, 0.06) 100%
+    rgba(217, 119, 6, 0.06) 0%,
+    rgba(217, 119, 6, 0.14) 50%,
+    rgba(217, 119, 6, 0.06) 100%
   );
   background-size: 200% 100%;
   animation: skeletonShimmer 1.5s ease-in-out infinite;
@@ -2641,7 +2660,7 @@ a:focus-visible {
   max-width: 100vw;
   background: var(--surface-solid);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 30px rgba(58, 39, 29, 0.08);
+  box-shadow: -8px 0 30px rgba(28, 25, 23, 0.08);
   z-index: 40;
   overflow-y: auto;
   padding: 1.5rem;
@@ -2771,7 +2790,7 @@ a:focus-visible {
 .orbit-tooltip {
   position: absolute;
   background: rgba(28, 23, 20, 0.95);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
   color: #fffaf3;
@@ -2811,7 +2830,7 @@ a:focus-visible {
   font-size: 0.7rem;
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   background: rgba(28, 23, 20, 0.8);
   color: rgba(255, 250, 243, 0.5);
   cursor: pointer;
@@ -2823,7 +2842,7 @@ a:focus-visible {
 
 .orbit-filter-btn:hover,
 .orbit-filter-btn.active {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(217, 119, 6, 0.15);
   color: var(--accent-2);
   border-color: var(--accent-2);
 }

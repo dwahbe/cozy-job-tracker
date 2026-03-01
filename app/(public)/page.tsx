@@ -15,11 +15,11 @@ export default async function HomePage() {
       {/* Hero */}
       <div className="container-app max-w-xl mb-2 sm:mb-4">
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-          Track your job hunt, stress-free 🌱
+          Track your job applications 🌱
         </h1>
         <p className="text-base sm:text-lg muted mb-8">
-          A simple board for tracking the jobs you&apos;re applying to. Paste a job URL, we parse
-          it, and add it to your board with one click.
+          A simple board for tracking the jobs you&apos;re applying to and the people helping you
+          get there. Paste a job URL, it gets parsed, and added to your board with one click.
         </p>
         <div className="flex flex-col sm:flex-row items-start gap-3">
           <Link href="/login" className="btn btn-primary text-base px-6 py-2.5">
