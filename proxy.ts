@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 
-const protectedPrefixes = ['/board', '/settings'];
+const protectedPrefixes = ['/board', '/settings', '/admin'];
 const authRoutes = ['/login'];
 
 const BASE = 'https://cozyjobtracker.com';
