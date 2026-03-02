@@ -55,8 +55,7 @@ export default async function HomePage() {
           {boardCount > 0 && (
             <>
               {' '}
-              Currently it&apos;s me and <AnimatedCount value={boardCount} /> other
-              {boardCount === 1 ? '' : 's'}. Come join us!
+              Currently helping <AnimatedCount value={boardCount} /> people track job apps!
             </>
           )}
         </p>
