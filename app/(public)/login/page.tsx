@@ -2,20 +2,33 @@
 
 import { signIn } from 'next-auth/react';
 import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const searchParams = useSearchParams();
+  const router = useRouter();
   const isVerify = searchParams.has('verify');
   const callbackUrl = searchParams.get('callbackUrl') || '/board';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await signIn('resend', { email, callbackUrl });
-    setLoading(false);
+    setError('');
+    try {
+      const result = await signIn('resend', { email, callbackUrl, redirect: false });
+      if (result?.error) {
+        setError('Something went wrong — please try again.');
+        setLoading(false);
+      } else {
+        router.push('/login?verify=1');
+      }
+    } catch {
+      setError('Something went wrong — please try again.');
+      setLoading(false);
+    }
   }
 
   if (isVerify) {
@@ -58,6 +71,7 @@ function LoginForm() {
             <button type="submit" disabled={loading || !email} className="btn btn-primary w-full">
               {loading ? 'Sending...' : 'Send magic link'}
             </button>
+            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
           </form>
           <p className="text-sm muted mt-5 text-center">
             Already have a board with a /b/ link? Sign in and you&apos;ll be able to import it.
