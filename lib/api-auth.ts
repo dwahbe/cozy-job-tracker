@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { getBoard, saveBoard, getBoardByUserId, saveBoardByUserId, type Board } from '@/lib/kv';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 
 const SLUG_REGEX = /^[a-z0-9-]+$/;
 
@@ -38,11 +39,15 @@ export async function resolveBoard(slug: string | undefined): Promise<BoardConte
 export async function saveBoardAndRevalidate(ctx: BoardContext): Promise<void> {
   if (ctx.isAuth) {
     await saveBoardByUserId(ctx.key, ctx.board);
-    revalidatePath('/board');
-    revalidatePath('/trash');
+    after(() => {
+      revalidatePath('/board');
+      revalidatePath('/trash');
+    });
   } else {
     await saveBoard(ctx.key, ctx.board);
-    revalidatePath(`/b/${ctx.key}`);
+    after(() => {
+      revalidatePath(`/b/${ctx.key}`);
+    });
   }
 }
 

@@ -176,9 +176,9 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         });
 
         if (!response.ok) {
-          const data = await response.json();
+          const data = await response.json().catch(() => ({}));
           setError(data.error || 'Failed to reorder columns');
-          setLocalColumns(columns); // Revert on error
+          setLocalColumns(columns);
           return;
         }
 
@@ -231,8 +231,8 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         body: JSON.stringify({ slug, column }),
       });
 
-      const data = await response.json();
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
         setError(data.error || 'Failed to add column');
         return;
       }
@@ -292,8 +292,8 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         body: JSON.stringify({ slug, oldName: editing.originalName, column }),
       });
 
-      const data = await response.json();
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
         setError(data.error || 'Failed to update column');
         return;
       }
@@ -321,8 +321,8 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
         { method: 'DELETE' }
       );
 
-      const data = await response.json();
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
         setError(data.error || 'Failed to delete column');
         return;
       }
