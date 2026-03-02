@@ -184,7 +184,7 @@ a:focus-visible {
 
 .page {
   min-height: calc(100dvh - 4rem);
-  padding: 4rem 0 12rem;
+  padding: 4rem 0 4rem;
 }
 
 .topbar {
@@ -2111,7 +2111,7 @@ a:focus-visible {
 /* Mobile responsiveness */
 @media (max-width: 640px) {
   .page {
-    padding: 2rem 0 10rem;
+    padding: 2rem 0 2rem;
   }
 
   .container-app {

@@ -64,7 +64,7 @@ export default async function HomePage() {
 
       {/* Legacy Board Migration -- TEMPORARY */}
       {boardCount > 0 && (
-        <div className="container-app max-w-xl mb-16 sm:mb-20">
+        <div className="container-app max-w-xl mb-4 sm:mb-6">
           <div className="card p-6 border-2 border-foreground/15">
             <h2 className="text-xl font-semibold mb-2">Already have a board?</h2>
             <p className="muted mb-5">
