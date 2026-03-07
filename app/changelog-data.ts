@@ -29,7 +29,7 @@ export const changelog: ChangelogEntry[] = [
     emoji: '🤖',
     tag: 'new',
     description:
-      'You can now connect your board to the AI assistant of your choice — like Claude or ChatGPT. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
+      'You can now connect your board to the AI assistant of your choice — I recommend Claude. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
     link: {
       url: '/settings',
       text: 'Set it up in settings',
