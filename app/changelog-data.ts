@@ -27,7 +27,7 @@ export const changelog: ChangelogEntry[] = [
     date: 'Feb 22, 2026',
     title: 'AI chat integration',
     emoji: '🤖',
-    tag: 'beta',
+    tag: 'new',
     description:
       'You can now connect your board to the AI assistant of your choice — like Claude or ChatGPT. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
     link: {
