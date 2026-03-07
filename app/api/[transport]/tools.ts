@@ -1,6 +1,15 @@
 import { z } from 'zod';
 import { getBoardByUserId, saveBoardByUserId, generateJobId, pruneTrash } from '@/lib/kv';
 import type { Job, TrashedJob } from '@/lib/kv';
+import {
+  getNetworkByUserId,
+  saveNetworkByUserId,
+  generatePersonId,
+  generateInteractionId,
+  PERSON_STATUSES,
+  STATUS_LABELS,
+} from '@/lib/network';
+import type { Person, PersonStatus, Interaction, NetworkData } from '@/lib/network';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -29,6 +38,40 @@ function formatJob(job: Job): string {
   if (job.notes) lines.push(`Notes: ${job.notes}`);
 
   const customEntries = Object.entries(job.customFields).filter(([, v]) => v);
+  if (customEntries.length > 0) {
+    for (const [key, value] of customEntries) {
+      lines.push(`${key}: ${value}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+const NETWORK_NOT_FOUND = txt(
+  'Network not found. Enable networking at cozyjobtracker.com/network.',
+  true
+);
+
+async function getNetwork(userId: string): Promise<NetworkData | null> {
+  const data = await getNetworkByUserId(userId);
+  if (!data) return null;
+  return data;
+}
+
+function formatPerson(person: Person): string {
+  const statusLabel = STATUS_LABELS[person.status] ?? person.status;
+  const lines = [
+    `**${person.name}**${person.company ? ` at ${person.company}` : ''}`,
+    `Status: ${statusLabel}`,
+    `ID: ${person.id}`,
+  ];
+  if (person.role) lines.push(`Role: ${person.role}`);
+  if (person.linkedinUrl) lines.push(`LinkedIn: ${person.linkedinUrl}`);
+  if (person.lastContacted) lines.push(`Last contacted: ${person.lastContacted}`);
+  if (person.interactions.length > 0)
+    lines.push(`Interactions: ${person.interactions.length}`);
+
+  const customEntries = Object.entries(person.customFields).filter(([, v]) => v);
   if (customEntries.length > 0) {
     for (const [key, value] of customEntries) {
       lines.push(`${key}: ${value}`);
@@ -406,6 +449,399 @@ export const toolDefinitions: ToolDef[] = [
           true
         );
       }
+    },
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Network (contacts) tools
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ── list_people ─────────────────────────────────────────────
+  {
+    name: 'list_people',
+    config: {
+      title: 'List people',
+      description:
+        'List all people in the network. Optionally filter by status (not-contacted, reached-out, waiting, in-conversation, paused).',
+      inputSchema: {
+        status: z
+          .string()
+          .optional()
+          .describe(
+            'Filter by status: not-contacted, reached-out, waiting, in-conversation, or paused'
+          ),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { status } = args as { status?: string };
+      const network = await getNetwork(getUserId(extra as Extra));
+      if (!network) return NETWORK_NOT_FOUND;
+
+      let people = network.people;
+      if (status) people = people.filter((p) => p.status === status);
+
+      if (people.length === 0) {
+        return txt(
+          status ? `No people with status "${status}".` : 'No people in the network yet.'
+        );
+      }
+
+      const out = people.map(formatPerson).join('\n\n---\n\n');
+      return txt(`${people.length} person(s):\n\n${out}`);
+    },
+  },
+
+  // ── get_person ──────────────────────────────────────────────
+  {
+    name: 'get_person',
+    config: {
+      title: 'Get person details',
+      description:
+        'Get full details of a person by ID, including their interaction history.',
+      inputSchema: {
+        personId: z.string().describe('The person ID'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { personId } = args as { personId: string };
+      const network = await getNetwork(getUserId(extra as Extra));
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const person = network.people.find((p) => p.id === personId);
+      if (!person) return txt(`Person "${personId}" not found.`, true);
+
+      const lines = [formatPerson(person)];
+
+      if (person.interactions.length > 0) {
+        lines.push('', 'Interaction history:');
+        for (const ix of person.interactions) {
+          const entry = `  - ${ix.date} [${ix.type}]${ix.note ? `: ${ix.note}` : ''}`;
+          lines.push(entry);
+        }
+      }
+
+      return txt(lines.join('\n'));
+    },
+  },
+
+  // ── search_people ───────────────────────────────────────────
+  {
+    name: 'search_people',
+    config: {
+      title: 'Search people',
+      description: 'Search people by text across name, company, and role.',
+      inputSchema: {
+        query: z.string().describe('Search text'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { query } = args as { query: string };
+      const network = await getNetwork(getUserId(extra as Extra));
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const q = query.toLowerCase();
+      const matches = network.people.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.company.toLowerCase().includes(q) ||
+          p.role.toLowerCase().includes(q)
+      );
+
+      if (matches.length === 0) return txt(`No people matching "${query}".`);
+
+      const out = matches.map(formatPerson).join('\n\n---\n\n');
+      return txt(`${matches.length} result(s):\n\n${out}`);
+    },
+  },
+
+  // ── get_network_summary ─────────────────────────────────────
+  {
+    name: 'get_network_summary',
+    config: {
+      title: 'Network summary',
+      description:
+        'Get a summary of the networking board: total people, counts by status, and recent additions.',
+      inputSchema: {},
+      annotations: { readOnlyHint: true },
+    },
+    handler: async (_args: unknown, extra: unknown): Promise<TextResult> => {
+      const network = await getNetwork(getUserId(extra as Extra));
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const total = network.people.length;
+      const byStatus: Record<string, number> = {};
+      for (const person of network.people) {
+        const label = STATUS_LABELS[person.status] ?? person.status;
+        byStatus[label] = (byStatus[label] || 0) + 1;
+      }
+
+      const recent = [...network.people]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 5);
+
+      const lines = ['**Network**', `Total people: ${total}`];
+
+      if (total > 0) {
+        lines.push('', 'By status:');
+        for (const [status, count] of Object.entries(byStatus)) {
+          lines.push(`  ${status}: ${count}`);
+        }
+      }
+
+      if (recent.length > 0) {
+        lines.push('', 'Recently added:');
+        for (const p of recent) {
+          const label = STATUS_LABELS[p.status] ?? p.status;
+          lines.push(`  - ${p.name}${p.company ? ` at ${p.company}` : ''} (${label})`);
+        }
+      }
+
+      return txt(lines.join('\n'));
+    },
+  },
+
+  // ── add_person ──────────────────────────────────────────────
+  {
+    name: 'add_person',
+    config: {
+      title: 'Add a person',
+      description:
+        'Add a person to the networking board. Only name is required.',
+      inputSchema: {
+        name: z.string().describe('Person name'),
+        company: z.string().optional().describe('Company name'),
+        role: z.string().optional().describe('Job title / role'),
+        linkedinUrl: z.string().optional().describe('LinkedIn profile URL'),
+        status: z
+          .string()
+          .optional()
+          .describe(
+            'Status: not-contacted, reached-out, waiting, in-conversation, or paused. Defaults to not-contacted.'
+          ),
+      },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { name, company, role, linkedinUrl, status } = args as {
+        name: string;
+        company?: string;
+        role?: string;
+        linkedinUrl?: string;
+        status?: string;
+      };
+      const userId = getUserId(extra as Extra);
+      const network = await getNetwork(userId);
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const personStatus: PersonStatus =
+        status && PERSON_STATUSES.includes(status as PersonStatus)
+          ? (status as PersonStatus)
+          : 'not-contacted';
+
+      const customFields: Record<string, string> = {};
+      for (const col of network.columns) {
+        customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
+      }
+
+      const person: Person = {
+        id: generatePersonId(),
+        name,
+        linkedinUrl: linkedinUrl || '',
+        company: company || '',
+        role: role || '',
+        status: personStatus,
+        lastContacted: null,
+        linkedJobIds: [],
+        interactions: [],
+        customFields,
+        createdAt: new Date().toISOString(),
+      };
+
+      network.people.unshift(person);
+      await saveNetworkByUserId(userId, network);
+      revalidatePath('/network');
+
+      return txt(`Added ${name}${company ? ` at ${company}` : ''} to the network.`);
+    },
+  },
+
+  // ── update_person ───────────────────────────────────────────
+  {
+    name: 'update_person',
+    config: {
+      title: 'Update a person',
+      description:
+        'Update fields on an existing person. Provide the person ID and whichever fields you want to change. Use customFields to set custom column values by column name.',
+      inputSchema: {
+        personId: z.string().describe('The person ID to update'),
+        name: z.string().optional().describe('New name'),
+        company: z.string().optional().describe('New company'),
+        role: z.string().optional().describe('New role / title'),
+        linkedinUrl: z.string().optional().describe('New LinkedIn URL'),
+        status: z
+          .string()
+          .optional()
+          .describe(
+            'New status: not-contacted, reached-out, waiting, in-conversation, or paused'
+          ),
+        customFields: z
+          .record(z.string())
+          .optional()
+          .describe(
+            'Custom column values to update, keyed by column name. For checkbox columns use "Yes"/"No". For dropdown columns use one of the allowed options.'
+          ),
+      },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { personId, customFields, ...fields } = args as {
+        personId: string;
+        customFields?: Record<string, string>;
+        name?: string;
+        company?: string;
+        role?: string;
+        linkedinUrl?: string;
+        status?: string;
+      };
+      const userId = getUserId(extra as Extra);
+      const network = await getNetwork(userId);
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const person = network.people.find((p) => p.id === personId);
+      if (!person) return txt(`Person "${personId}" not found.`, true);
+
+      const standardUpdates = Object.entries(fields).filter(([, v]) => v !== undefined);
+      const hasCustom = customFields && Object.keys(customFields).length > 0;
+
+      if (standardUpdates.length === 0 && !hasCustom) {
+        return txt('No fields to update.', true);
+      }
+
+      if (fields.status && !PERSON_STATUSES.includes(fields.status as PersonStatus)) {
+        return txt(
+          `Invalid status "${fields.status}". Use: ${PERSON_STATUSES.join(', ')}.`,
+          true
+        );
+      }
+
+      for (const [key, value] of standardUpdates) {
+        (person as unknown as Record<string, unknown>)[key] = value;
+      }
+
+      if (hasCustom) {
+        const colMap = new Map(network.columns.map((c) => [c.name, c]));
+        for (const [colName, value] of Object.entries(customFields)) {
+          const col = colMap.get(colName);
+          if (!col)
+            return txt(`Custom column "${colName}" does not exist on the network.`, true);
+
+          if (col.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
+            return txt(`Column "${colName}" is a checkbox — use "Yes" or "No".`, true);
+          }
+          if (col.type === 'dropdown' && col.options && !col.options.includes(value)) {
+            return txt(
+              `Column "${colName}" only accepts: ${col.options.join(', ')}. Got "${value}".`,
+              true
+            );
+          }
+
+          person.customFields[colName] = value;
+        }
+      }
+
+      await saveNetworkByUserId(userId, network);
+      revalidatePath('/network');
+
+      return txt(`Updated ${person.name}.`);
+    },
+  },
+
+  // ── delete_person ───────────────────────────────────────────
+  {
+    name: 'delete_person',
+    config: {
+      title: 'Delete a person',
+      description: 'Permanently delete a person from the networking board.',
+      inputSchema: {
+        personId: z.string().describe('The person ID to delete'),
+      },
+      annotations: { destructiveHint: true },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { personId } = args as { personId: string };
+      const userId = getUserId(extra as Extra);
+      const network = await getNetwork(userId);
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const idx = network.people.findIndex((p) => p.id === personId);
+      if (idx === -1) return txt(`Person "${personId}" not found.`, true);
+
+      const [person] = network.people.splice(idx, 1);
+      await saveNetworkByUserId(userId, network);
+      revalidatePath('/network');
+
+      return txt(`Deleted ${person.name} from the network.`);
+    },
+  },
+
+  // ── log_interaction ─────────────────────────────────────────
+  {
+    name: 'log_interaction',
+    config: {
+      title: 'Log an interaction',
+      description:
+        'Log an interaction with a person. Automatically updates their last-contacted date and status.',
+      inputSchema: {
+        personId: z.string().describe('The person ID'),
+        type: z
+          .string()
+          .describe('Interaction type: reached-out, met, followed-up, or note'),
+        note: z.string().optional().describe('Optional note about the interaction'),
+      },
+    },
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
+      const { personId, type, note } = args as {
+        personId: string;
+        type: string;
+        note?: string;
+      };
+      const userId = getUserId(extra as Extra);
+      const network = await getNetwork(userId);
+      if (!network) return NETWORK_NOT_FOUND;
+
+      const validTypes = ['reached-out', 'met', 'followed-up', 'note'] as const;
+      if (!validTypes.includes(type as Interaction['type'])) {
+        return txt(
+          `Invalid interaction type "${type}". Use: ${validTypes.join(', ')}.`,
+          true
+        );
+      }
+
+      const person = network.people.find((p) => p.id === personId);
+      if (!person) return txt(`Person "${personId}" not found.`, true);
+
+      const interaction: Interaction = {
+        id: generateInteractionId(),
+        type: type as Interaction['type'],
+        date: new Date().toISOString().split('T')[0],
+        ...(note ? { note } : {}),
+      };
+
+      person.interactions.unshift(interaction);
+      person.lastContacted = interaction.date;
+
+      if (type !== 'note') {
+        person.status = type === 'reached-out' ? 'reached-out' : 'in-conversation';
+      }
+
+      await saveNetworkByUserId(userId, network);
+      revalidatePath('/network');
+
+      const label = STATUS_LABELS[person.status] ?? person.status;
+      return txt(
+        `Logged "${type}" interaction with ${person.name}. Status is now "${label}".`
+      );
     },
   },
 ];
