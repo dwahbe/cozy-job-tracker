@@ -1,5 +1,10 @@
 import { verifySession } from '@/lib/dal';
-import { getNetworkByUserId, saveNetworkByUserId, getNetworkColumnOrder } from '@/lib/network';
+import {
+  getNetworkByUserId,
+  saveNetworkByUserId,
+  getNetworkColumnOrder,
+  pruneNetworkTrash,
+} from '@/lib/network';
 import { getBoardByUserId } from '@/lib/kv';
 import { NetworkView } from '@/app/components/NetworkView';
 import { RefreshOnFocus } from '@/app/components/RefreshOnFocus';
@@ -13,6 +18,10 @@ export default async function NetworkPage() {
   let network = await getNetworkByUserId(userId);
   if (!network) {
     network = { people: [], columns: [] };
+    await saveNetworkByUserId(userId, network);
+  }
+
+  if (pruneNetworkTrash(network)) {
     await saveNetworkByUserId(userId, network);
   }
 
@@ -43,6 +52,7 @@ export default async function NetworkPage() {
           showLinkedJobs={network.showLinkedJobs ?? false}
           jobs={jobs}
           userName={userName}
+          trashCount={network.trash?.length ?? 0}
         />
       </div>
     </main>

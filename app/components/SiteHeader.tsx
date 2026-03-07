@@ -72,7 +72,7 @@ export function SiteHeader() {
   }, [activeDropdown, closeDropdown]);
 
   const displayName = session?.user?.name || session?.user?.email || 'Account';
-  const isAppPage = /^\/(board|network|settings|trash)(\/|$)/.test(pathname);
+  const isAppPage = /^\/(board|network|settings)(\/|$)/.test(pathname);
 
   return (
     <header className={`topbar${isAppPage ? '' : ' topbar-sticky'}`}>

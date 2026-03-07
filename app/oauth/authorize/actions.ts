@@ -1,6 +1,5 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { generateCode, storeAuthCode, validateRedirectUri } from '@/lib/oauth';
 
@@ -12,7 +11,7 @@ interface ApproveInput {
   scope: string;
 }
 
-export async function approveConsent(input: ApproveInput): Promise<never> {
+export async function approveConsent(input: ApproveInput): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
@@ -36,5 +35,5 @@ export async function approveConsent(input: ApproveInput): Promise<never> {
   url.searchParams.set('code', code);
   if (input.state) url.searchParams.set('state', input.state);
 
-  redirect(url.toString());
+  return url.toString();
 }

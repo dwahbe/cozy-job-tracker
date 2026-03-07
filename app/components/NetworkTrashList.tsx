@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TrashedJob } from '@/lib/kv';
+import type { TrashedPerson } from '@/lib/network';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -22,23 +22,22 @@ function daysUntilPermanentDelete(dateStr: string): number {
   return Math.max(0, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
-interface TrashListProps {
-  items: TrashedJob[];
-  slug: string;
+interface NetworkTrashListProps {
+  items: TrashedPerson[];
 }
 
-export function TrashList({ items, slug }: TrashListProps) {
+export function NetworkTrashList({ items }: NetworkTrashListProps) {
   const router = useRouter();
   const [restoring, setRestoring] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
 
-  const handleRestore = async (jobId: string) => {
-    setRestoring(jobId);
+  const handleRestore = async (personId: string) => {
+    setRestoring(personId);
     try {
-      const response = await fetch('/api/restore-job', {
+      const response = await fetch('/api/network/restore-person', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId }),
+        body: JSON.stringify({ personId }),
       });
       if (response.ok) {
         router.refresh();
@@ -55,10 +54,9 @@ export function TrashList({ items, slug }: TrashListProps) {
 
     setEmptying(true);
     try {
-      const response = await fetch('/api/empty-trash', {
+      const response = await fetch('/api/network/empty-trash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug }),
       });
       if (response.ok) {
         router.refresh();
@@ -75,7 +73,7 @@ export function TrashList({ items, slug }: TrashListProps) {
       <div className="text-center py-16">
         <p className="text-4xl mb-3">🗑️</p>
         <p className="text-lg font-medium mb-1">Trash is empty</p>
-        <p className="text-sm muted">Deleted jobs will appear here for 30 days</p>
+        <p className="text-sm muted">Deleted people will appear here for 30 days</p>
       </div>
     );
   }
@@ -99,29 +97,31 @@ export function TrashList({ items, slug }: TrashListProps) {
       </div>
 
       <div className="space-y-3">
-        {items.map((job) => {
-          const daysLeft = daysUntilPermanentDelete(job.deletedAt);
-          const isRestoringThis = restoring === job.id;
+        {items.map((person) => {
+          const daysLeft = daysUntilPermanentDelete(person.deletedAt);
+          const isRestoringThis = restoring === person.id;
 
           return (
             <div
-              key={job.id}
+              key={person.id}
               className={`card p-4 flex items-center justify-between gap-4 ${isRestoringThis ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="font-semibold truncate">{job.title}</h3>
-                  <span className="text-xs muted shrink-0">at {job.company}</span>
+                  <h3 className="font-semibold truncate">{person.name}</h3>
+                  {person.company && (
+                    <span className="text-xs muted shrink-0">at {person.company}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 text-xs muted">
-                  <span>Deleted {timeAgo(job.deletedAt)}</span>
+                  <span>Deleted {timeAgo(person.deletedAt)}</span>
                   <span className={daysLeft <= 3 ? 'text-danger font-medium' : ''}>
                     {daysLeft === 0 ? 'Expires today' : `${daysLeft}d left`}
                   </span>
                 </div>
               </div>
               <button
-                onClick={() => handleRestore(job.id)}
+                onClick={() => handleRestore(person.id)}
                 disabled={isRestoringThis}
                 className="btn btn-sm btn-soft shrink-0"
               >

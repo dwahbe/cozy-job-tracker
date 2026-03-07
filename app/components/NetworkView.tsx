@@ -12,6 +12,7 @@ import { NetworkTable } from './NetworkTable';
 import { BoardColumnManager } from './BoardColumnManager';
 import { OrbitView } from './OrbitView';
 import { SortBuilder } from './SortSelect';
+import { TrashButton } from './TrashButton';
 
 type ViewMode = 'table' | 'orbit';
 
@@ -60,6 +61,7 @@ interface NetworkViewProps {
   showLinkedJobs: boolean;
   jobs: ParsedJob[];
   userName: string | null;
+  trashCount: number;
 }
 
 export function NetworkView({
@@ -69,6 +71,7 @@ export function NetworkView({
   showLinkedJobs,
   jobs,
   userName,
+  trashCount,
 }: NetworkViewProps) {
   const router = useRouter();
   const [view, setView] = useState<ViewMode>('table');
@@ -422,6 +425,8 @@ export function NetworkView({
           )}
         </>
       )}
+
+      <TrashButton count={trashCount} href="/network/trash" />
     </>
   );
 }

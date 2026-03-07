@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
-export function TrashButton({ count }: { count: number }) {
+export function TrashButton({ count, href = '/board/trash' }: { count: number; href?: string }) {
   if (count === 0) return null;
 
   return (
     <div className="flex justify-end mt-6">
       <Link
-        href="/trash"
+        href={href}
         className="inline-flex items-center gap-1.5 text-sm muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-foreground/5"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

@@ -23,6 +23,7 @@ export function ConsentForm({
   userEmail,
 }: ConsentFormProps) {
   const [loading, setLoading] = useState(false);
+  const [connected, setConnected] = useState(false);
 
   const displayName = clientName.startsWith('https://')
     ? clientName.replace(/^https?:\/\//, '')
@@ -31,7 +32,17 @@ export function ConsentForm({
   async function handleAllow() {
     setLoading(true);
     try {
-      await approveConsent({ clientId, redirectUri, codeChallenge, state, scope });
+      const callbackUrl = await approveConsent({
+        clientId,
+        redirectUri,
+        codeChallenge,
+        state,
+        scope,
+      });
+      setConnected(true);
+      setTimeout(() => {
+        window.location.href = callbackUrl;
+      }, 1500);
     } catch {
       setLoading(false);
     }
@@ -42,6 +53,22 @@ export function ConsentForm({
     url.searchParams.set('error', 'access_denied');
     if (state) url.searchParams.set('state', state);
     window.location.href = url.toString();
+  }
+
+  if (connected) {
+    return (
+      <main className="page">
+        <div className="container-app max-w-md">
+          <div className="card p-8 text-center">
+            <p className="text-3xl mb-3">✓</p>
+            <h1 className="text-2xl font-bold mb-2">Connected!</h1>
+            <p className="muted">
+              {displayName} is now linked to your board. You can close this tab.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

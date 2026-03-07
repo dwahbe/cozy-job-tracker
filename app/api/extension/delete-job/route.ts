@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     await saveBoardByUserId(user.userId, board);
     revalidatePath('/board');
-    revalidatePath('/trash');
+    revalidatePath('/board/trash');
 
     return NextResponse.json({ success: true });
   } catch (error) {

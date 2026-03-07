@@ -49,11 +49,16 @@ export interface Person {
   createdAt: string; // ISO date
 }
 
+export interface TrashedPerson extends Person {
+  deletedAt: string; // ISO date
+}
+
 export interface NetworkData {
   people: Person[];
   columns: Column[];
   columnOrder?: string[];
   showLinkedJobs?: boolean;
+  trash?: TrashedPerson[];
 }
 
 // Built-in column IDs (always visible, not stored in columns[])
@@ -159,6 +164,19 @@ export function linkedinUsername(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Prune network trash items older than 30 days. Returns true if any were removed.
+ */
+export function pruneNetworkTrash(data: NetworkData): boolean {
+  if (!data.trash || data.trash.length === 0) return false;
+  const cutoff = Date.now() - TRASH_RETENTION_MS;
+  const before = data.trash.length;
+  data.trash = data.trash.filter((p) => new Date(p.deletedAt).getTime() > cutoff);
+  return data.trash.length !== before;
 }
 
 // ============================================================

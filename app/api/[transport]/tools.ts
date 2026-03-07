@@ -6,10 +6,11 @@ import {
   saveNetworkByUserId,
   generatePersonId,
   generateInteractionId,
+  pruneNetworkTrash,
   PERSON_STATUSES,
   STATUS_LABELS,
 } from '@/lib/network';
-import type { Person, PersonStatus, Interaction, NetworkData } from '@/lib/network';
+import type { Person, PersonStatus, Interaction, NetworkData, TrashedPerson } from '@/lib/network';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -312,7 +313,7 @@ export const toolDefinitions: ToolDef[] = [
 
       await saveBoardByUserId(userId, board);
       revalidatePath('/board');
-      revalidatePath('/trash');
+      revalidatePath('/board/trash');
 
       return txt('Job moved to trash.');
     },
@@ -571,6 +572,7 @@ export const toolDefinitions: ToolDef[] = [
       const network = await getNetwork(getUserId(extra as Extra));
       if (!network) return NETWORK_NOT_FOUND;
 
+      pruneNetworkTrash(network);
       const total = network.people.length;
       const byStatus: Record<string, number> = {};
       for (const person of network.people) {
@@ -581,6 +583,7 @@ export const toolDefinitions: ToolDef[] = [
       const recent = [...network.people]
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(0, 5);
+      const trashCount = network.trash?.length ?? 0;
 
       const lines = ['**Network**', `Total people: ${total}`];
 
@@ -589,6 +592,10 @@ export const toolDefinitions: ToolDef[] = [
         for (const [status, count] of Object.entries(byStatus)) {
           lines.push(`  ${status}: ${count}`);
         }
+      }
+
+      if (trashCount > 0) {
+        lines.push(`\nTrash: ${trashCount} person(s)`);
       }
 
       if (recent.length > 0) {
@@ -762,7 +769,7 @@ export const toolDefinitions: ToolDef[] = [
     name: 'delete_person',
     config: {
       title: 'Delete a person',
-      description: 'Permanently delete a person from the networking board.',
+      description: 'Move a person to the trash. They can be restored within 30 days.',
       inputSchema: {
         personId: z.string().describe('The person ID to delete'),
       },
@@ -778,10 +785,15 @@ export const toolDefinitions: ToolDef[] = [
       if (idx === -1) return txt(`Person "${personId}" not found.`, true);
 
       const [person] = network.people.splice(idx, 1);
+      const trashedPerson: TrashedPerson = { ...person, deletedAt: new Date().toISOString() };
+      if (!network.trash) network.trash = [];
+      network.trash.unshift(trashedPerson);
+
       await saveNetworkByUserId(userId, network);
       revalidatePath('/network');
+      revalidatePath('/network/trash');
 
-      return txt(`Deleted ${person.name} from the network.`);
+      return txt(`${person.name} moved to trash.`);
     },
   },
 

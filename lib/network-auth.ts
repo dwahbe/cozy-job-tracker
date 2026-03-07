@@ -32,4 +32,5 @@ export async function resolveNetwork(): Promise<NetworkContext | null> {
 export async function saveNetworkAndRevalidate(ctx: NetworkContext): Promise<void> {
   await saveNetworkByUserId(ctx.userId, ctx.network);
   revalidatePath('/network');
+  revalidatePath('/network/trash');
 }
