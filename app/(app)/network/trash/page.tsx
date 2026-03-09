@@ -30,10 +30,7 @@ export default async function NetworkTrashPage() {
       <div className="container-app max-w-3xl">
         <header className="mb-6 sm:mb-8">
           <div className="flex items-center gap-3 mb-1">
-            <Link
-              href="/network"
-              className="text-sm muted hover:text-foreground transition-colors"
-            >
+            <Link href="/network" className="text-sm muted hover:text-foreground transition-colors">
               ← Back to network
             </Link>
           </div>

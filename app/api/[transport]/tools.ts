@@ -69,8 +69,7 @@ function formatPerson(person: Person): string {
   if (person.role) lines.push(`Role: ${person.role}`);
   if (person.linkedinUrl) lines.push(`LinkedIn: ${person.linkedinUrl}`);
   if (person.lastContacted) lines.push(`Last contacted: ${person.lastContacted}`);
-  if (person.interactions.length > 0)
-    lines.push(`Interactions: ${person.interactions.length}`);
+  if (person.interactions.length > 0) lines.push(`Interactions: ${person.interactions.length}`);
 
   const customEntries = Object.entries(person.customFields).filter(([, v]) => v);
   if (customEntries.length > 0) {
@@ -483,9 +482,7 @@ export const toolDefinitions: ToolDef[] = [
       if (status) people = people.filter((p) => p.status === status);
 
       if (people.length === 0) {
-        return txt(
-          status ? `No people with status "${status}".` : 'No people in the network yet.'
-        );
+        return txt(status ? `No people with status "${status}".` : 'No people in the network yet.');
       }
 
       const out = people.map(formatPerson).join('\n\n---\n\n');
@@ -498,8 +495,7 @@ export const toolDefinitions: ToolDef[] = [
     name: 'get_person',
     config: {
       title: 'Get person details',
-      description:
-        'Get full details of a person by ID, including their interaction history.',
+      description: 'Get full details of a person by ID, including their interaction history.',
       inputSchema: {
         personId: z.string().describe('The person ID'),
       },
@@ -615,8 +611,7 @@ export const toolDefinitions: ToolDef[] = [
     name: 'add_person',
     config: {
       title: 'Add a person',
-      description:
-        'Add a person to the networking board. Only name is required.',
+      description: 'Add a person to the networking board. Only name is required.',
       inputSchema: {
         name: z.string().describe('Person name'),
         company: z.string().optional().describe('Company name'),
@@ -690,9 +685,7 @@ export const toolDefinitions: ToolDef[] = [
         status: z
           .string()
           .optional()
-          .describe(
-            'New status: not-contacted, reached-out, waiting, in-conversation, or paused'
-          ),
+          .describe('New status: not-contacted, reached-out, waiting, in-conversation, or paused'),
         customFields: z
           .record(z.string())
           .optional()
@@ -726,10 +719,7 @@ export const toolDefinitions: ToolDef[] = [
       }
 
       if (fields.status && !PERSON_STATUSES.includes(fields.status as PersonStatus)) {
-        return txt(
-          `Invalid status "${fields.status}". Use: ${PERSON_STATUSES.join(', ')}.`,
-          true
-        );
+        return txt(`Invalid status "${fields.status}". Use: ${PERSON_STATUSES.join(', ')}.`, true);
       }
 
       for (const [key, value] of standardUpdates) {
@@ -740,8 +730,7 @@ export const toolDefinitions: ToolDef[] = [
         const colMap = new Map(network.columns.map((c) => [c.name, c]));
         for (const [colName, value] of Object.entries(customFields)) {
           const col = colMap.get(colName);
-          if (!col)
-            return txt(`Custom column "${colName}" does not exist on the network.`, true);
+          if (!col) return txt(`Custom column "${colName}" does not exist on the network.`, true);
 
           if (col.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
             return txt(`Column "${colName}" is a checkbox — use "Yes" or "No".`, true);
@@ -806,9 +795,7 @@ export const toolDefinitions: ToolDef[] = [
         'Log an interaction with a person. Automatically updates their last-contacted date and status.',
       inputSchema: {
         personId: z.string().describe('The person ID'),
-        type: z
-          .string()
-          .describe('Interaction type: reached-out, met, followed-up, or note'),
+        type: z.string().describe('Interaction type: reached-out, met, followed-up, or note'),
         note: z.string().optional().describe('Optional note about the interaction'),
       },
     },
@@ -824,10 +811,7 @@ export const toolDefinitions: ToolDef[] = [
 
       const validTypes = ['reached-out', 'met', 'followed-up', 'note'] as const;
       if (!validTypes.includes(type as Interaction['type'])) {
-        return txt(
-          `Invalid interaction type "${type}". Use: ${validTypes.join(', ')}.`,
-          true
-        );
+        return txt(`Invalid interaction type "${type}". Use: ${validTypes.join(', ')}.`, true);
       }
 
       const person = network.people.find((p) => p.id === personId);
@@ -851,9 +835,7 @@ export const toolDefinitions: ToolDef[] = [
       revalidatePath('/network');
 
       const label = STATUS_LABELS[person.status] ?? person.status;
-      return txt(
-        `Logged "${type}" interaction with ${person.name}. Status is now "${label}".`
-      );
+      return txt(`Logged "${type}" interaction with ${person.name}. Status is now "${label}".`);
     },
   },
 ];
