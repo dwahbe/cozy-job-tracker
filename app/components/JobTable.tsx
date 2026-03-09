@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { celebrateOffer } from '@/lib/confetti';
+import { statusColor, getFieldValue, applyFieldUpdate, STATUS_OPTIONS } from '@/lib/job-utils';
+import { DueDatePicker } from './DueDatePicker';
 import {
   DndContext,
   closestCenter,
@@ -92,55 +94,6 @@ const BUILTIN_COLUMNS = [
 
 type BuiltinColumnId = (typeof BUILTIN_COLUMNS)[number]['id'];
 
-function getFieldValue(job: ParsedJob, field: string): string {
-  switch (field.toLowerCase()) {
-    case 'status':
-      return job.status;
-    case 'title':
-      return job.title;
-    case 'company':
-      return job.company;
-    case 'location':
-      return job.location || '';
-    case 'employment type':
-      return job.employmentType || '';
-    case 'notes':
-      return job.notes || '';
-    case 'due date':
-      return job.dueDate || '';
-    default:
-      return job.customFields[field] || '';
-  }
-}
-
-function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
-  switch (field.toLowerCase()) {
-    case 'status':
-      job.status = value;
-      break;
-    case 'title':
-      job.title = value;
-      break;
-    case 'company':
-      job.company = value;
-      break;
-    case 'location':
-      job.location = value;
-      break;
-    case 'employment type':
-      job.employmentType = value;
-      break;
-    case 'notes':
-      job.notes = value;
-      break;
-    case 'due date':
-      job.dueDate = value;
-      break;
-    default:
-      job.customFields[field] = value;
-  }
-}
-
 function isBuiltinColumn(id: string): id is BuiltinColumnId {
   return BUILTIN_COLUMNS.some((c) => c.id === id);
 }
@@ -184,141 +137,6 @@ interface JobTableProps {
   columnOrder: string[];
   highlightJobId?: string | null;
   onHighlightDone?: () => void;
-}
-
-const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
-
-const formatDateDisplay = (dateStr: string): string => {
-  if (!dateStr) return '';
-  if (dateStr === 'rolling') return 'Rolling';
-  const date = new Date(dateStr + 'T00:00:00');
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
-  const day = date.getDate();
-  const year = date.getFullYear();
-  const ordinal = (n: number) => {
-    if (n > 3 && n < 21) return 'th';
-    switch (n % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  };
-  return `${month} ${day}${ordinal(day)} ${year}`;
-};
-
-function DueDatePicker({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-
-  // Calculate dropdown position when opening
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        zIndex: 9999,
-      });
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node) &&
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setIsOpen(false);
-  };
-
-  const handleRollingClick = () => {
-    onChange('rolling');
-    setIsOpen(false);
-  };
-
-  const handleClear = () => {
-    onChange('');
-    setIsOpen(false);
-  };
-
-  const displayText = value ? formatDateDisplay(value) : '—';
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={disabled}
-        className="hover:underline underline-offset-2 text-left whitespace-nowrap"
-      >
-        {displayText}
-      </button>
-      {isOpen && (
-        <div
-          ref={dropdownRef}
-          style={dropdownStyle}
-          className="bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
-        >
-          <div className="space-y-2">
-            <input
-              type="date"
-              value={value === 'rolling' ? '' : value}
-              onChange={handleDateChange}
-              className="input w-full text-sm"
-            />
-            <button
-              type="button"
-              onClick={handleRollingClick}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
-              }`}
-            >
-              🔄 Rolling basis
-            </button>
-            {value && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="w-full text-left px-3 py-2 rounded-md text-sm muted hover:bg-black/5 transition-colors"
-              >
-                ✕ Clear
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function JobTable({
@@ -569,15 +387,6 @@ export function JobTable({
       cancelEdit();
     }
   };
-
-  const statusColor = (status: string) =>
-    ({
-      Saved: 'status-saved',
-      Applied: 'status-applied',
-      Interview: 'status-interview',
-      Offer: 'status-offer',
-      Rejected: 'status-rejected',
-    })[status] || 'status-saved';
 
   const isEditing = (jobLink: string, field: string) =>
     editingCell?.jobLink === jobLink && editingCell?.field === field;

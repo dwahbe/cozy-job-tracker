@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { PERSON_STATUSES } from '@/lib/network';
 
 export const runtime = 'nodejs';
 
@@ -27,21 +28,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
-    const builtinFields = new Set([
-      'name',
-      'linkedinUrl',
-      'company',
-      'role',
-      'status',
-      'lastContacted',
-    ]);
-
     for (const { field, value } of fields) {
-      if (builtinFields.has(field)) {
-        (person as unknown as Record<string, unknown>)[field] = value;
+      if (field === 'status') {
+        if (!PERSON_STATUSES.includes(value as (typeof PERSON_STATUSES)[number])) {
+          return NextResponse.json(
+            { error: `Status must be one of: ${PERSON_STATUSES.join(', ')}` },
+            { status: 400 }
+          );
+        }
+        person.status = value as (typeof PERSON_STATUSES)[number];
+      } else if (field === 'name') {
+        person.name = value;
+      } else if (field === 'linkedinUrl') {
+        person.linkedinUrl = value;
+      } else if (field === 'company') {
+        person.company = value;
+      } else if (field === 'role') {
+        person.role = value;
+      } else if (field === 'lastContacted') {
+        person.lastContacted = value || null;
       } else if (field === 'linkedJobIds') {
-        person.linkedJobIds = JSON.parse(value);
+        try {
+          person.linkedJobIds = JSON.parse(value);
+        } catch {
+          return NextResponse.json({ error: 'Invalid linkedJobIds format' }, { status: 400 });
+        }
       } else {
+        const col = ctx.network.columns.find((c) => c.name === field);
+        if (col?.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
+          return NextResponse.json({ error: `${field} must be Yes or No` }, { status: 400 });
+        }
+        if (col?.type === 'dropdown' && col.options && !col.options.includes(value)) {
+          return NextResponse.json(
+            { error: `${field} must be one of: ${col.options.join(', ')}` },
+            { status: 400 }
+          );
+        }
         person.customFields[field] = value;
       }
     }

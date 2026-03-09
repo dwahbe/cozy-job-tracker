@@ -6,22 +6,31 @@ export function BoardTitleForm({ currentTitle }: { currentTitle: string }) {
   const [title, setTitle] = useState(currentTitle);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setSaved(false);
+    setError(null);
 
-    const res = await fetch('/api/update-board-title', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    });
+    try {
+      const res = await fetch('/api/update-board-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
 
-    setSaving(false);
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        setError('Failed to save title. Please try again.');
+      }
+    } catch {
+      setError('Failed to save title. Please try again.');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -49,6 +58,7 @@ export function BoardTitleForm({ currentTitle }: { currentTitle: string }) {
           {saving ? 'Saving...' : 'Save'}
         </button>
         {saved && <span className="text-sm text-success">Saved!</span>}
+        {error && <span className="text-sm text-danger">{error}</span>}
       </div>
     </form>
   );

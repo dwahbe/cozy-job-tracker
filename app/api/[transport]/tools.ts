@@ -255,7 +255,14 @@ export const toolDefinitions: ToolDef[] = [
       }
 
       for (const [key, value] of standardUpdates) {
-        (job as unknown as Record<string, unknown>)[key] = value;
+        if (key === 'title') job.title = value as string;
+        else if (key === 'company') job.company = value as string;
+        else if (key === 'link') job.link = value as string;
+        else if (key === 'location') job.location = value as string;
+        else if (key === 'employmentType') job.employmentType = value as string;
+        else if (key === 'notes') job.notes = value as string;
+        else if (key === 'status') job.status = value as string;
+        else if (key === 'dueDate') job.dueDate = value as string;
       }
 
       if (hasCustom) {
@@ -723,7 +730,11 @@ export const toolDefinitions: ToolDef[] = [
       }
 
       for (const [key, value] of standardUpdates) {
-        (person as unknown as Record<string, unknown>)[key] = value;
+        if (key === 'name') person.name = value as string;
+        else if (key === 'company') person.company = value as string;
+        else if (key === 'role') person.role = value as string;
+        else if (key === 'linkedinUrl') person.linkedinUrl = value as string;
+        else if (key === 'status') person.status = value as PersonStatus;
       }
 
       if (hasCustom) {

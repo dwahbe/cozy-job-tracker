@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/dal';
-import { getBoardByUserId, saveBoardByUserId, getColumnOrder } from '@/lib/kv';
+import { getBoardByUserId, saveBoardByUserId, getColumnOrder, pruneTrash } from '@/lib/kv';
 import { JobForm } from '@/app/components/JobForm';
 import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
@@ -21,6 +21,10 @@ export default async function BoardPage() {
       columns: [],
       jobs: [],
     };
+    await saveBoardByUserId(userId, board);
+  }
+
+  if (pruneTrash(board)) {
     await saveBoardByUserId(userId, board);
   }
 

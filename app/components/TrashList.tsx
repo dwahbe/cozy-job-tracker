@@ -31,9 +31,11 @@ export function TrashList({ items, slug }: TrashListProps) {
   const router = useRouter();
   const [restoring, setRestoring] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRestore = async (jobId: string) => {
     setRestoring(jobId);
+    setError(null);
     try {
       const response = await fetch('/api/restore-job', {
         method: 'POST',
@@ -42,9 +44,11 @@ export function TrashList({ items, slug }: TrashListProps) {
       });
       if (response.ok) {
         router.refresh();
+      } else {
+        setError('Failed to restore item. Please try again.');
       }
-    } catch (err) {
-      console.error('Restore failed:', err);
+    } catch {
+      setError('Failed to restore item. Please try again.');
     } finally {
       setRestoring(null);
     }
@@ -54,6 +58,7 @@ export function TrashList({ items, slug }: TrashListProps) {
     if (!confirm("Permanently delete all items in trash? This can't be undone.")) return;
 
     setEmptying(true);
+    setError(null);
     try {
       const response = await fetch('/api/empty-trash', {
         method: 'POST',
@@ -62,9 +67,11 @@ export function TrashList({ items, slug }: TrashListProps) {
       });
       if (response.ok) {
         router.refresh();
+      } else {
+        setError('Failed to empty trash. Please try again.');
       }
-    } catch (err) {
-      console.error('Empty trash failed:', err);
+    } catch {
+      setError('Failed to empty trash. Please try again.');
     } finally {
       setEmptying(false);
     }
@@ -82,6 +89,7 @@ export function TrashList({ items, slug }: TrashListProps) {
 
   return (
     <div>
+      {error && <div className="callout callout-error mb-4">{error}</div>}
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm">

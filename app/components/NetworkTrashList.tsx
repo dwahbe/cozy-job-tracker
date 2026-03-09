@@ -30,9 +30,11 @@ export function NetworkTrashList({ items }: NetworkTrashListProps) {
   const router = useRouter();
   const [restoring, setRestoring] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRestore = async (personId: string) => {
     setRestoring(personId);
+    setError(null);
     try {
       const response = await fetch('/api/network/restore-person', {
         method: 'POST',
@@ -41,9 +43,11 @@ export function NetworkTrashList({ items }: NetworkTrashListProps) {
       });
       if (response.ok) {
         router.refresh();
+      } else {
+        setError('Failed to restore person. Please try again.');
       }
-    } catch (err) {
-      console.error('Restore failed:', err);
+    } catch {
+      setError('Failed to restore person. Please try again.');
     } finally {
       setRestoring(null);
     }
@@ -53,6 +57,7 @@ export function NetworkTrashList({ items }: NetworkTrashListProps) {
     if (!confirm("Permanently delete all items in trash? This can't be undone.")) return;
 
     setEmptying(true);
+    setError(null);
     try {
       const response = await fetch('/api/network/empty-trash', {
         method: 'POST',
@@ -60,9 +65,11 @@ export function NetworkTrashList({ items }: NetworkTrashListProps) {
       });
       if (response.ok) {
         router.refresh();
+      } else {
+        setError('Failed to empty trash. Please try again.');
       }
-    } catch (err) {
-      console.error('Empty trash failed:', err);
+    } catch {
+      setError('Failed to empty trash. Please try again.');
     } finally {
       setEmptying(false);
     }
@@ -80,6 +87,7 @@ export function NetworkTrashList({ items }: NetworkTrashListProps) {
 
   return (
     <div>
+      {error && <div className="callout callout-error mb-4">{error}</div>}
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm">

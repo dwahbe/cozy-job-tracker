@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { celebrateOffer } from '@/lib/confetti';
+import { statusColor, getFieldValue, applyFieldUpdate, STATUS_OPTIONS } from '@/lib/job-utils';
+import { DueDatePicker } from './DueDatePicker';
 
 interface JobCardProps {
   job: ParsedJob;
@@ -22,177 +24,6 @@ interface EditableFields {
   notes: string;
   link: string;
 }
-
-const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
-
-function DueDatePicker({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setIsOpen(false);
-  };
-
-  const handleRollingClick = () => {
-    onChange('rolling');
-    setIsOpen(false);
-  };
-
-  const handleClear = () => {
-    onChange('');
-    setIsOpen(false);
-  };
-
-  const displayText = value ? formatDateDisplay(value) : 'Set due date';
-
-  return (
-    <div className="flex items-center gap-2 text-sm" ref={containerRef}>
-      <span className="muted">📅</span>
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          disabled={disabled}
-          className="hover:underline underline-offset-2 text-left"
-        >
-          {displayText}
-        </button>
-        {isOpen && (
-          <div className="absolute z-50 top-full left-0 mt-1 bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]">
-            <div className="space-y-2">
-              <input
-                type="date"
-                value={value === 'rolling' ? '' : value}
-                onChange={handleDateChange}
-                className="input w-full text-sm"
-              />
-              <button
-                type="button"
-                onClick={handleRollingClick}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
-                }`}
-              >
-                🔄 Rolling basis
-              </button>
-              {value && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm muted hover:bg-black/5 transition-colors"
-                >
-                  ✕ Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const formatDateDisplay = (dateStr: string): string => {
-  if (!dateStr) return '';
-  if (dateStr === 'rolling') return 'Rolling';
-  const date = new Date(dateStr + 'T00:00:00');
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
-  const day = date.getDate();
-  const year = date.getFullYear();
-  const ordinal = (n: number) => {
-    if (n > 3 && n < 21) return 'th';
-    switch (n % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  };
-  return `${month} ${day}${ordinal(day)} ${year}`;
-};
-
-function getFieldValue(job: ParsedJob, field: string): string {
-  switch (field.toLowerCase()) {
-    case 'status':
-      return job.status;
-    case 'title':
-      return job.title;
-    case 'company':
-      return job.company;
-    case 'location':
-      return job.location || '';
-    case 'employment type':
-      return job.employmentType || '';
-    case 'notes':
-      return job.notes || '';
-    case 'due date':
-      return job.dueDate || '';
-    default:
-      return job.customFields[field] || '';
-  }
-}
-
-function applyFieldUpdate(job: ParsedJob, field: string, value: string): void {
-  switch (field.toLowerCase()) {
-    case 'status':
-      job.status = value;
-      break;
-    case 'title':
-      job.title = value;
-      break;
-    case 'company':
-      job.company = value;
-      break;
-    case 'location':
-      job.location = value;
-      break;
-    case 'employment type':
-      job.employmentType = value;
-      break;
-    case 'notes':
-      job.notes = value;
-      break;
-    case 'due date':
-      job.dueDate = value;
-      break;
-    default:
-      job.customFields[field] = value;
-  }
-}
-
-const statusColor = (status: string) =>
-  ({
-    Saved: 'status-saved',
-    Applied: 'status-applied',
-    Interview: 'status-interview',
-    Offer: 'status-offer',
-    Rejected: 'status-rejected',
-  })[status] || 'status-saved';
 
 export function JobCard({
   job: serverJob,
@@ -520,10 +351,14 @@ export function JobCard({
       {/* Controls */}
       <div className="flex flex-col gap-3 pt-4 border-t border-black/5">
         {/* Due date */}
-        <DueDatePicker
-          value={job.dueDate || ''}
-          onChange={(value) => updateField('Due date', value)}
-        />
+        <div className="flex items-center gap-2 text-sm">
+          <span className="muted">📅</span>
+          <DueDatePicker
+            value={job.dueDate || ''}
+            onChange={(value) => updateField('Due date', value)}
+            placeholder="Set due date"
+          />
+        </div>
 
         {/* Status dropdown */}
         <div className="flex items-center gap-2 text-sm">
