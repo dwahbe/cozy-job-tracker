@@ -115,17 +115,17 @@ export function JobForm({ slug, columns }: JobFormProps) {
         body: JSON.stringify({ slug, job: parsedJob }),
       });
 
-      const data = await response.json();
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        setError(data.error || 'Failed to add job');
+        setError((data.error as string) || 'Failed to add job');
         return;
       }
 
       setUrl('');
       setParsedJob(null);
       setFetchWarning(null);
-      if (data.jobId) setHighlightJob(data.jobId);
+      if (data.jobId) setHighlightJob(data.jobId as string);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add job');
@@ -148,15 +148,15 @@ export function JobForm({ slug, columns }: JobFormProps) {
         body: JSON.stringify({ slug, manualJob }),
       });
 
-      const data = await response.json();
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        setError(data.error || 'Failed to add job');
+        setError((data.error as string) || 'Failed to add job');
         return;
       }
 
       setManualJob(emptyManualJob);
-      if (data.jobId) setHighlightJob(data.jobId);
+      if (data.jobId) setHighlightJob(data.jobId as string);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add job');
