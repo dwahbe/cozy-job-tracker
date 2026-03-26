@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type Column } from '@/lib/kv';
 import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import {
+  getColumnValidationError,
+  removeColumnFromOrder,
+  renameColumnInOrder,
+} from '@/lib/custom-column-utils';
 
 export const runtime = 'nodejs';
-
-const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown', 'date'];
 
 // PUT - Update column
 export async function PUT(request: NextRequest) {
@@ -17,22 +20,9 @@ export async function PUT(request: NextRequest) {
     };
 
     // Validate column
-    if (!column || !column.name || !column.type) {
-      return NextResponse.json({ error: 'Column name and type are required' }, { status: 400 });
-    }
-
-    if (!VALID_COLUMN_TYPES.includes(column.type)) {
-      return NextResponse.json(
-        { error: `Column type must be one of: ${VALID_COLUMN_TYPES.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    if (column.type === 'dropdown' && (!column.options || column.options.length === 0)) {
-      return NextResponse.json(
-        { error: 'Dropdown columns require at least one option' },
-        { status: 400 }
-      );
+    const validationError = getColumnValidationError(column);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
     // Resolve board (auth session or legacy slug)
@@ -64,6 +54,7 @@ export async function PUT(request: NextRequest) {
 
     // If renamed, update custom fields in all jobs
     if (oldName !== column.name) {
+      ctx.board.columnOrder = renameColumnInOrder(ctx.board.columnOrder, oldName, column.name);
       for (const job of ctx.board.jobs) {
         if (oldName in job.customFields) {
           job.customFields[column.name] = job.customFields[oldName];
@@ -157,6 +148,7 @@ export async function DELETE(request: NextRequest) {
 
     const removedColumn = ctx.board.columns[columnIndex];
     ctx.board.columns.splice(columnIndex, 1);
+    ctx.board.columnOrder = removeColumnFromOrder(ctx.board.columnOrder, removedColumn.name);
 
     // Remove custom field from all jobs
     for (const job of ctx.board.jobs) {

@@ -186,12 +186,7 @@ export function NetworkView({
           body: JSON.stringify({
             action: 'update',
             columnName: oldName,
-            updates: {
-              name: column.name,
-              type: column.type,
-              options: column.options,
-              optionColors: column.optionColors,
-            },
+            column,
           }),
         });
         if (res.ok) router.refresh();

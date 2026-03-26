@@ -1,6 +1,7 @@
 import { kv } from '@vercel/kv';
 import type { Column } from './markdown';
 import type { ValidatedJob } from './validateExtraction';
+import { getOrderedColumnIds } from '@/lib/custom-column-utils';
 
 /**
  * Board data structure for KV storage
@@ -57,17 +58,7 @@ const BUILTIN_COLUMN_IDS = [
  * Get the column order for a board, with defaults for boards without saved order
  */
 export function getColumnOrder(board: Board): string[] {
-  if (board.columnOrder && board.columnOrder.length > 0) {
-    // Ensure any new custom columns are included
-    const customNames = board.columns.map((c) => c.name);
-    const missingCustom = customNames.filter((n) => !board.columnOrder!.includes(n));
-    if (missingCustom.length > 0) {
-      return [...board.columnOrder, ...missingCustom];
-    }
-    return board.columnOrder;
-  }
-  // Default: built-in columns followed by custom columns
-  return [...BUILTIN_COLUMN_IDS, ...board.columns.map((c) => c.name)];
+  return getOrderedColumnIds(board.columnOrder, BUILTIN_COLUMN_IDS, board.columns);
 }
 
 // Re-export Column type

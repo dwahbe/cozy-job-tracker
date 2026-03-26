@@ -1,5 +1,6 @@
 import { kv } from '@vercel/kv';
 import type { Column } from './markdown';
+import { getOrderedColumnIds } from '@/lib/custom-column-utils';
 
 // ============================================================
 // Network data types
@@ -133,23 +134,17 @@ export function createEmptyPerson(columns: Column[]): Person {
 }
 
 export function getNetworkColumnOrder(data: NetworkData): string[] {
-  if (data.columnOrder && data.columnOrder.length > 0) {
-    const customNames = data.columns.map((c) => c.name);
-    const missingCustom = customNames.filter((n) => !data.columnOrder!.includes(n));
-    if (missingCustom.length > 0) {
-      return [...data.columnOrder, ...missingCustom];
-    }
-    return data.columnOrder;
-  }
-  return [
+  const enabledBuiltinIds = [
     '_name',
     '_company',
     '_role',
     '_status',
     '_linkedin',
+    ...(data.columnOrder?.includes('_lastContacted') ? ['_lastContacted'] : []),
     ...(data.showLinkedJobs ? ['_linkedJobs'] : []),
-    ...data.columns.map((c) => c.name),
   ];
+
+  return getOrderedColumnIds(data.columnOrder, enabledBuiltinIds, data.columns);
 }
 
 /**

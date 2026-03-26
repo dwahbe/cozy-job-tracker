@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import type { Column } from '@/lib/markdown';
+import {
+  getColumnValidationError,
+  removeColumnFromOrder,
+  renameColumnInOrder,
+  renameCustomFieldKey,
+} from '@/lib/custom-column-utils';
 
 export const runtime = 'nodejs';
 
@@ -8,7 +15,12 @@ export async function POST(request: NextRequest) {
     const ctx = await resolveNetwork();
     if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { action, columnName, updates } = await request.json();
+    const { action, columnName, column, updates } = (await request.json()) as {
+      action?: 'delete' | 'update';
+      columnName?: string;
+      column?: Column;
+      updates?: Partial<Column>;
+    };
 
     if (!columnName) {
       return NextResponse.json({ error: 'columnName is required' }, { status: 400 });
@@ -24,30 +36,44 @@ export async function POST(request: NextRequest) {
       for (const person of ctx.network.people) {
         delete person.customFields[columnName];
       }
-      if (ctx.network.columnOrder) {
-        ctx.network.columnOrder = ctx.network.columnOrder.filter((c) => c !== columnName);
-      }
-    } else if (action === 'update' && updates) {
-      const col = ctx.network.columns[colIndex];
-      const oldName = col.name;
+      ctx.network.columnOrder = removeColumnFromOrder(ctx.network.columnOrder, columnName);
+    } else if (action === 'update' && (column || updates)) {
+      const existingColumn = ctx.network.columns[colIndex];
+      const nextColumn: Column = column ?? {
+        ...existingColumn,
+        ...updates,
+      };
 
-      if (updates.name && updates.name !== oldName) {
-        col.name = updates.name;
-        for (const person of ctx.network.people) {
-          if (oldName in person.customFields) {
-            person.customFields[updates.name] = person.customFields[oldName];
-            delete person.customFields[oldName];
-          }
-        }
-        if (ctx.network.columnOrder) {
-          ctx.network.columnOrder = ctx.network.columnOrder.map((c) =>
-            c === oldName ? updates.name : c
+      const validationError = getColumnValidationError(nextColumn);
+      if (validationError) {
+        return NextResponse.json({ error: validationError }, { status: 400 });
+      }
+
+      if (columnName.toLowerCase() !== nextColumn.name.toLowerCase()) {
+        const hasConflict = ctx.network.columns.some(
+          (col, index) =>
+            index !== colIndex && col.name.toLowerCase() === nextColumn.name.toLowerCase()
+        );
+        if (hasConflict) {
+          return NextResponse.json(
+            { error: 'A column with this name already exists' },
+            { status: 409 }
           );
         }
       }
-      if (updates.type) col.type = updates.type;
-      if (updates.options) col.options = updates.options;
-      if (updates.optionColors !== undefined) col.optionColors = updates.optionColors;
+
+      ctx.network.columns[colIndex] = nextColumn;
+
+      if (columnName !== nextColumn.name) {
+        for (const person of ctx.network.people) {
+          renameCustomFieldKey(person.customFields, columnName, nextColumn.name);
+        }
+        ctx.network.columnOrder = renameColumnInOrder(
+          ctx.network.columnOrder,
+          columnName,
+          nextColumn.name
+        );
+      }
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
