@@ -9,6 +9,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: 'Apr 3, 2026',
+    title: 'Board view for jobs',
+    emoji: '📋',
+    tag: 'new',
+    description: [
+      'A new way to see your job pipeline. The board view shows your jobs as a kanban board with columns for each status — Saved, Applied, Interview, Offer, and Rejected.',
+      'Drag and drop jobs between columns to update their status',
+      'Click any card to open a detail panel with all your fields and custom columns',
+      'Edit everything inline without leaving the board view',
+      'Custom column values show as tags right on the cards',
+    ],
+  },
+  {
     date: 'Feb 23, 2026',
     title: 'Professional network tab',
     emoji: '🤝',

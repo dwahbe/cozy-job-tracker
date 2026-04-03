@@ -3,10 +3,12 @@
 import { useState, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import type { SortRule } from '@/lib/kv';
+import type { JobView } from './ViewToggle';
 import { ViewToggle } from './ViewToggle';
 import { SortBuilder } from './SortSelect';
 import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
+import { KanbanBoard } from './KanbanBoard';
 
 const VIEW_STORAGE_KEY = 'cozy-jobs-view-preference';
 const HIGHLIGHT_KEY = 'cozy-highlight-job';
@@ -111,14 +113,14 @@ export function JobsView({
   columnOrder,
   initialSortPreference,
 }: JobsViewProps) {
-  const [view, setStoredView] = useLocalStorage<'cards' | 'table'>(VIEW_STORAGE_KEY, 'table');
+  const [view, setStoredView] = useLocalStorage<JobView>(VIEW_STORAGE_KEY, 'table');
   const [sorts, setSorts] = useState<SortRule[]>(initialSortPreference ?? []);
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const [minHeight, setMinHeight] = useState(0);
   const [highlightJobId, clearHighlight] = useHighlightJob();
 
-  const handleViewChange = (newView: 'cards' | 'table') => {
+  const handleViewChange = (newView: JobView) => {
     setStoredView(newView);
   };
 
@@ -301,6 +303,14 @@ export function JobsView({
               </button>
             </p>
           </div>
+        ) : view === 'kanban' ? (
+          <KanbanBoard
+            jobs={filteredJobs}
+            slug={slug}
+            columns={columns}
+            highlightJobId={highlightJobId}
+            onHighlightDone={clearHighlight}
+          />
         ) : view === 'cards' ? (
           <div className="space-y-4">
             {filteredJobs.map((job) => (
