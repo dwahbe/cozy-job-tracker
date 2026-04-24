@@ -113,7 +113,7 @@ export function JobsView({
   columnOrder,
   initialSortPreference,
 }: JobsViewProps) {
-  const [view, setStoredView] = useLocalStorage<JobView>(VIEW_STORAGE_KEY, 'table');
+  const [view, setStoredView] = useLocalStorage<JobView>(VIEW_STORAGE_KEY, 'kanban');
   const [sorts, setSorts] = useState<SortRule[]>(initialSortPreference ?? []);
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
