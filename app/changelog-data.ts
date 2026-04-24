@@ -12,7 +12,6 @@ export const changelog: ChangelogEntry[] = [
     date: 'Apr 3, 2026',
     title: 'Board view for jobs',
     emoji: '📋',
-    tag: 'new',
     description: [
       'A new way to see your job pipeline. The board view shows your jobs as a kanban board with columns for each status — Saved, Applied, Interview, Offer, and Rejected.',
       'Drag and drop jobs between columns to update their status',
@@ -25,7 +24,6 @@ export const changelog: ChangelogEntry[] = [
     date: 'Feb 23, 2026',
     title: 'Professional network tab',
     emoji: '🤝',
-    tag: 'beta',
     description: [
       "I got some great feedback from a few users that their job search spreadsheet had a people tab too. Recruiters, old coworkers, friends at companies you're interested in. cozy job tracker couldn't really replace that sheet until it could track people. The new Network tab can:",
       'Track contacts with name, company, title, LinkedIn, and status',
@@ -40,7 +38,6 @@ export const changelog: ChangelogEntry[] = [
     date: 'Feb 22, 2026',
     title: 'AI chat integration',
     emoji: '🤖',
-    tag: 'new',
     description:
       'You can now connect your board to the AI assistant of your choice — I recommend Claude. Manage your jobs right from a chat. Try things like "what jobs have I applied to?" or "add a barista role at Cosmic Cat Cafe".',
     link: {
