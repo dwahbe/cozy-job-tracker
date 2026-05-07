@@ -40,6 +40,7 @@ export function KanbanExpandPanel({
     employmentType: serverJob.employmentType || '',
     notes: serverJob.notes || '',
     link: serverJob.link,
+    dueDate: serverJob.dueDate || '',
   });
 
   // Reconcile optimistic state when server data arrives
@@ -64,6 +65,7 @@ export function KanbanExpandPanel({
         employmentType: serverJob.employmentType || '',
         notes: serverJob.notes || '',
         link: serverJob.link,
+        dueDate: serverJob.dueDate || '',
       });
     }
   }, [serverJob, isEditing]);
@@ -94,7 +96,13 @@ export function KanbanExpandPanel({
         const response = await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, jobLink: serverJob.link, field, value }),
+          body: JSON.stringify({
+            slug,
+            jobId: serverJob.id,
+            jobLink: serverJob.link,
+            field,
+            value,
+          }),
         });
         if (response.ok) {
           if (field === 'Status' && value === 'Offer') celebrateOffer();
@@ -114,7 +122,7 @@ export function KanbanExpandPanel({
         });
       }
     },
-    [slug, serverJob.link, router]
+    [slug, serverJob.id, serverJob.link, router]
   );
 
   const handleSaveEdit = async () => {
@@ -133,13 +141,20 @@ export function KanbanExpandPanel({
         updates.push({ field: 'Notes', value: editFields.notes });
       if (editFields.link !== serverJob.link)
         updates.push({ field: 'Link', value: editFields.link });
+      if (editFields.dueDate !== (serverJob.dueDate || ''))
+        updates.push({ field: 'Due date', value: editFields.dueDate });
 
       if (updates.length > 0) {
         for (const u of updates) setPendingUpdates((prev) => ({ ...prev, [u.field]: u.value }));
         await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, jobLink: serverJob.link, fields: updates }),
+          body: JSON.stringify({
+            slug,
+            jobId: serverJob.id,
+            jobLink: serverJob.link,
+            fields: updates,
+          }),
         });
       }
       setIsEditing(false);
@@ -260,6 +275,15 @@ export function KanbanExpandPanel({
                 />
               </div>
               <div>
+                <label className="expand-field-label">Due date</label>
+                <DueDatePicker
+                  value={editFields.dueDate}
+                  onChange={(value) => setEditFields({ ...editFields, dueDate: value })}
+                  placeholder="Set due date"
+                  buttonClassName={`input w-full text-left ${editFields.dueDate ? '' : 'muted'}`}
+                />
+              </div>
+              <div>
                 <label className="expand-field-label">Link</label>
                 <input
                   type="url"
@@ -318,14 +342,18 @@ export function KanbanExpandPanel({
                 {job.notes && <FieldRow label="Notes">{job.notes}</FieldRow>}
 
                 <FieldRow label="Link">
-                  <a
-                    href={job.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium hover:underline underline-offset-2 decoration-1 break-all"
-                  >
-                    View posting ↗
-                  </a>
+                  {job.link ? (
+                    <a
+                      href={job.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium hover:underline underline-offset-2 decoration-1 break-all"
+                    >
+                      View posting ↗
+                    </a>
+                  ) : (
+                    <span className="text-sm muted">No link</span>
+                  )}
                 </FieldRow>
 
                 {/* Custom columns */}

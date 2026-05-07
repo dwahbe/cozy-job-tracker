@@ -8,6 +8,7 @@ interface DueDatePickerProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  buttonClassName?: string;
 }
 
 export function DueDatePicker({
@@ -15,6 +16,7 @@ export function DueDatePicker({
   onChange,
   disabled,
   placeholder = '\u2014',
+  buttonClassName = 'hover:underline underline-offset-2 text-left whitespace-nowrap',
 }: DueDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,7 +76,7 @@ export function DueDatePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
-        className="hover:underline underline-offset-2 text-left whitespace-nowrap"
+        className={buttonClassName}
       >
         {displayText}
       </button>

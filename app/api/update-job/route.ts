@@ -40,16 +40,17 @@ function applyFieldToJob(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, jobLink, field, value, fields } = body as {
+    const { slug, jobId, jobLink, field, value, fields } = body as {
       slug: string;
-      jobLink: string;
+      jobId?: string;
+      jobLink?: string;
       field?: string;
       value?: string;
       fields?: FieldUpdate[];
     };
 
-    if (!jobLink) {
-      return NextResponse.json({ error: 'jobLink is required' }, { status: 400 });
+    if (!jobId && !jobLink) {
+      return NextResponse.json({ error: 'jobId or jobLink is required' }, { status: 400 });
     }
 
     // Normalize: support single field or batch fields array
@@ -87,8 +88,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Find the job
-    const jobIndex = ctx.board.jobs.findIndex((j) => j.link === jobLink);
+    // Find the job — prefer id (always unique), fall back to link
+    const jobIndex = ctx.board.jobs.findIndex(
+      (j) => (jobId && j.id === jobId) || (jobLink && j.link === jobLink)
+    );
     if (jobIndex === -1) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }

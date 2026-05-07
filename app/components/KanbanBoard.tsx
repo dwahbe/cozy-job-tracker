@@ -177,7 +177,7 @@ export function KanbanBoard({
         const response = await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, jobLink, field: 'Status', value: newStatus }),
+          body: JSON.stringify({ slug, jobId, jobLink, field: 'Status', value: newStatus }),
         });
 
         if (response.ok) {

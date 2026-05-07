@@ -92,7 +92,7 @@ export function JobCard({
       const response = await fetch('/api/update-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobLink: serverJob.link, field, value }),
+        body: JSON.stringify({ slug, jobId: serverJob.id, jobLink: serverJob.link, field, value }),
       });
 
       if (response.ok) {
@@ -188,7 +188,12 @@ export function JobCard({
         await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, jobLink: serverJob.link, fields: updates }),
+          body: JSON.stringify({
+            slug,
+            jobId: serverJob.id,
+            jobLink: serverJob.link,
+            fields: updates,
+          }),
         });
       }
 
@@ -337,14 +342,18 @@ export function JobCard({
         )}
         <div className="flex items-center gap-2">
           <span className="muted">🔗</span>
-          <a
-            href={job.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="truncate max-w-xs font-medium hover:underline decoration-2 underline-offset-4"
-          >
-            View posting
-          </a>
+          {job.link ? (
+            <a
+              href={job.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate max-w-xs font-medium hover:underline decoration-2 underline-offset-4"
+            >
+              View posting
+            </a>
+          ) : (
+            <span className="muted">No link</span>
+          )}
         </div>
       </div>
 
