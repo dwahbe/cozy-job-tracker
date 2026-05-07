@@ -322,6 +322,7 @@ body {
   display: flex;
   gap: 8px;
   padding: 5px 0;
+  align-items: flex-start;
 }
 
 .preview-row + .preview-row {
@@ -332,7 +333,7 @@ body {
   font-size: 11px;
   font-weight: 600;
   color: var(--muted-3);
-  width: 56px;
+  width: 64px;
   flex-shrink: 0;
   padding-top: 1px;
 }
@@ -343,6 +344,72 @@ body {
   line-height: 1.4;
   min-width: 0;
   word-break: break-word;
+}
+
+.preview-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin: -3px -6px;
+  outline: none;
+  line-height: 1.4;
+  font-family: inherit;
+  field-sizing: content;
+}
+
+.preview-input:hover:not(:focus) {
+  border-color: rgba(245, 158, 11, 0.18);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.preview-input:focus {
+  border-color: var(--accent-2);
+  background-color: var(--surface-solid);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.preview-textarea {
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+select.preview-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23a08978' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1 5 5 9 1'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 22px;
+  cursor: pointer;
+}
+
+.preview-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.preview-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.preview-checkbox-wrapper span {
+  color: var(--muted-2);
 }
 
 .preview-value.not-found {

@@ -24,7 +24,15 @@ interface ValidatedJob {
   finalUrl: string;
 }
 
+interface BoardColumn {
+  name: string;
+  type: 'text' | 'checkbox' | 'dropdown' | 'date';
+  options?: string[];
+}
+
 let pendingJob: ValidatedJob | null = null;
+let boardColumns: BoardColumn[] = [];
+let initialDueDateInput = '';
 
 function showState(state: AppState) {
   document.querySelectorAll('.state').forEach((el) => el.classList.add('hidden'));
@@ -123,49 +131,94 @@ async function showReady(user: UserInfo) {
   showState('ready');
 }
 
-function setPreviewField(id: string, value: string | null, rowId?: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
+function setInputValue(id: string, value: string) {
+  const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
+  if (el) el.value = value;
+}
 
-  if (value) {
-    el.textContent = value;
-    el.className = 'preview-value';
-    if (rowId) document.getElementById(rowId)?.classList.remove('hidden');
-  } else {
-    el.textContent = 'Not found';
-    el.className = 'preview-value not-found';
+function customFieldId(index: number): string {
+  return `preview-custom-${index}`;
+}
+
+function renderCustomFields(columns: BoardColumn[]) {
+  const card = document.querySelector('#state-preview .preview-card');
+  const verifiedRow = document.getElementById('preview-verified-row');
+  if (!card || !verifiedRow) return;
+
+  card.querySelectorAll('.preview-custom-row').forEach((el) => el.remove());
+
+  for (const [index, col] of columns.entries()) {
+    const row = document.createElement('div');
+    row.className = 'preview-row preview-custom-row';
+
+    const label = document.createElement('label');
+    label.className = 'preview-label';
+    label.textContent = col.name;
+    const id = customFieldId(index);
+    label.htmlFor = id;
+    row.appendChild(label);
+
+    let input: HTMLElement;
+    if (col.type === 'dropdown') {
+      const select = document.createElement('select');
+      select.className = 'preview-input';
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = '—';
+      select.appendChild(empty);
+      for (const opt of col.options ?? []) {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        select.appendChild(option);
+      }
+      input = select;
+    } else if (col.type === 'checkbox') {
+      const wrapper = document.createElement('label');
+      wrapper.className = 'preview-checkbox-wrapper';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'preview-checkbox';
+      checkbox.id = id;
+      const text = document.createElement('span');
+      text.textContent = 'Yes';
+      wrapper.append(checkbox, text);
+      row.appendChild(wrapper);
+      card.insertBefore(row, verifiedRow);
+      continue;
+    } else if (col.type === 'date') {
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.className = 'preview-input';
+      input = dateInput;
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.className = 'preview-input preview-textarea';
+      textArea.rows = 1;
+      input = textArea;
+    }
+
+    input.id = id;
+    row.appendChild(input);
+    card.insertBefore(row, verifiedRow);
   }
 }
 
 function showPreview(job: ValidatedJob, fetchWarning?: string) {
   pendingJob = job;
 
-  setPreviewField('preview-title', job.title);
-  setPreviewField('preview-company', job.company);
-  setPreviewField('preview-location', job.location);
-  setPreviewField('preview-type', job.employment_type);
+  setInputValue('preview-title', job.title ?? '');
+  setInputValue('preview-company', job.company ?? '');
+  setInputValue('preview-location', job.location ?? '');
+  setInputValue('preview-type', job.employment_type ?? '');
+  setInputValue('preview-notes', job.notes ?? '');
 
-  if (job.due_date) {
-    const dueDateEl = document.getElementById('preview-due-date');
-    if (dueDateEl) {
-      dueDateEl.textContent = job.due_date === 'rolling' ? 'Rolling basis' : job.due_date;
-      dueDateEl.className = 'preview-value';
-    }
-    document.getElementById('preview-due-date-row')?.classList.remove('hidden');
-  } else {
-    document.getElementById('preview-due-date-row')?.classList.add('hidden');
-  }
+  // Date input only accepts YYYY-MM-DD; "rolling" or other strings won't parse, leave blank
+  const dueDateValue = job.due_date && /^\d{4}-\d{2}-\d{2}$/.test(job.due_date) ? job.due_date : '';
+  setInputValue('preview-due-date', dueDateValue);
+  initialDueDateInput = dueDateValue;
 
-  if (job.notes) {
-    const notesEl = document.getElementById('preview-notes');
-    if (notesEl) {
-      notesEl.textContent = job.notes;
-      notesEl.className = 'preview-value';
-    }
-    document.getElementById('preview-notes-row')?.classList.remove('hidden');
-  } else {
-    document.getElementById('preview-notes-row')?.classList.add('hidden');
-  }
+  renderCustomFields(boardColumns);
 
   const verifiedEl = document.getElementById('preview-verified');
   if (verifiedEl) {
@@ -184,6 +237,36 @@ function showPreview(job: ValidatedJob, fetchWarning?: string) {
   }
 
   showState('preview');
+}
+
+function getInputValue(id: string): string {
+  const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
+  return el?.value.trim() ?? '';
+}
+
+function collectCustomFields(): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [index, col] of boardColumns.entries()) {
+    const id = customFieldId(index);
+    if (col.type === 'checkbox') {
+      const cb = document.getElementById(id) as HTMLInputElement | null;
+      result[col.name] = cb?.checked ? 'Yes' : 'No';
+    } else {
+      const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+      const v = el?.value ?? '';
+      if (v) result[col.name] = v;
+    }
+  }
+  return result;
+}
+
+async function loadBoardColumns(token: string): Promise<void> {
+  try {
+    const data = await apiGet<{ columns?: BoardColumn[] }>('/api/extension/board', token);
+    boardColumns = Array.isArray(data.columns) ? data.columns : [];
+  } catch {
+    boardColumns = [];
+  }
 }
 
 // --- Main init ---
@@ -243,11 +326,14 @@ document.getElementById('btn-add')?.addEventListener('click', async () => {
   }
 
   try {
-    const data = await apiPost<{
-      job?: ValidatedJob;
-      fetchWarning?: string;
-      error?: string;
-    }>('/api/extension/parse-job', token, { url });
+    const [data] = await Promise.all([
+      apiPost<{
+        job?: ValidatedJob;
+        fetchWarning?: string;
+        error?: string;
+      }>('/api/extension/parse-job', token, { url }),
+      loadBoardColumns(token),
+    ]);
 
     if (data.error || !data.job) {
       const errEl = document.getElementById('error-message');
@@ -275,13 +361,28 @@ document.getElementById('btn-confirm')?.addEventListener('click', async () => {
     return;
   }
 
+  const dueDateInput = getInputValue('preview-due-date');
+  // If the user didn't touch the date input, preserve the parsed value — this keeps
+  // non-representable values like "rolling" that the date input can't display.
+  const dueDate = dueDateInput === initialDueDateInput ? (pendingJob.due_date ?? '') : dueDateInput;
+
+  const overrides = {
+    title: getInputValue('preview-title'),
+    company: getInputValue('preview-company'),
+    location: getInputValue('preview-location'),
+    employmentType: getInputValue('preview-type'),
+    dueDate,
+    notes: (document.getElementById('preview-notes') as HTMLTextAreaElement | null)?.value ?? '',
+  };
+  const customFields = collectCustomFields();
+
   try {
     const data = await apiPost<{
       success?: boolean;
       title?: string;
       company?: string;
       error?: string;
-    }>('/api/extension/add-job', token, { job: pendingJob });
+    }>('/api/extension/add-job', token, { job: pendingJob, overrides, customFields });
 
     if (data.error) {
       const errEl = document.getElementById('error-message');
@@ -338,18 +439,8 @@ document.getElementById('btn-retry')?.addEventListener('click', async () => {
   }
 });
 
-document.getElementById('btn-add-another')?.addEventListener('click', async () => {
-  const token = await getSessionToken();
-  if (!token) {
-    showState('signed-out');
-    return;
-  }
-  const cached = await chrome.storage.session.get('user');
-  if (cached.user) {
-    await showReady(cached.user as UserInfo);
-  } else {
-    showState('signed-out');
-  }
+document.getElementById('btn-close')?.addEventListener('click', () => {
+  window.close();
 });
 
 document.getElementById('link-board')?.addEventListener('click', (e) => {

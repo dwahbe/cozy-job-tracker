@@ -67,30 +67,38 @@
         <p class="preview-heading">Preview</p>
         <div class="preview-card">
           <div class="preview-row">
-            <span class="preview-label">Title</span>
-            <span class="preview-value" id="preview-title"></span>
+            <label class="preview-label" for="preview-title">Title</label>
+            <textarea class="preview-input preview-textarea" id="preview-title" rows="1"></textarea>
           </div>
           <div class="preview-row">
-            <span class="preview-label">Company</span>
-            <span class="preview-value" id="preview-company"></span>
+            <label class="preview-label" for="preview-company">Company</label>
+            <textarea
+              class="preview-input preview-textarea"
+              id="preview-company"
+              rows="1"
+            ></textarea>
           </div>
           <div class="preview-row">
-            <span class="preview-label">Location</span>
-            <span class="preview-value" id="preview-location"></span>
+            <label class="preview-label" for="preview-location">Location</label>
+            <textarea
+              class="preview-input preview-textarea"
+              id="preview-location"
+              rows="1"
+            ></textarea>
           </div>
           <div class="preview-row">
-            <span class="preview-label">Type</span>
-            <span class="preview-value" id="preview-type"></span>
-          </div>
-          <div class="preview-row hidden" id="preview-due-date-row">
-            <span class="preview-label">Due date</span>
-            <span class="preview-value" id="preview-due-date"></span>
-          </div>
-          <div class="preview-row hidden" id="preview-notes-row">
-            <span class="preview-label">Notes</span>
-            <span class="preview-value" id="preview-notes"></span>
+            <label class="preview-label" for="preview-type">Type</label>
+            <textarea class="preview-input preview-textarea" id="preview-type" rows="1"></textarea>
           </div>
           <div class="preview-row">
+            <label class="preview-label" for="preview-due-date">Due date</label>
+            <input class="preview-input" id="preview-due-date" type="date" />
+          </div>
+          <div class="preview-row">
+            <label class="preview-label" for="preview-notes">Notes</label>
+            <textarea class="preview-input preview-textarea" id="preview-notes" rows="1"></textarea>
+          </div>
+          <div class="preview-row" id="preview-verified-row">
             <span class="preview-label">Verified</span>
             <span class="preview-value" id="preview-verified"></span>
           </div>
@@ -129,7 +137,7 @@
           <p class="success-company" id="success-company"></p>
           <div class="success-actions">
             <a id="link-board" class="btn btn-primary btn-sm" href="#">View board</a>
-            <button id="btn-add-another" class="btn btn-soft btn-sm">Add another</button>
+            <button id="btn-close" class="btn btn-soft btn-sm">Close</button>
           </div>
         </div>
       </div>

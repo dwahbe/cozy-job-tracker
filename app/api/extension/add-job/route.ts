@@ -32,10 +32,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { job, url, manual } = body as {
+    const { job, url, manual, overrides, customFields } = body as {
       job?: ValidatedJob;
       url?: string;
       manual?: ManualJob;
+      overrides?: Partial<{
+        title: string;
+        company: string;
+        location: string;
+        employmentType: string;
+        notes: string;
+        dueDate: string;
+      }>;
+      customFields?: Record<string, string>;
     };
 
     const board = await getBoardByUserId(user.userId);
@@ -102,7 +111,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const extraction = await extractJob(pageResult.text, pageResult.title, pageResult.finalUrl);
+      const extraction = await extractJob(
+        pageResult.text,
+        pageResult.title,
+        pageResult.finalUrl,
+        pageResult.structured
+      );
       validatedJob = validateExtraction(
         extraction,
         pageResult.text,
@@ -118,6 +132,27 @@ export async function POST(req: NextRequest) {
     }
 
     const newJob = createJobFromValidation(validatedJob, board.columns);
+
+    if (overrides) {
+      if (typeof overrides.title === 'string' && overrides.title.trim())
+        newJob.title = overrides.title.trim();
+      if (typeof overrides.company === 'string' && overrides.company.trim())
+        newJob.company = overrides.company.trim();
+      if (typeof overrides.location === 'string') newJob.location = overrides.location.trim();
+      if (typeof overrides.employmentType === 'string')
+        newJob.employmentType = overrides.employmentType.trim();
+      if (typeof overrides.notes === 'string') newJob.notes = overrides.notes;
+      if (typeof overrides.dueDate === 'string') newJob.dueDate = overrides.dueDate.trim();
+    }
+
+    if (customFields) {
+      const allowed = new Set(board.columns.map((c) => c.name));
+      for (const [name, value] of Object.entries(customFields)) {
+        if (allowed.has(name) && typeof value === 'string') {
+          newJob.customFields[name] = value;
+        }
+      }
+    }
 
     board.jobs.push(newJob);
     await saveBoardByUserId(user.userId, board);

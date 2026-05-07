@@ -1,7 +1,7 @@
 {
   "name": "cozy-job-tracker-extension",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun run build.ts && echo 'Reload extension in chrome://extensions'"
