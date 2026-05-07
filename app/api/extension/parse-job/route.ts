@@ -44,7 +44,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const extraction = await extractJob(pageResult.text, pageResult.title, pageResult.finalUrl);
+    const extraction = await extractJob(
+      pageResult.text,
+      pageResult.title,
+      pageResult.finalUrl,
+      pageResult.structured
+    );
 
     const validatedJob = validateExtraction(
       extraction,

@@ -1,5 +1,13 @@
 import * as cheerio from 'cheerio';
 
+export interface StructuredJobData {
+  title?: string;
+  company?: string;
+  location?: string;
+  employmentType?: string;
+  dueDate?: string; // YYYY-MM-DD
+}
+
 export interface FetchPageResult {
   finalUrl: string;
   title: string | null;
@@ -7,6 +15,62 @@ export interface FetchPageResult {
   fetchedAt: string;
   fetchError?: string;
   errorType?: 'bot_protection' | 'http_error' | 'empty_content' | 'network_error';
+  structured?: StructuredJobData;
+}
+
+const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
+  FULL_TIME: 'Full-time',
+  FULLTIME: 'Full-time',
+  'FULL-TIME': 'Full-time',
+  PART_TIME: 'Part-time',
+  PARTTIME: 'Part-time',
+  'PART-TIME': 'Part-time',
+  CONTRACTOR: 'Contract',
+  CONTRACT: 'Contract',
+  TEMPORARY: 'Temporary',
+  INTERN: 'Internship',
+  INTERNSHIP: 'Internship',
+  VOLUNTEER: 'Volunteer',
+  PER_DIEM: 'Per diem',
+};
+
+function normalizeEmploymentType(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const upper = value.toUpperCase().trim();
+    return EMPLOYMENT_TYPE_MAP[upper];
+  }
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      const result = normalizeEmploymentType(v);
+      if (result) return result;
+    }
+  }
+  return undefined;
+}
+
+function extractIsoDate(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : undefined;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatAddress(loc: any): string | null {
+  const addr = loc?.address;
+  if (!addr) return null;
+  const parts = [addr.addressLocality, addr.addressRegion, addr.addressCountry].filter(
+    (p) => typeof p === 'string' && p.trim()
+  );
+  return parts.length ? parts.join(', ') : null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractStructuredLocation(jobLocation: any): string | undefined {
+  const locs = Array.isArray(jobLocation) ? jobLocation : [jobLocation];
+  const formatted = locs.map(formatAddress).filter((s): s is string => s !== null);
+  if (!formatted.length) return undefined;
+  const unique = Array.from(new Set(formatted));
+  return unique.join(' / ');
 }
 
 // Known bot protection patterns
@@ -214,6 +278,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
 
     // Extract JSON-LD structured data (used by Workday, Lever, Greenhouse, etc.)
     let jsonLdText = '';
+    let structured: StructuredJobData | undefined;
     $('script[type="application/ld+json"]').each((_, el) => {
       try {
         const jsonText = $(el).html();
@@ -235,21 +300,44 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
         }
 
         if (jobPosting) {
+          const collected: StructuredJobData = {};
           const parts: string[] = [];
-          if (jobPosting.title) parts.push(`Title: ${jobPosting.title}`);
-          if (jobPosting.description) parts.push(`Description: ${jobPosting.description}`);
-          if (jobPosting.employmentType)
-            parts.push(`Employment Type: ${jobPosting.employmentType}`);
-          if (jobPosting.datePosted) parts.push(`Date Posted: ${jobPosting.datePosted}`);
-          if (jobPosting.jobLocation?.address) {
-            const addr = jobPosting.jobLocation.address;
-            const loc = [addr.addressLocality, addr.addressRegion, addr.addressCountry]
-              .filter(Boolean)
-              .join(', ');
-            if (loc) parts.push(`Location: ${loc}`);
+
+          if (typeof jobPosting.title === 'string' && jobPosting.title.trim()) {
+            collected.title = jobPosting.title.trim();
+            parts.push(`Title: ${collected.title}`);
           }
-          if (jobPosting.hiringOrganization?.name)
-            parts.push(`Company: ${jobPosting.hiringOrganization.name}`);
+
+          const company =
+            typeof jobPosting.hiringOrganization === 'string'
+              ? jobPosting.hiringOrganization
+              : jobPosting.hiringOrganization?.name;
+          if (typeof company === 'string' && company.trim()) {
+            collected.company = company.trim();
+            parts.push(`Company: ${collected.company}`);
+          }
+
+          const loc = extractStructuredLocation(jobPosting.jobLocation);
+          if (loc) {
+            collected.location = loc;
+            parts.push(`Location: ${loc}`);
+          }
+
+          const empType = normalizeEmploymentType(jobPosting.employmentType);
+          if (empType) {
+            collected.employmentType = empType;
+            parts.push(`Employment Type: ${empType}`);
+          }
+
+          const validThrough = extractIsoDate(jobPosting.validThrough);
+          if (validThrough) {
+            collected.dueDate = validThrough;
+            parts.push(`Application Deadline: ${validThrough}`);
+          }
+
+          if (jobPosting.description) parts.push(`Description: ${jobPosting.description}`);
+          if (jobPosting.datePosted) parts.push(`Date Posted: ${jobPosting.datePosted}`);
+
           if (jobPosting.baseSalary) {
             const salary = jobPosting.baseSalary;
             if (salary.value) {
@@ -260,7 +348,10 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
               parts.push(`Salary: ${salaryStr}`);
             }
           }
+
           jsonLdText = parts.join('\n');
+          if (Object.keys(collected).length > 0) structured = collected;
+          return false;
         }
       } catch {
         // Ignore JSON parse errors
@@ -306,6 +397,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
       title,
       text,
       fetchedAt,
+      ...(structured ? { structured } : {}),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';

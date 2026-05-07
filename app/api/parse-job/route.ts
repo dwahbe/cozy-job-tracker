@@ -61,7 +61,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract job data using OpenAI
-    const extraction = await extractJob(pageResult.text, pageResult.title, pageResult.finalUrl);
+    const extraction = await extractJob(
+      pageResult.text,
+      pageResult.title,
+      pageResult.finalUrl,
+      pageResult.structured
+    );
 
     // Validate the extraction against source text
     const validatedJob = validateExtraction(

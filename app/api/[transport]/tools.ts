@@ -431,7 +431,12 @@ export const toolDefinitions: ToolDef[] = [
           return txt(`Failed to fetch: ${pageResult.fetchError}`, true);
         }
 
-        const extraction = await extractJob(pageResult.text, pageResult.title, pageResult.finalUrl);
+        const extraction = await extractJob(
+          pageResult.text,
+          pageResult.title,
+          pageResult.finalUrl,
+          pageResult.structured
+        );
         const job = validateExtraction(
           extraction,
           pageResult.text,

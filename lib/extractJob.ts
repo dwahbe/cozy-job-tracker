@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import type { StructuredJobData } from './fetchPage';
 
 export interface ExtractionField {
   value: string | null;
@@ -16,7 +17,38 @@ export interface RawExtraction {
 
 const openai = new OpenAI();
 
-const SYSTEM_PROMPT = `You are a job posting data extractor. Extract structured information from job posting text.
+type FieldKey = keyof RawExtraction;
+
+const FIELD_DESCRIPTIONS: Record<FieldKey, string> = {
+  title: '- title: The job title/position name',
+  company: '- company: The company/organization name',
+  location: '- location: Where the job is located (city, state, remote, etc.)',
+  employment_type: '- employment_type: Full-time, Part-time, Contract, etc.',
+  due_date: `- due_date: Application deadline or closing date. IMPORTANT:
+  - If a specific date is mentioned, format as YYYY-MM-DD
+  - If the posting EXPLICITLY states "rolling basis", "rolling admissions", "no deadline", "open until filled", or similar phrases indicating there is no fixed deadline, set value to "rolling"
+  - Only set to "rolling" if the text explicitly mentions this - do NOT assume rolling if no date is mentioned`,
+  notes:
+    '- notes: Concise supplementary details — prioritize: salary/compensation range, remote/hybrid/onsite policy if not already in location, visa sponsorship status. Keep to 2-3 short phrases max. Do NOT repeat the title, company, or location.',
+};
+
+const ALL_FIELDS: FieldKey[] = [
+  'title',
+  'company',
+  'location',
+  'employment_type',
+  'due_date',
+  'notes',
+];
+
+const EMPTY_FIELD: ExtractionField = { value: null, evidence: null };
+
+function buildSystemPrompt(fields: FieldKey[]): string {
+  const fieldDescs = fields.map((f) => FIELD_DESCRIPTIONS[f]).join('\n');
+  const jsonTemplate = fields
+    .map((f) => `  "${f}": { "value": "string or null", "evidence": "string or null" }`)
+    .join(',\n');
+  return `You are a job posting data extractor. Extract structured information from job posting text.
 
 CRITICAL RULES:
 1. Only extract information that is EXPLICITLY stated in the provided text
@@ -26,36 +58,75 @@ CRITICAL RULES:
 5. Keep evidence quotes short but complete enough to prove the value
 
 Extract these fields:
-- title: The job title/position name
-- company: The company/organization name
-- location: Where the job is located (city, state, remote, etc.)
-- employment_type: Full-time, Part-time, Contract, etc.
-- due_date: Application deadline or closing date. IMPORTANT:
-  - If a specific date is mentioned, format as YYYY-MM-DD
-  - If the posting EXPLICITLY states "rolling basis", "rolling admissions", "no deadline", "open until filled", or similar phrases indicating there is no fixed deadline, set value to "rolling"
-  - Only set to "rolling" if the text explicitly mentions this - do NOT assume rolling if no date is mentioned
-- notes: Concise supplementary details — prioritize: salary/compensation range, remote/hybrid/onsite policy if not already in location, visa sponsorship status. Keep to 2-3 short phrases max. Do NOT repeat the title, company, or location.
+${fieldDescs}
 
 Return ONLY valid JSON in this exact format:
 {
-  "title": { "value": "string or null", "evidence": "string or null" },
-  "company": { "value": "string or null", "evidence": "string or null" },
-  "location": { "value": "string or null", "evidence": "string or null" },
-  "employment_type": { "value": "string or null", "evidence": "string or null" },
-  "due_date": { "value": "string or null or 'rolling'", "evidence": "string or null" },
-  "notes": { "value": "string or null", "evidence": "string or null" }
+${jsonTemplate}
 }`;
+}
+
+function coveredFields(structured?: StructuredJobData): Set<FieldKey> {
+  const covered = new Set<FieldKey>();
+  if (!structured) return covered;
+  if (structured.title) covered.add('title');
+  if (structured.company) covered.add('company');
+  if (structured.location) covered.add('location');
+  if (structured.employmentType) covered.add('employment_type');
+  if (structured.dueDate) covered.add('due_date');
+  return covered;
+}
+
+function applyStructured(result: RawExtraction, structured?: StructuredJobData): RawExtraction {
+  if (!structured) return result;
+  if (structured.title) {
+    result.title = { value: structured.title, evidence: `Title: ${structured.title}` };
+  }
+  if (structured.company) {
+    result.company = { value: structured.company, evidence: `Company: ${structured.company}` };
+  }
+  if (structured.location) {
+    result.location = {
+      value: structured.location,
+      evidence: `Location: ${structured.location}`,
+    };
+  }
+  if (structured.employmentType) {
+    result.employment_type = {
+      value: structured.employmentType,
+      evidence: `Employment Type: ${structured.employmentType}`,
+    };
+  }
+  if (structured.dueDate) {
+    result.due_date = {
+      value: structured.dueDate,
+      evidence: `Application Deadline: ${structured.dueDate}`,
+    };
+  }
+  return result;
+}
 
 export async function extractJob(
   text: string,
   title: string | null,
-  finalUrl: string
+  finalUrl: string,
+  structured?: StructuredJobData
 ): Promise<RawExtraction> {
+  const covered = coveredFields(structured);
+  const fieldsNeeded = ALL_FIELDS.filter((f) => !covered.has(f));
+
+  // When 4+ deterministic fields are already covered by JSON-LD, the body text
+  // is largely redundant — JSON-LD's `Description:` block is already in the prefix.
+  const richStructured = covered.size >= 4;
+  const inputLimit = richStructured ? 4000 : 15000;
+
   const userPrompt = `Page title: ${title || 'Unknown'}
 URL: ${finalUrl}
 
 Job posting text:
-${text.slice(0, 15000)}`;
+${text.slice(0, inputLimit)}`;
+
+  const systemPrompt = buildSystemPrompt(fieldsNeeded);
 
   let lastError: unknown;
 
@@ -65,7 +136,7 @@ ${text.slice(0, 15000)}`;
         model: 'gpt-4o-mini',
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
         temperature: 0,
@@ -75,7 +146,18 @@ ${text.slice(0, 15000)}`;
       const content = response.choices[0]?.message?.content;
       if (!content) throw new Error('No response from OpenAI');
 
-      return JSON.parse(content) as RawExtraction;
+      const llmResult = JSON.parse(content) as Partial<RawExtraction>;
+
+      const merged: RawExtraction = {
+        title: llmResult.title ?? EMPTY_FIELD,
+        company: llmResult.company ?? EMPTY_FIELD,
+        location: llmResult.location ?? EMPTY_FIELD,
+        employment_type: llmResult.employment_type ?? EMPTY_FIELD,
+        due_date: llmResult.due_date ?? EMPTY_FIELD,
+        notes: llmResult.notes ?? EMPTY_FIELD,
+      };
+
+      return applyStructured(merged, structured);
     } catch (error) {
       lastError = error;
       const isRetryable =
