@@ -220,7 +220,7 @@ export const toolDefinitions: ToolDef[] = [
           .describe('New status: Saved, Applied, Interview, Offer, or Rejected'),
         dueDate: z.string().optional().describe('New due date (YYYY-MM-DD)'),
         customFields: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .optional()
           .describe(
             'Custom column values to update, keyed by column name. For checkbox columns use "Yes"/"No". For dropdown columns use one of the allowed options.'
@@ -418,7 +418,7 @@ export const toolDefinitions: ToolDef[] = [
       description:
         'Parse a job posting URL and return the extracted fields without saving to the board. Useful for previewing what a listing contains.',
       inputSchema: {
-        url: z.string().url().describe('URL of the job posting to parse'),
+        url: z.url().describe('URL of the job posting to parse'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -699,7 +699,7 @@ export const toolDefinitions: ToolDef[] = [
           .optional()
           .describe('New status: not-contacted, reached-out, waiting, in-conversation, or paused'),
         customFields: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .optional()
           .describe(
             'Custom column values to update, keyed by column name. For checkbox columns use "Yes"/"No". For dropdown columns use one of the allowed options.'
