@@ -168,7 +168,7 @@ export function KanbanBoard({
         newStatus = (over.data.current as { status: string })?.status;
       }
 
-      if (!newStatus || !oldStatus || newStatus === oldStatus || !jobLink) return;
+      if (!newStatus || !oldStatus || newStatus === oldStatus) return;
 
       // Optimistic update
       setLocalJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
