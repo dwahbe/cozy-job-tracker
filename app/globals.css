@@ -1860,7 +1860,7 @@ a:focus-visible {
 
 .mock-listing-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.65rem;
   padding: 0.55rem 0.65rem;
   border-radius: 10px;
@@ -1885,6 +1885,7 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .mock-listing-logo-alt {
@@ -1914,14 +1915,19 @@ a:focus-visible {
   color: var(--muted-2);
 }
 
-.mock-listing-cta {
+.mock-listing-apply {
+  margin-top: 0.3rem;
   font-size: 0.7rem;
-  font-weight: 650;
-  color: white;
-  background: #0a66c2;
-  border-radius: var(--radius-full);
-  padding: 4px 12px;
+  font-weight: 600;
+  color: #0a66c2;
+}
+
+.mock-listing-age {
+  font-size: 0.68rem;
+  color: var(--muted-2);
+  white-space: nowrap;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* ---- Parse mockup ---- */

@@ -219,24 +219,27 @@ function JobListingMockup() {
           <div className="mock-listing-info">
             <div className="mock-listing-title">Program Manager</div>
             <div className="mock-listing-company">Habitat for Humanity · Atlanta, GA</div>
+            <div className="mock-listing-apply">Apply ↗</div>
           </div>
-          <div className="mock-listing-cta">Apply</div>
+          <div className="mock-listing-age">2d ago</div>
         </div>
         <div className="mock-listing-item mock-listing-item-faded">
           <div className="mock-listing-logo">B</div>
           <div className="mock-listing-info">
             <div className="mock-listing-title">Barista</div>
             <div className="mock-listing-company">Blue Bottle Coffee · Brooklyn, NY</div>
+            <div className="mock-listing-apply">Apply ↗</div>
           </div>
-          <div className="mock-listing-cta">Apply</div>
+          <div className="mock-listing-age">5d ago</div>
         </div>
         <div className="mock-listing-item mock-listing-item-faded">
           <div className="mock-listing-logo mock-listing-logo-alt">P</div>
           <div className="mock-listing-info">
             <div className="mock-listing-title">Marketing Coordinator</div>
             <div className="mock-listing-company">Patagonia · Ventura, CA</div>
+            <div className="mock-listing-apply">Apply ↗</div>
           </div>
-          <div className="mock-listing-cta">Apply</div>
+          <div className="mock-listing-age">1w ago</div>
         </div>
       </div>
     </BrowserChrome>
@@ -354,7 +357,7 @@ export function HowItWorks() {
 
         <StepCard
           step={2}
-          title="Paste the URL, we parse it for you"
+          title="Paste the URL in"
           description="Drop in a job posting link and cozy job tracker pulls out the title, company, location, and more."
           index={1}
           align="right"
