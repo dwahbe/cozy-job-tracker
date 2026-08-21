@@ -13,7 +13,7 @@ export function Footer() {
         </div>
         <div className="flex items-center justify-center gap-2 text-sm flex-wrap">
           <span className="muted">
-            Built by{' '}
+            Created by{' '}
             <a
               href="https://dylanwahbe.com"
               target="_blank"
