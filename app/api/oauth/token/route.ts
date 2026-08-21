@@ -30,8 +30,6 @@ export async function POST(req: Request) {
     const params = new URLSearchParams(body);
     const grantType = params.get('grant_type');
 
-    console.log('[oauth/token] grant_type=%s client_id=%s', grantType, params.get('client_id'));
-
     if (grantType === 'authorization_code') {
       return handleAuthorizationCode(params);
     }
@@ -43,7 +41,7 @@ export async function POST(req: Request) {
     return oauthError('unsupported_grant_type', `Unsupported grant_type: ${grantType}`);
   } catch (e) {
     console.error('[oauth/token]', e);
-    return oauthError('server_error', String(e), 500);
+    return oauthError('server_error', 'Token request failed.', 500);
   }
 }
 
@@ -54,46 +52,29 @@ async function handleAuthorizationCode(params: URLSearchParams) {
   const codeVerifier = params.get('code_verifier');
 
   if (!code || !clientId || !redirectUri || !codeVerifier) {
-    console.log(
-      '[oauth/token] missing params: code=%s clientId=%s uri=%s verifier=%s',
-      !!code,
-      !!clientId,
-      !!redirectUri,
-      !!codeVerifier
-    );
     return oauthError('invalid_request', 'Missing required parameters.');
   }
 
   const codeData = await consumeAuthCode(code);
   if (!codeData) {
-    console.log('[oauth/token] auth code invalid or expired');
     return oauthError('invalid_grant', 'Authorization code is invalid or expired.');
   }
 
   if (codeData.clientId !== clientId) {
-    console.log(
-      '[oauth/token] client_id mismatch: stored=%s received=%s',
-      codeData.clientId,
-      clientId
-    );
+    console.warn('[oauth/token] client_id mismatch');
     return oauthError('invalid_grant', 'client_id does not match.');
   }
 
   if (codeData.redirectUri !== redirectUri) {
-    console.log(
-      '[oauth/token] redirect_uri mismatch: stored=%s received=%s',
-      codeData.redirectUri,
-      redirectUri
-    );
+    console.warn('[oauth/token] redirect_uri mismatch');
     return oauthError('invalid_grant', 'redirect_uri does not match.');
   }
 
   if (!verifyPkce(codeVerifier, codeData.codeChallenge)) {
-    console.log('[oauth/token] PKCE failed');
+    console.warn('[oauth/token] PKCE verification failed');
     return oauthError('invalid_grant', 'PKCE verification failed.');
   }
 
-  console.log('[oauth/token] success, issuing tokens for user=%s', codeData.userId);
   return issueTokens(codeData.userId, codeData.clientId, codeData.scope);
 }
 

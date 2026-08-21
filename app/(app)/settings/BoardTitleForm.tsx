@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BOARD_TITLE_MAX } from '@/lib/limits';
 
 export function BoardTitleForm({ currentTitle }: { currentTitle: string }) {
   const [title, setTitle] = useState(currentTitle);
@@ -25,7 +26,8 @@ export function BoardTitleForm({ currentTitle }: { currentTitle: string }) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError('Failed to save title. Please try again.');
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Failed to save title. Please try again.');
       }
     } catch {
       setError('Failed to save title. Please try again.');
@@ -45,6 +47,7 @@ export function BoardTitleForm({ currentTitle }: { currentTitle: string }) {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          maxLength={BOARD_TITLE_MAX}
           className="input w-full"
           placeholder="My job board"
         />

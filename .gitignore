@@ -44,3 +44,6 @@ next-env.d.ts
 # chrome extension build artifacts
 extension/dist/
 extension/*.zip
+
+# local data export (contains other users' board data) — never commit
+legacy-backup.json

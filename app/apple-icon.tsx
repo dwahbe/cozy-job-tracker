@@ -6,8 +6,6 @@ export const size = {
 };
 export const contentType = 'image/png';
 
-export const runtime = 'edge';
-
 export default function AppleIcon() {
   return new ImageResponse(
     <div

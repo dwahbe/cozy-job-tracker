@@ -14,11 +14,7 @@ export interface Interaction {
 }
 
 export type PersonStatus =
-  | 'not-contacted'
-  | 'reached-out'
-  | 'waiting'
-  | 'in-conversation'
-  | 'paused';
+  'not-contacted' | 'reached-out' | 'waiting' | 'in-conversation' | 'paused';
 
 export const PERSON_STATUSES: PersonStatus[] = [
   'not-contacted',

@@ -1,27 +1,38 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { getBoardByUserId, saveBoardByUserId } from '@/lib/kv';
+import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { BOARD_TITLE_MAX } from '@/lib/limits';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const { title } = body as { title?: unknown };
+    if (typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+    const trimmed = title.trim();
+    if (trimmed.length > BOARD_TITLE_MAX) {
+      return NextResponse.json(
+        { error: `Title must be ${BOARD_TITLE_MAX} characters or fewer` },
+        { status: 400 }
+      );
+    }
+
+    const ctx = await resolveBoard(undefined);
+    if (!ctx) {
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+    }
+
+    ctx.board.title = trimmed;
+    await saveBoardAndRevalidate(ctx);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Update board title error:', error);
+    return NextResponse.json({ error: 'Failed to update title' }, { status: 500 });
   }
-
-  const { title } = await request.json();
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-  }
-
-  const board = await getBoardByUserId(session.user.id);
-  if (!board) {
-    return NextResponse.json({ error: 'Board not found' }, { status: 404 });
-  }
-
-  board.title = title.trim();
-  await saveBoardByUserId(session.user.id, board);
-
-  return NextResponse.json({ ok: true });
 }

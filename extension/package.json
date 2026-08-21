@@ -7,6 +7,6 @@
     "dev": "bun run build.ts && echo 'Reload extension in chrome://extensions'"
   },
   "devDependencies": {
-    "@types/chrome": "latest"
+    "@types/chrome": "^0.1.36"
   }
 }

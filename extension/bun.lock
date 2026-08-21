@@ -5,7 +5,7 @@
     "": {
       "name": "cozy-job-tracker-extension",
       "devDependencies": {
-        "@types/chrome": "latest",
+        "@types/chrome": "^0.1.36",
       },
     },
   },

@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
-
 export const alt = 'cozy job tracker - calm tracking for a noisy job search';
 export const size = {
   width: 1200,
