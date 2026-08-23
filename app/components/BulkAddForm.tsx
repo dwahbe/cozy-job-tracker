@@ -56,6 +56,7 @@ export function BulkAddForm() {
   const [phase, setPhase] = useState<'input' | 'parsing' | 'review' | 'adding'>('input');
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const urls = extractUrls(input);
   const urlCount = urls.length;
@@ -69,6 +70,9 @@ export function BulkAddForm() {
     if (urlCount === 0 || overLimit) return;
 
     abortRef.current = false;
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setError(null);
 
     const initial: UrlEntry[] = urls.map((url) => ({ url, status: 'pending' }));
@@ -96,6 +100,7 @@ export function BulkAddForm() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: initial[idx].url }),
+            signal: controller.signal,
           });
 
           if (abortRef.current) return;
@@ -152,6 +157,7 @@ export function BulkAddForm() {
 
   const handleCancel = () => {
     abortRef.current = true;
+    controllerRef.current?.abort();
     setPhase('review');
   };
 
@@ -199,6 +205,7 @@ export function BulkAddForm() {
 
   const handleReset = useCallback(() => {
     abortRef.current = true;
+    controllerRef.current?.abort();
     setInput('');
     setEntries([]);
     setPhase('input');

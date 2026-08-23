@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
 import { createJobFromValidation } from '@/lib/kv';
 import type { ValidatedJob } from '@/lib/validateExtraction';
-import { fetchPage } from '@/lib/fetchPage';
-import { extractJob } from '@/lib/extractJob';
-import { validateExtraction } from '@/lib/validateExtraction';
 import { outcomeError, unauthorized, withBoard } from '@/lib/api-auth';
 import { addManualJob, applyJobUpdates, updatesFromObject } from '@/lib/job-updates';
-import { limited } from '@/lib/ratelimit';
 import { ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
@@ -18,9 +14,8 @@ export async function POST(req: NextRequest) {
     if (!user) return unauthorized();
 
     const body = await req.json().catch(() => null);
-    const { job, url, manual, overrides, customFields } = (body ?? {}) as {
+    const { job, manual, overrides, customFields } = (body ?? {}) as {
       job?: ValidatedJob;
-      url?: string;
       manual?: unknown;
       overrides?: Partial<{
         title: string;
@@ -44,51 +39,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Path 2: Legacy URL parse (extension v1.0)
-    // TODO: remove v1.0 compat once extension v1.1+ is widespread
-    const isLegacy = !job && typeof url === 'string';
-
-    let validatedJob: ValidatedJob;
-    let fetchWarning: string | undefined;
-
-    if (isLegacy) {
-      const blocked = await limited('parse', user.userId);
-      if (blocked) return blocked;
-
-      try {
-        new URL(url);
-      } catch {
-        return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
-      }
-
-      const pageResult = await fetchPage(url);
-
-      if (pageResult.fetchError && pageResult.text.length === 0) {
-        return NextResponse.json(
-          { error: pageResult.fetchError, errorType: pageResult.errorType },
-          { status: 422 }
-        );
-      }
-
-      const extraction = await extractJob(
-        pageResult.text,
-        pageResult.title,
-        pageResult.finalUrl,
-        pageResult.structured
-      );
-      validatedJob = validateExtraction(
-        extraction,
-        pageResult.text,
-        pageResult.fetchedAt,
-        pageResult.finalUrl
-      );
-      fetchWarning = pageResult.fetchError;
-    } else if (job?.finalUrl) {
-      // Path 3: Pre-parsed job (extension v1.1+)
-      validatedJob = job;
-    } else {
+    // Pre-parsed job from the extension (v1.1+): the extension calls /api/extension/parse-job
+    // first, lets the user review the fields, then posts the result here.
+    if (!job?.finalUrl) {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
+    const validatedJob = job;
 
     const result = await withBoard(user.userId, (board) => {
       const newJob = createJobFromValidation(validatedJob, board.columns);
@@ -118,7 +74,6 @@ export async function POST(req: NextRequest) {
       success: true,
       title: result.value.title,
       company: result.value.company,
-      ...(fetchWarning ? { warning: fetchWarning } : {}),
     });
   } catch (error) {
     console.error('Extension add-job error:', error);

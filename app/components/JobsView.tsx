@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import type { SortRule } from '@/lib/kv';
 import type { JobView } from './ViewToggle';
@@ -9,6 +9,7 @@ import { SortBuilder } from './SortSelect';
 import { JobCard } from './JobCard';
 import { JobTable } from './JobTable';
 import { KanbanBoard } from './KanbanBoard';
+import { showToast } from './Toast';
 
 const VIEW_STORAGE_KEY = 'cozy-jobs-view-preference';
 const HIGHLIGHT_KEY = 'cozy-highlight-job';
@@ -112,24 +113,56 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
   const listRef = useRef<HTMLDivElement>(null);
   const [minHeight, setMinHeight] = useState(0);
   const [highlightJobId, clearHighlight] = useHighlightJob();
+  const sortsRef = useRef(sorts);
+
+  useEffect(() => {
+    sortsRef.current = sorts;
+  }, [sorts]);
+
+  // Backstop: clear the highlight after a few seconds even if no animationend fires
+  // (reduced motion, or the highlighted job isn't rendered in the current view).
+  useEffect(() => {
+    if (!highlightJobId) return;
+    const timer = window.setTimeout(clearHighlight, 3000);
+    return () => window.clearTimeout(timer);
+  }, [highlightJobId, clearHighlight]);
 
   const handleViewChange = (newView: JobView) => {
     setStoredView(newView);
   };
 
-  const handleSortsChange = useCallback((newSorts: SortRule[]) => {
+  const handleSortsChange = useCallback(async (newSorts: SortRule[]) => {
+    const previous = sortsRef.current;
     setSorts(newSorts);
-    // Persist to server
-    fetch('/api/update-sort', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sortPreference: newSorts }),
-    }).catch(console.error);
+    // Persist to server; roll back if that fails.
+    try {
+      const response = await fetch('/api/update-sort', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sortPreference: newSorts }),
+      });
+      if (!response.ok) throw new Error(`update-sort ${response.status}`);
+    } catch (err) {
+      console.error('Sort save failed:', err);
+      setSorts(previous);
+      showToast("Couldn't save your sort order — please try again.");
+    }
   }, []);
+
+  // Rules that point at a custom column that no longer exists are ignored.
+  const activeSorts = useMemo(
+    () =>
+      sorts.filter(
+        (rule) =>
+          !rule.field.startsWith('custom:') ||
+          columns.some((c) => `custom:${c.name}` === rule.field)
+      ),
+    [sorts, columns]
+  );
 
   const sortedJobs = useMemo(() => {
     // No active sorts — default to newest first
-    if (sorts.length === 0) {
+    if (activeSorts.length === 0) {
       return [...jobs].sort((a, b) => b.parsedOn.localeCompare(a.parsedOn));
     }
 
@@ -142,7 +175,7 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
     }
 
     return [...jobs].sort((a, b) => {
-      for (const rule of sorts) {
+      for (const rule of activeSorts) {
         const aVal = getSortFieldValue(a, rule.field);
         const bVal = getSortFieldValue(b, rule.field);
 
@@ -175,7 +208,7 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
       }
       return 0;
     });
-  }, [jobs, sorts, columns]);
+  }, [jobs, activeSorts, columns]);
 
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -246,6 +279,7 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
                 setSearch(e.target.value);
               }}
               placeholder="Search jobs..."
+              aria-label="Search jobs"
               className="search-input"
             />
             {search && (
@@ -274,7 +308,7 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
           </p>
         </div>
         <div className="jobs-toolbar-controls">
-          <SortBuilder sorts={sorts} onSortsChange={handleSortsChange} columns={columns} />
+          <SortBuilder sorts={activeSorts} onSortsChange={handleSortsChange} columns={columns} />
           <ViewToggle view={view} onViewChange={handleViewChange} />
         </div>
       </div>
@@ -304,7 +338,7 @@ export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: 
           <div className="space-y-4">
             {filteredJobs.map((job) => (
               <JobCard
-                key={job.link}
+                key={job.id}
                 job={job}
                 columns={columns}
                 highlight={job.id === highlightJobId}

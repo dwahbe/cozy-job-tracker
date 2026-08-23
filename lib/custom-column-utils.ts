@@ -293,6 +293,15 @@ export function reorderCustomColumns(doc: ColumnDoc, order: unknown): Outcome<Co
     if (!byName.has(name)) return fail(400, `Column "${name}" not found`);
   }
   doc.columns = order.map((name) => byName.get(name)!);
+
+  // Keep the saved display order in step: custom names keep their slots among the built-ins
+  // but take the new relative order (names missing from the saved order are appended on read).
+  if (doc.columnOrder && doc.columnOrder.length > 0) {
+    const saved = doc.columnOrder;
+    const queue = order.filter((name) => saved.includes(name));
+    const customNames = new Set(order);
+    doc.columnOrder = saved.map((id) => (customNames.has(id) ? queue.shift()! : id));
+  }
   return ok(doc.columns);
 }
 

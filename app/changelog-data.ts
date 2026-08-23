@@ -2,20 +2,38 @@ export type ChangelogEntry = {
   date: string;
   title: string;
   emoji: string;
+  /** A paragraph, or [intro paragraph, ...bullet points]. */
   description: string | string[];
+  /** Closing paragraph shown after the bullets. */
+  outro?: string;
   tag?: 'new' | 'improvement' | 'fix' | 'beta';
   link?: { url: string; text: string };
 };
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: 'Aug 22, 2026',
+    title: 'A sturdier, safer cozy job tracker',
+    emoji: '🔧',
+    description: [
+      "A big under-the-hood pass. Nothing new to learn — things just work the way you'd expect now.",
+      'Edits from two tabs (or the web and the extension) no longer overwrite each other',
+      'Editing a link in the table view works again, and typing no longer loses your place',
+      'Dropdown values can be cleared, and imported spreadsheet dates display properly',
+      'Big sheet imports tell you when only the first 200 rows came through',
+      'The feedback form opens reliably from the header menus',
+      "Clearer error messages when something can't be saved, instead of quietly reverting",
+      'Rate limits on parsing and sign-in, and tighter checks on outside links',
+    ],
+    outro: 'Spot something off? The feedback button is always there.',
+    tag: 'improvement',
+  },
+  {
     date: 'Aug 21, 2026',
     title: 'Old /b/ boards retired',
     emoji: '🧹',
-    description: [
-      "The link-based boards from before accounts existed are gone — everyone's on email sign-in now, and the old boards had been idle for months.",
-      "If you had one and still want the data, send me a note through the feedback button and I'll dig it out.",
-    ],
+    description:
+      "The link-based boards from before accounts existed are gone — everyone's on email sign-in now, and the old boards had been idle for months. If you had one and still want the data, send me a note through the feedback button and I'll dig it out.",
   },
   {
     date: 'Apr 3, 2026',
@@ -40,8 +58,8 @@ export const changelog: ChangelogEntry[] = [
       'Import from Google Sheets with auto-detected column mapping',
       'Inline editing, drag-and-drop columns, search, and multi-sort',
       'Link people to jobs on your board',
-      "This is in beta and I'll be refining it and adding more. Let me know what's missing!",
     ],
+    outro: "This is in beta and I'll be refining it and adding more. Let me know what's missing!",
   },
   {
     date: 'Feb 22, 2026',

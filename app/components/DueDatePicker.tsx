@@ -21,6 +21,7 @@ export function DueDatePicker({
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
@@ -32,8 +33,20 @@ export function DueDatePicker({
         left: rect.left,
         zIndex: 9999,
       });
+      // Move focus into the popover so Escape/Tab act on it rather than on whatever is behind.
+      dateInputRef.current?.focus();
     }
   }, [isOpen]);
+
+  // Escape closes just this popover (parents check data-popover / defaultPrevented first).
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && isOpen) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(false);
+      buttonRef.current?.focus();
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -70,13 +83,15 @@ export function DueDatePicker({
   const displayText = value ? formatDateDisplay(value) : placeholder;
 
   return (
-    <div className="relative">
+    <div className="relative" data-popover={isOpen ? 'date' : undefined} onKeyDown={handleKeyDown}>
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
         className={buttonClassName}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
       >
         {displayText}
       </button>
@@ -84,13 +99,17 @@ export function DueDatePicker({
         <div
           ref={dropdownRef}
           style={dropdownStyle}
+          role="dialog"
+          aria-label="Pick a date"
           className="bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
         >
           <div className="space-y-2">
             <input
+              ref={dateInputRef}
               type="date"
               value={value === 'rolling' ? '' : value}
               onChange={handleDateChange}
+              aria-label="Date"
               className="input w-full text-sm"
             />
             <button

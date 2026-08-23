@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -20,6 +20,7 @@ import { celebrateOffer } from '@/lib/confetti';
 import type { DropAnimation } from '@dnd-kit/core';
 import { KanbanCard } from './KanbanCard';
 import { KanbanExpandPanel } from './KanbanExpandPanel';
+import { showToast } from './Toast';
 
 const DROP_ANIMATION: DropAnimation = { duration: 200, easing: 'ease' };
 
@@ -104,18 +105,41 @@ function KanbanColumn({
 
 export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: KanbanBoardProps) {
   const router = useRouter();
-  const [localJobs, setLocalJobs] = useState(jobs);
+  // Status moves that are in flight or not yet reflected in `jobs`, by job id. Layering these
+  // over the server data (instead of copying `jobs` into state) means a search or refresh can't
+  // snap a card back to its old column mid-move.
+  const [pendingMoves, setPendingMoves] = useState<Record<string, string>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  // The element that opened the details panel, so focus can go back to it on close.
+  const triggerRef = useRef<HTMLElement | null>(null);
 
-  // Sync with server data
-  useEffect(() => {
-    setLocalJobs(jobs);
-  }, [jobs]);
+  // Drop pending moves once the server data agrees with them (adjusted during render, the
+  // React-recommended way to derive state from props without an extra effect pass).
+  const settledIds = Object.keys(pendingMoves).filter(
+    (id) => jobs.find((j) => j.id === id)?.status === pendingMoves[id]
+  );
+  if (settledIds.length > 0) {
+    const next = { ...pendingMoves };
+    for (const id of settledIds) delete next[id];
+    setPendingMoves(next);
+  }
+
+  const localJobs = useMemo(() => {
+    if (Object.keys(pendingMoves).length === 0) return jobs;
+    return jobs.map((job) =>
+      pendingMoves[job.id] && pendingMoves[job.id] !== job.status
+        ? { ...job, status: pendingMoves[job.id] }
+        : job
+    );
+  }, [jobs, pendingMoves]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor)
+    // Space picks up / drops a card; Enter is left free to open the card's details.
+    useSensor(KeyboardSensor, {
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    })
   );
 
   const grouped = useMemo(() => {
@@ -163,7 +187,13 @@ export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: 
       if (!newStatus || !oldStatus || newStatus === oldStatus) return;
 
       // Optimistic update
-      setLocalJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
+      setPendingMoves((prev) => ({ ...prev, [jobId]: newStatus }));
+      const rollback = () =>
+        setPendingMoves((prev) => {
+          const next = { ...prev };
+          delete next[jobId];
+          return next;
+        });
 
       try {
         const response = await fetch('/api/update-job', {
@@ -176,12 +206,13 @@ export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: 
           if (newStatus === 'Offer') celebrateOffer();
           router.refresh();
         } else {
-          setLocalJobs((prev) =>
-            prev.map((j) => (j.id === jobId ? { ...j, status: oldStatus } : j))
-          );
+          const data = (await response.json().catch(() => ({}))) as { error?: unknown };
+          showToast(typeof data.error === 'string' ? data.error : "Couldn't move the job.");
+          rollback();
         }
       } catch {
-        setLocalJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: oldStatus } : j)));
+        showToast("Couldn't move the job — check your connection.");
+        rollback();
       }
     },
     [router]
@@ -192,7 +223,16 @@ export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: 
   }, []);
 
   const handleCardClick = useCallback((jobId: string) => {
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setExpandedJobId(jobId);
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    setExpandedJobId(null);
+    const trigger = triggerRef.current;
+    triggerRef.current = null;
+    if (trigger?.isConnected) trigger.focus();
   }, []);
 
   return (
@@ -230,11 +270,7 @@ export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: 
       </DndContext>
 
       {expandedJob && (
-        <KanbanExpandPanel
-          job={expandedJob}
-          columns={columns}
-          onClose={() => setExpandedJobId(null)}
-        />
+        <KanbanExpandPanel job={expandedJob} columns={columns} onClose={handleClosePanel} />
       )}
     </>
   );

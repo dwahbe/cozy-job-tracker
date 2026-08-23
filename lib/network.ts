@@ -267,8 +267,65 @@ const CHECKBOX_PATTERNS = new Set([
   '',
 ]);
 
-const DATE_PATTERN =
-  /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|[a-z]+ \d{1,2},?\s*\d{2,4}|\d{1,2} [a-z]+ \d{2,4})$/i;
+const MONTHS: Record<string, number> = {
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  sept: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
+};
+
+function toIso(year: number, month: number, day: number): string | null {
+  if (year < 100) year += 2000;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const date = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) || !date.toISOString().startsWith(iso) ? null : iso;
+}
+
+/**
+ * Parse the date spellings that show up in spreadsheets into YYYY-MM-DD:
+ * 2026-08-25, 2026/8/25, 8/25/2026 (US, Google Sheets' default), 25.8.2026 (when the first
+ * number can't be a month), Aug 25, 2026, 25 Aug 2026, August 25 2026. Returns null otherwise.
+ */
+export function parseFlexibleDate(value: string): string | null {
+  const v = value.trim();
+  if (!v) return null;
+
+  let m = v.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if (m) return toIso(Number(m[1]), Number(m[2]), Number(m[3]));
+
+  m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    const year = Number(m[3]);
+    // Month-first unless that can't be a month (e.g. 25/8/2026).
+    return a > 12 && b <= 12 ? toIso(year, b, a) : toIso(year, a, b);
+  }
+
+  m = v.match(/^([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{2,4})$/i);
+  if (m) {
+    const month = MONTHS[m[1].slice(0, 4).toLowerCase()] ?? MONTHS[m[1].slice(0, 3).toLowerCase()];
+    return month ? toIso(Number(m[3]), month, Number(m[2])) : null;
+  }
+
+  m = v.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)\.?,?\s+(\d{2,4})$/i);
+  if (m) {
+    const month = MONTHS[m[2].slice(0, 4).toLowerCase()] ?? MONTHS[m[2].slice(0, 3).toLowerCase()];
+    return month ? toIso(Number(m[3]), month, Number(m[1])) : null;
+  }
+
+  return null;
+}
 
 export interface InferredColumnType {
   type: 'text' | 'checkbox' | 'dropdown' | 'date';
@@ -283,9 +340,9 @@ export function inferColumnType(values: string[]): InferredColumnType {
   const checkboxCount = nonEmpty.filter((v) => CHECKBOX_PATTERNS.has(v.toLowerCase())).length;
   if (checkboxCount / nonEmpty.length >= 0.8) return { type: 'checkbox' };
 
-  // Date: 70%+ values look like dates
-  const dateCount = nonEmpty.filter((v) => DATE_PATTERN.test(v)).length;
-  if (dateCount / nonEmpty.length >= 0.7) return { type: 'date' };
+  // Date: only when every value parses — a single stray value makes it a text column, since
+  // date cells can't hold the unparseable ones.
+  if (nonEmpty.every((v) => parseFlexibleDate(v) !== null)) return { type: 'date' };
 
   // Dropdown: <=8 unique values (case-insensitive dedup, keep first casing)
   const seen = new Map<string, string>();

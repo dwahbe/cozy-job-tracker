@@ -417,7 +417,7 @@ export function JobForm({ columns }: JobFormProps) {
                   </select>
                 ) : (
                   <input
-                    type="text"
+                    type={col.type === 'date' ? 'date' : 'text'}
                     value={manualJob.customFields[col.name] || ''}
                     onChange={(e) =>
                       setManualJob({

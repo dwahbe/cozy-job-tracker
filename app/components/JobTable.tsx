@@ -5,8 +5,15 @@ import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
 import { celebrateOffer } from '@/lib/confetti';
-import { statusColor, getFieldValue, applyFieldUpdate, STATUS_OPTIONS } from '@/lib/job-utils';
+import {
+  statusColor,
+  getFieldValue,
+  applyFieldUpdate,
+  toHref,
+  STATUS_OPTIONS,
+} from '@/lib/job-utils';
 import { DueDatePicker } from './DueDatePicker';
+import { showToast } from './Toast';
 import {
   DndContext,
   closestCenter,
@@ -130,6 +137,194 @@ function SortableHeader({
   );
 }
 
+// The inline editors live at module level (not inside JobTable's render) so React keeps the same
+// component identity across renders — defined inline, the textarea remounted on every keystroke
+// and lost focus and caret position.
+
+interface EditableCellProps {
+  value: string;
+  placeholder?: string;
+  className?: string;
+  editing: boolean;
+  editValue: string;
+  onEditValueChange: (value: string) => void;
+  onStart: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+function EditableCell({
+  value,
+  placeholder = '—',
+  className = '',
+  editing,
+  editValue,
+  onEditValueChange,
+  onStart,
+  onSave,
+  onCancel,
+}: EditableCellProps) {
+  if (editing) {
+    return (
+      <AutoHeightTextarea
+        value={editValue}
+        onChange={(e) => onEditValueChange(e.target.value)}
+        onBlur={onSave}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onSave();
+          } else if (e.key === 'Escape') {
+            onCancel();
+          }
+        }}
+        className="inline-edit"
+        autoFocus
+      />
+    );
+  }
+
+  const isEmpty = !value;
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={onStart}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onStart();
+        }
+      }}
+      className={`cursor-pointer hover:bg-black/5 px-1 -mx-1 rounded transition-colors ${isEmpty ? 'text-muted-3' : ''} ${className}`}
+    >
+      {value || placeholder}
+    </span>
+  );
+}
+
+interface TitleLinkCellProps {
+  job: ParsedJob;
+  editing: boolean;
+  editValue: string;
+  editLinkValue: string;
+  onEditValueChange: (value: string) => void;
+  onEditLinkValueChange: (value: string) => void;
+  onStart: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+function TitleLinkCell({
+  job,
+  editing,
+  editValue,
+  editLinkValue,
+  onEditValueChange,
+  onEditLinkValueChange,
+  onStart,
+  onSave,
+  onCancel,
+}: TitleLinkCellProps) {
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSave();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <AutoHeightTextarea
+          value={editValue}
+          onChange={(e) => onEditValueChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={() => {}}
+          className="inline-edit"
+          autoFocus
+        />
+        <div className="flex items-center gap-1">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="shrink-0 text-muted-3"
+            aria-hidden="true"
+          >
+            <path
+              d="M6.5 11.5h-2a3 3 0 010-6h2M9.5 4.5h2a3 3 0 010 6h-2M5 8h6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          <input
+            type="text"
+            value={editLinkValue}
+            onChange={(e) => onEditLinkValueChange(e.target.value)}
+            onBlur={onSave}
+            onKeyDown={onKeyDown}
+            placeholder="https://..."
+            aria-label="Link"
+            className="inline-edit text-xs w-full"
+            style={{ color: 'var(--muted-3)', boxShadow: 'none' }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 group/cell">
+      {job.title ? (
+        job.link ? (
+          <a href={toHref(job.link)} target="_blank" rel="noopener noreferrer" className="job-link">
+            {job.title}
+          </a>
+        ) : (
+          <span>{job.title}</span>
+        )
+      ) : (
+        <span className="text-muted-3">—</span>
+      )}
+      <button
+        type="button"
+        onClick={onStart}
+        className="opacity-0 group-hover/cell:opacity-100 focus-visible:opacity-100 p-0.5 hover:bg-black/5 rounded transition-opacity"
+        aria-label="Edit title and link"
+        title="Edit title & link"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 14 14"
+          fill="none"
+          className="text-muted-3"
+          aria-hidden="true"
+        >
+          <path
+            d="M10.5 1.5l2 2-7.5 7.5H3v-2l7.5-7.5zM8.5 3.5l2 2"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+async function readError(response: Response, fallback: string): Promise<string> {
+  const data = (await response.json().catch(() => ({}))) as { error?: unknown };
+  return typeof data.error === 'string' && data.error ? data.error : fallback;
+}
+
 interface JobTableProps {
   jobs: ParsedJob[];
   columns: Column[];
@@ -153,18 +348,13 @@ export function JobTable({
   const [editLinkValue, setEditLinkValue] = useState('');
   const [localOrder, setLocalOrder] = useState(columnOrder);
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, Record<string, string>>>({});
-  const highlightRef = useCallback(
-    (node: HTMLTableRowElement | null) => {
-      if (node) {
-        requestAnimationFrame(() => {
-          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-      }
-    },
-    // Re-run when the highlighted job changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [highlightJobId]
-  );
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+
+  // Scroll the highlighted row into view once per highlight, not on every render.
+  useEffect(() => {
+    if (!highlightJobId) return;
+    rowRefs.current.get(highlightJobId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightJobId]);
 
   // Create a map of custom columns for quick lookup
   const customColumnMap = new Map(columns.map((c) => [c.name, c]));
@@ -181,7 +371,11 @@ export function JobTable({
       const next: Record<string, Record<string, string>> = {};
       for (const [jobId, fields] of Object.entries(prev)) {
         const serverJob = serverJobs.find((j) => j.id === jobId);
-        if (!serverJob) continue;
+        // Jobs hidden by the current search keep their pending edits until they're visible again.
+        if (!serverJob) {
+          next[jobId] = fields;
+          continue;
+        }
         const remaining: Record<string, string> = {};
         for (const [field, value] of Object.entries(fields)) {
           if (getFieldValue(serverJob, field) !== value) {
@@ -192,7 +386,7 @@ export function JobTable({
           next[jobId] = remaining;
         }
       }
-      return Object.keys(next).length > 0 ? next : {};
+      return next;
     });
   }, [serverJobs]);
 
@@ -245,21 +439,28 @@ export function JobTable({
         });
 
         if (!response.ok) {
+          showToast(await readError(response, "Couldn't save the column order."));
           setLocalOrder(columnOrder); // Revert on error
         } else {
           router.refresh();
         }
       } catch {
+        showToast("Couldn't save the column order — check your connection.");
         setLocalOrder(columnOrder); // Revert on error
       }
     }
   };
 
-  const revertPendingUpdate = (jobId: string, field: string) => {
+  const setPending = (jobId: string, fields: Record<string, string>) => {
+    setPendingUpdates((prev) => ({ ...prev, [jobId]: { ...prev[jobId], ...fields } }));
+  };
+
+  const revertPendingUpdates = (jobId: string, fields: string[]) => {
     setPendingUpdates((prev) => {
       const next = { ...prev };
       if (next[jobId]) {
-        delete next[jobId][field];
+        next[jobId] = { ...next[jobId] };
+        for (const field of fields) delete next[jobId][field];
         if (Object.keys(next[jobId]).length === 0) delete next[jobId];
       }
       return next;
@@ -268,10 +469,7 @@ export function JobTable({
 
   const updateField = async (jobId: string, field: string, value: string) => {
     // Optimistic update - UI reflects change immediately
-    setPendingUpdates((prev) => ({
-      ...prev,
-      [jobId]: { ...prev[jobId], [field]: value },
-    }));
+    setPending(jobId, { [field]: value });
 
     try {
       const response = await fetch('/api/update-job', {
@@ -286,11 +484,13 @@ export function JobTable({
         }
         router.refresh();
       } else {
-        revertPendingUpdate(jobId, field);
+        showToast(await readError(response, "Couldn't save that change."));
+        revertPendingUpdates(jobId, [field]);
       }
     } catch (err) {
       console.error('Update failed:', err);
-      revertPendingUpdate(jobId, field);
+      showToast("Couldn't save that change — check your connection.");
+      revertPendingUpdates(jobId, [field]);
     }
   };
 
@@ -307,9 +507,12 @@ export function JobTable({
 
       if (response.ok) {
         router.refresh();
+      } else {
+        showToast(await readError(response, "Couldn't move the job to trash."));
       }
     } catch (err) {
       console.error('Delete failed:', err);
+      showToast("Couldn't move the job to trash — check your connection.");
     } finally {
       setDeleting(null);
     }
@@ -343,12 +546,7 @@ export function JobTable({
     if (titleChanged) fields.push({ field: 'Title', value: editValue });
     if (linkChanged) fields.push({ field: 'Link', value: editLinkValue });
 
-    for (const f of fields) {
-      setPendingUpdates((prev) => ({
-        ...prev,
-        [jobId]: { ...prev[jobId], [f.field]: f.value },
-      }));
-    }
+    setPending(jobId, Object.fromEntries(fields.map((f) => [f.field, f.value])));
 
     try {
       const response = await fetch('/api/update-job', {
@@ -359,10 +557,18 @@ export function JobTable({
       if (response.ok) {
         router.refresh();
       } else {
-        for (const f of fields) revertPendingUpdate(jobId, f.field);
+        showToast(await readError(response, "Couldn't save the title and link."));
+        revertPendingUpdates(
+          jobId,
+          fields.map((f) => f.field)
+        );
       }
     } catch {
-      for (const f of fields) revertPendingUpdate(jobId, f.field);
+      showToast("Couldn't save the title and link — check your connection.");
+      revertPendingUpdates(
+        jobId,
+        fields.map((f) => f.field)
+      );
     }
   };
 
@@ -372,151 +578,19 @@ export function JobTable({
     setEditLinkValue('');
   };
 
-  const handleKeyDown = (
-    e: React.KeyboardEvent,
-    jobId: string,
-    field: string,
-    originalValue: string
-  ) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveEdit(jobId, field, originalValue);
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
-
   const isEditing = (jobId: string, field: string) =>
     editingCell?.jobId === jobId && editingCell?.field === field;
 
-  const EditableCell = ({
-    jobId,
-    field,
+  // Props for a plain text cell (company, location, type, notes)
+  const editableCellProps = (job: ParsedJob, field: string, value: string) => ({
     value,
-    placeholder = '—',
-    className = '',
-  }: {
-    jobId: string;
-    field: string;
-    value: string;
-    placeholder?: string;
-    className?: string;
-  }) => {
-    if (isEditing(jobId, field)) {
-      return (
-        <AutoHeightTextarea
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={() => saveEdit(jobId, field, value)}
-          onKeyDown={(e) => handleKeyDown(e, jobId, field, value)}
-          className="inline-edit"
-          autoFocus
-        />
-      );
-    }
-
-    const displayValue = value || placeholder;
-    const isEmpty = !value;
-
-    return (
-      <span
-        onClick={() => startEditing(jobId, field, value)}
-        className={`cursor-pointer hover:bg-black/5 px-1 -mx-1 rounded transition-colors ${isEmpty ? 'text-muted-3' : ''} ${className}`}
-      >
-        {displayValue}
-      </span>
-    );
-  };
-
-  const TitleLinkCell = ({ job }: { job: ParsedJob }) => {
-    const editing = isEditing(job.id, 'Title');
-
-    if (editing) {
-      return (
-        <div className="flex flex-col gap-1.5">
-          <AutoHeightTextarea
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                saveTitleAndLink(job.id, job.title, job.link);
-              } else if (e.key === 'Escape') {
-                cancelEdit();
-              }
-            }}
-            onBlur={() => {}}
-            className="inline-edit"
-            autoFocus
-          />
-          <div className="flex items-center gap-1">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              className="shrink-0 text-muted-3"
-            >
-              <path
-                d="M6.5 11.5h-2a3 3 0 010-6h2M9.5 4.5h2a3 3 0 010 6h-2M5 8h6"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-            <input
-              type="text"
-              value={editLinkValue}
-              onChange={(e) => setEditLinkValue(e.target.value)}
-              onBlur={() => saveTitleAndLink(job.id, job.title, job.link)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  saveTitleAndLink(job.id, job.title, job.link);
-                } else if (e.key === 'Escape') {
-                  cancelEdit();
-                }
-              }}
-              placeholder="https://..."
-              className="inline-edit text-xs w-full"
-              style={{ color: 'var(--muted-3)', boxShadow: 'none' }}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-1.5 group/cell">
-        {job.title ? (
-          job.link ? (
-            <a href={job.link} target="_blank" rel="noopener noreferrer" className="job-link">
-              {job.title}
-            </a>
-          ) : (
-            <span>{job.title}</span>
-          )
-        ) : (
-          <span className="text-muted-3">—</span>
-        )}
-        <button
-          onClick={() => startEditing(job.id, 'Title', job.title, job.link)}
-          className="opacity-0 group-hover/cell:opacity-100 p-0.5 hover:bg-black/5 rounded transition-opacity"
-          title="Edit title & link"
-        >
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-muted-3">
-            <path
-              d="M10.5 1.5l2 2-7.5 7.5H3v-2l7.5-7.5zM8.5 3.5l2 2"
-              stroke="currentColor"
-              strokeWidth="1.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-    );
-  };
+    editing: isEditing(job.id, field),
+    editValue,
+    onEditValueChange: setEditValue,
+    onStart: () => startEditing(job.id, field, value),
+    onSave: () => saveEdit(job.id, field, value),
+    onCancel: cancelEdit,
+  });
 
   // Get header label for a column
   const getHeaderLabel = (colId: string): string => {
@@ -542,34 +616,36 @@ export function JobTable({
         case '_title':
           return (
             <td key={colId} className={col.tdClass}>
-              <TitleLinkCell job={job} />
+              <TitleLinkCell
+                job={job}
+                editing={isEditing(job.id, 'Title')}
+                editValue={editValue}
+                editLinkValue={editLinkValue}
+                onEditValueChange={setEditValue}
+                onEditLinkValueChange={setEditLinkValue}
+                onStart={() => startEditing(job.id, 'Title', job.title, job.link)}
+                onSave={() => saveTitleAndLink(job.id, job.title, job.link)}
+                onCancel={cancelEdit}
+              />
             </td>
           );
         case '_company':
           return (
             <td key={colId} className={col.tdClass}>
-              <EditableCell jobId={job.id} field="Company" value={job.company} />
+              <EditableCell {...editableCellProps(job, 'Company', job.company)} />
             </td>
           );
         case '_location':
           return (
             <td key={colId} className={col.tdClass}>
-              <EditableCell
-                jobId={job.id}
-
-                field="Location"
-                value={job.location || ''}
-              />
+              <EditableCell {...editableCellProps(job, 'Location', job.location || '')} />
             </td>
           );
         case '_type':
           return (
             <td key={colId} className={col.tdClass}>
               <EditableCell
-                jobId={job.id}
-
-                field="Employment type"
-                value={job.employmentType || ''}
+                {...editableCellProps(job, 'Employment type', job.employmentType || '')}
               />
             </td>
           );
@@ -586,10 +662,7 @@ export function JobTable({
           return (
             <td key={colId} className={col.tdClass}>
               <EditableCell
-                jobId={job.id}
-
-                field="Notes"
-                value={job.notes || ''}
+                {...editableCellProps(job, 'Notes', job.notes || '')}
                 className="notes-text"
               />
             </td>
@@ -601,6 +674,7 @@ export function JobTable({
                 value={job.status}
                 onChange={(e) => updateField(job.id, 'Status', e.target.value)}
                 className={`status-select ${statusColor(job.status)}`}
+                aria-label="Status"
               >
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
@@ -630,6 +704,7 @@ export function JobTable({
             checked={job.customFields[customCol.name] === 'Yes'}
             onChange={(e) => updateField(job.id, customCol.name, e.target.checked ? 'Yes' : 'No')}
             className="table-checkbox"
+            aria-label={customCol.name}
           />
         )}
         {customCol.type === 'dropdown' && customCol.options && (
@@ -637,6 +712,7 @@ export function JobTable({
             value={job.customFields[customCol.name] || ''}
             onChange={(e) => updateField(job.id, customCol.name, e.target.value)}
             className={`table-select ${dropdownColorClass(customCol.optionColors?.[job.customFields[customCol.name]])}`}
+            aria-label={customCol.name}
           >
             <option value="">—</option>
             {customCol.options.map((opt) => (
@@ -678,6 +754,7 @@ export function JobTable({
             }}
             placeholder="..."
             className="table-input"
+            aria-label={customCol.name}
           />
         )}
       </td>
@@ -712,7 +789,10 @@ export function JobTable({
               return (
                 <tr
                   key={job.id}
-                  ref={isHighlighted ? highlightRef : undefined}
+                  ref={(node) => {
+                    if (node) rowRefs.current.set(job.id, node);
+                    else rowRefs.current.delete(job.id);
+                  }}
                   className={`${deleting === job.id ? 'row-deleting' : ''} ${isHighlighted ? 'row-highlight' : ''}`}
                   onAnimationEnd={isHighlighted ? onHighlightDone : undefined}
                 >
@@ -722,12 +802,20 @@ export function JobTable({
                   </td>
                   <td className="td-actions">
                     <button
+                      type="button"
                       onClick={() => handleDelete(job.id)}
                       disabled={deleting === job.id}
                       className="delete-btn"
                       title="Delete job"
+                      aria-label={`Move "${job.title}" to trash`}
                     >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        aria-hidden="true"
+                      >
                         <path
                           d="M2 3.5h10M5.5 3.5V2a1 1 0 011-1h1a1 1 0 011 1v1.5M11 3.5V12a1 1 0 01-1 1H4a1 1 0 01-1-1V3.5"
                           stroke="currentColor"

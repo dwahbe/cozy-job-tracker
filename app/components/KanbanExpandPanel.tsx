@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ParsedJob, Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
@@ -11,8 +11,13 @@ import {
   formatDateDisplay,
   getFieldValue,
   applyFieldUpdate,
+  toHref,
 } from '@/lib/job-utils';
 import { DueDatePicker } from './DueDatePicker';
+import { showToast } from './Toast';
+
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface KanbanExpandPanelProps {
   job: ParsedJob;
@@ -26,7 +31,9 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
   const [textFields, setTextFields] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [editFields, setEditFields] = useState({
     title: serverJob.title,
     company: serverJob.company,
@@ -64,14 +71,41 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
     }
   }, [serverJob, isEditing]);
 
-  // Close on Escape
+  // Close on Escape — unless an open popover (date picker) already handled it.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (e.target instanceof Element && e.target.closest('[data-popover]')) return;
+      onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Modal behaviour: move focus into the panel on open and keep Tab cycling inside it.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusable = () => Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+    (focusable()[0] ?? panel).focus();
+
+    const trapTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const elements = focusable();
+      if (elements.length === 0) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    panel.addEventListener('keydown', trapTab);
+    return () => panel.removeEventListener('keydown', trapTab);
+  }, []);
 
   // Effective job with optimistic updates applied
   const job = useMemo(() => {
@@ -118,39 +152,60 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
   );
 
   const handleSaveEdit = async () => {
-    setSaving(true);
-    try {
-      const updates: { field: string; value: string }[] = [];
-      if (editFields.title !== serverJob.title)
-        updates.push({ field: 'Title', value: editFields.title });
-      if (editFields.company !== serverJob.company)
-        updates.push({ field: 'Company', value: editFields.company });
-      if (editFields.location !== (serverJob.location || ''))
-        updates.push({ field: 'Location', value: editFields.location });
-      if (editFields.employmentType !== (serverJob.employmentType || ''))
-        updates.push({ field: 'Employment type', value: editFields.employmentType });
-      if (editFields.notes !== (serverJob.notes || ''))
-        updates.push({ field: 'Notes', value: editFields.notes });
-      if (editFields.link !== serverJob.link)
-        updates.push({ field: 'Link', value: editFields.link });
-      if (editFields.dueDate !== (serverJob.dueDate || ''))
-        updates.push({ field: 'Due date', value: editFields.dueDate });
+    const updates: { field: string; value: string }[] = [];
+    if (editFields.title !== serverJob.title)
+      updates.push({ field: 'Title', value: editFields.title });
+    if (editFields.company !== serverJob.company)
+      updates.push({ field: 'Company', value: editFields.company });
+    if (editFields.location !== (serverJob.location || ''))
+      updates.push({ field: 'Location', value: editFields.location });
+    if (editFields.employmentType !== (serverJob.employmentType || ''))
+      updates.push({ field: 'Employment type', value: editFields.employmentType });
+    if (editFields.notes !== (serverJob.notes || ''))
+      updates.push({ field: 'Notes', value: editFields.notes });
+    if (editFields.link !== serverJob.link) updates.push({ field: 'Link', value: editFields.link });
+    if (editFields.dueDate !== (serverJob.dueDate || ''))
+      updates.push({ field: 'Due date', value: editFields.dueDate });
 
-      if (updates.length > 0) {
-        for (const u of updates) setPendingUpdates((prev) => ({ ...prev, [u.field]: u.value }));
-        await fetch('/api/update-job', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jobId: serverJob.id,
-            fields: updates,
-          }),
-        });
+    if (updates.length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    // Optimistic: show the new values right away; rolled back below if the server says no.
+    setPendingUpdates((prev) => ({
+      ...prev,
+      ...Object.fromEntries(updates.map((u) => [u.field, u.value])),
+    }));
+    const rollback = () =>
+      setPendingUpdates((prev) => {
+        const next = { ...prev };
+        for (const u of updates) delete next[u.field];
+        return next;
+      });
+
+    try {
+      const response = await fetch('/api/update-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: serverJob.id, fields: updates }),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { error?: unknown };
+        setSaveError(
+          typeof data.error === 'string' ? data.error : "Couldn't save — please try again."
+        );
+        rollback();
+        return; // stay in edit mode so nothing typed is lost
       }
       setIsEditing(false);
       router.refresh();
     } catch (err) {
       console.error('Save failed:', err);
+      setSaveError("Couldn't save — check your connection and try again.");
+      rollback();
     } finally {
       setSaving(false);
     }
@@ -168,9 +223,13 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
       if (response.ok) {
         onClose();
         router.refresh();
+      } else {
+        const data = (await response.json().catch(() => ({}))) as { error?: unknown };
+        showToast(typeof data.error === 'string' ? data.error : "Couldn't move the job to trash.");
       }
     } catch (err) {
       console.error('Delete failed:', err);
+      showToast("Couldn't move the job to trash — check your connection.");
     } finally {
       setDeleting(false);
     }
@@ -179,10 +238,18 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
   return (
     <>
       <div className="expand-overlay" onClick={onClose} />
-      <div className="expand-panel">
+      <div
+        ref={panelRef}
+        className="expand-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? `Edit ${serverJob.title}` : serverJob.title}
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="expand-panel-header">
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-md hover:bg-black/5 muted hover:text-black transition-colors"
             aria-label="Close"
@@ -200,13 +267,18 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
             {isEditing ? (
               <>
                 <button
-                  onClick={() => setIsEditing(false)}
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSaveError(null);
+                  }}
                   disabled={saving}
                   className="btn btn-ghost btn-sm"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleSaveEdit}
                   disabled={saving || !editFields.title || !editFields.company}
                   className="btn btn-primary btn-sm"
@@ -215,7 +287,11 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
                 </button>
               </>
             ) : (
-              <button onClick={() => setIsEditing(true)} className="btn btn-ghost btn-sm">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="btn btn-ghost btn-sm"
+              >
                 Edit
               </button>
             )}
@@ -226,6 +302,11 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
           {isEditing ? (
             /* ── Edit mode ── */
             <div className="space-y-4">
+              {saveError && (
+                <p className="text-sm text-danger" role="alert">
+                  {saveError}
+                </p>
+              )}
               <div>
                 <label className="expand-field-label">Title</label>
                 <input
@@ -334,7 +415,7 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
                 <FieldRow label="Link">
                   {job.link ? (
                     <a
-                      href={job.link}
+                      href={toHref(job.link)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium hover:underline underline-offset-2 decoration-1 break-all"
@@ -417,10 +498,12 @@ export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanEx
                   {job.verified === 'Yes' ? '✓ Verified' : '⚠ Partial'}
                 </span>
                 <button
+                  type="button"
                   onClick={handleDelete}
                   disabled={deleting}
                   className="expand-delete-btn ml-auto"
                   title="Move to trash"
+                  aria-label="Move to trash"
                 >
                   🗑️
                 </button>

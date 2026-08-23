@@ -56,12 +56,15 @@ export function SiteHeader() {
   useEffect(() => {
     if (!activeDropdown) return;
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node | null;
+      // The feedback modal is portaled outside the header; clicks inside it aren't "outside".
+      if (target instanceof Element && target.closest('[data-feedback-modal]')) return;
+      if (containerRef.current && target && !containerRef.current.contains(target)) {
         closeDropdown();
       }
     }
     function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') closeDropdown();
+      if (e.key === 'Escape' && !document.querySelector('[data-feedback-modal]')) closeDropdown();
     }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
@@ -174,6 +177,7 @@ export function SiteHeader() {
             onMouseLeave={scheduleClose}
           >
             <button
+              type="button"
               onClick={() => (activeDropdown === 'about' ? closeDropdown() : openDropdown('about'))}
               className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md hover:bg-foreground/5 transition-colors cursor-pointer"
               aria-expanded={activeDropdown === 'about'}
@@ -195,48 +199,46 @@ export function SiteHeader() {
             </button>
           </div>
 
-          {status !== 'loading' && (
-            <>
-              {isLoggedIn ? (
-                <div
-                  ref={userRef}
-                  onMouseEnter={() => openDropdown('user')}
-                  onMouseLeave={scheduleClose}
+          {/* Fixed-width slot so the control doesn't pop in (and shift the header) once the session loads. */}
+          <div className="flex min-w-[4.5rem] justify-end">
+            {status === 'loading' ? (
+              <span className="h-8 w-[4.5rem] rounded-md bg-foreground/5" aria-hidden="true" />
+            ) : isLoggedIn ? (
+              <div
+                ref={userRef}
+                onMouseEnter={() => openDropdown('user')}
+                onMouseLeave={scheduleClose}
+              >
+                <button
+                  type="button"
+                  aria-expanded={activeDropdown === 'user'}
+                  onClick={() =>
+                    activeDropdown === 'user' ? closeDropdown() : openDropdown('user')
+                  }
+                  className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-foreground/5 transition-colors cursor-pointer"
                 >
-                  <button
-                    onClick={() =>
-                      activeDropdown === 'user' ? closeDropdown() : openDropdown('user')
-                    }
-                    className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-foreground/5 transition-colors cursor-pointer"
+                  <span className="max-w-[120px] sm:max-w-[180px] truncate">{displayName}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform ${activeDropdown === 'user' ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <span
-                      className="max-w-[120px] sm:max-w-[180px] truncate"
-                      suppressHydrationWarning
-                    >
-                      {displayName}
-                    </span>
-                    <svg
-                      className={`w-3.5 h-3.5 transition-transform ${activeDropdown === 'user' ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <Link href="/login" className="btn btn-primary btn-sm">
-                  Sign in
-                </Link>
-              )}
-            </>
-          )}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm">
+                Sign in
+              </Link>
+            )}
+          </div>
 
           {activeDropdown && (
             <NavDropdownPanel

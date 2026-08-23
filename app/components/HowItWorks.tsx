@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 
 const dummyJobs = [
   {
@@ -86,6 +86,7 @@ function HandDrawnArrow({
   delay?: number;
 }) {
   const ref = useRef<SVGSVGElement>(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, amount: 0.3 });
 
   const path =
@@ -105,8 +106,8 @@ function HandDrawnArrow({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+        animate={reduce || isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut', delay }}
       />
       <motion.path
@@ -116,8 +117,8 @@ function HandDrawnArrow({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+        animate={reduce || isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
         transition={{ duration: 0.25, ease: 'easeOut', delay: delay + 0.75 }}
       />
     </svg>
@@ -126,6 +127,7 @@ function HandDrawnArrow({
 
 function HandDrawnArrowVertical() {
   const ref = useRef<SVGSVGElement>(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, amount: 0.4 });
 
   return (
@@ -137,8 +139,8 @@ function HandDrawnArrowVertical() {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+        animate={reduce || isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
         transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
       />
       <motion.path
@@ -148,8 +150,8 @@ function HandDrawnArrowVertical() {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+        animate={reduce || isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
         transition={{ duration: 0.25, ease: 'easeOut', delay: 0.8 }}
       />
     </svg>
@@ -172,14 +174,15 @@ function StepCard({
   align: 'left' | 'right' | 'full';
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, amount: 0.15 });
 
   return (
     <motion.div
       ref={ref}
       className={`hiw-step hiw-step-${align}`}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      initial={reduce ? false : { opacity: 0, y: 40 }}
+      animate={reduce || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
       transition={{ duration: 0.6, ease: 'easeOut', delay: index * 0.05 }}
     >
       <div className="hiw-step-header">
@@ -248,6 +251,7 @@ function JobListingMockup() {
 
 function ParseMockup() {
   const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, amount: 0.4 });
 
   return (
@@ -261,8 +265,8 @@ function ParseMockup() {
       </div>
       <motion.div
         className="parse-result"
-        initial={{ opacity: 0, y: 8 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+        initial={reduce ? false : { opacity: 0, y: 8 }}
+        animate={reduce || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.4 }}
       >
         <div className="parse-result-inner">
@@ -335,6 +339,11 @@ function DummyTable() {
 export function HowItWorks() {
   return (
     <section className="hiw">
+      {/* Without JS the motion components would stay at their hidden initial state. */}
+      <noscript>
+        <style>{`.hiw-step, .parse-result { opacity: 1 !important; transform: none !important; }
+.hiw-arrow-row path { opacity: 1 !important; stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }`}</style>
+      </noscript>
       <h2 className="hiw-heading" style={{ fontSize: '1.35rem' }}>
         Here&apos;s how it works
       </h2>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type { Person, PersonStatus } from '@/lib/network';
 import { STATUS_LABELS, PERSON_STATUSES, PREBUILT_NETWORK_COLUMNS } from '@/lib/network';
 import type { Column } from '@/lib/markdown';
@@ -10,9 +11,31 @@ import type { SortRule } from '@/lib/kv';
 import { AddPersonForm } from './AddPersonForm';
 import { NetworkTable } from './NetworkTable';
 import { BoardColumnManager } from './BoardColumnManager';
-import { OrbitView } from './OrbitView';
+import { showToast } from './Toast';
 import { SortBuilder } from './SortSelect';
 import { TrashButton } from './TrashButton';
+
+// Orbit pulls in d3-force + framer-motion; only load it when someone switches to that view.
+const OrbitView = dynamic(() => import('./OrbitView').then((m) => m.OrbitView), {
+  ssr: false,
+  loading: () => <div className="orbit-canvas" aria-busy="true" />,
+});
+
+/** POST JSON; resolves to null on success or the server's error message to show inline. */
+async function columnRequest(url: string, body: unknown, fallback: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return null;
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    return typeof data.error === 'string' && data.error ? data.error : fallback;
+  } catch {
+    return `${fallback} — check your connection.`;
+  }
+}
 
 type ViewMode = 'table' | 'orbit';
 
@@ -156,108 +179,87 @@ export function NetworkView({
   // -- BoardColumnManager callbacks -----------------------------------------
 
   const handleAddColumn = useCallback(
-    async (column: Column): Promise<boolean> => {
-      try {
-        const res = await fetch('/api/network/add-column', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ column }),
-        });
-        if (res.ok) router.refresh();
-        return res.ok;
-      } catch {
-        return false;
-      }
+    async (column: Column) => {
+      const error = await columnRequest(
+        '/api/network/add-column',
+        { column },
+        'Failed to add column'
+      );
+      if (!error) router.refresh();
+      return error;
     },
     [router]
   );
 
   const handleEditColumn = useCallback(
-    async (oldName: string, column: Column): Promise<boolean> => {
-      try {
-        const res = await fetch('/api/network/manage-column', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update',
-            columnName: oldName,
-            column,
-          }),
-        });
-        if (res.ok) router.refresh();
-        return res.ok;
-      } catch {
-        return false;
-      }
+    async (oldName: string, column: Column) => {
+      const error = await columnRequest(
+        '/api/network/manage-column',
+        { action: 'update', columnName: oldName, column },
+        'Failed to update column'
+      );
+      if (!error) router.refresh();
+      return error;
     },
     [router]
   );
 
   const handleDeleteColumn = useCallback(
-    async (name: string): Promise<boolean> => {
-      try {
-        const res = await fetch('/api/network/manage-column', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', columnName: name }),
-        });
-        if (res.ok) router.refresh();
-        return res.ok;
-      } catch {
-        return false;
-      }
+    async (name: string) => {
+      const error = await columnRequest(
+        '/api/network/manage-column',
+        { action: 'delete', columnName: name },
+        'Failed to delete column'
+      );
+      if (!error) router.refresh();
+      return error;
     },
     [router]
   );
 
   const handleReorderColumns = useCallback(
-    async (names: string[]): Promise<boolean> => {
-      try {
-        const currentBuiltinOrder = columnOrder.filter((id) => id.startsWith('_'));
-        const newOrder = [...currentBuiltinOrder, ...names];
-        const res = await fetch('/api/network/reorder-columns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ columnOrder: newOrder }),
-        });
-        if (res.ok) router.refresh();
-        return res.ok;
-      } catch {
-        return false;
-      }
+    async (names: string[]) => {
+      // Keep the saved order's built-in/custom interleaving: custom columns take their new
+      // relative order in the slots they already occupy; brand-new ones go on the end.
+      const customNames = new Set(names);
+      const queue = names.filter((name) => columnOrder.includes(name));
+      const newOrder = columnOrder.map((id) => (customNames.has(id) ? queue.shift()! : id));
+      for (const name of names) if (!newOrder.includes(name)) newOrder.push(name);
+
+      const error = await columnRequest(
+        '/api/network/reorder-columns',
+        { columnOrder: newOrder },
+        'Failed to reorder columns'
+      );
+      if (!error) router.refresh();
+      return error;
     },
     [router, columnOrder]
   );
 
   const handleToggleLinkedJobs = useCallback(async () => {
-    try {
-      const res = await fetch('/api/network/add-column', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toggleLinkedJobs: !showLinkedJobs }),
-      });
-      if (res.ok) router.refresh();
-    } catch {
-      // Silent fail
-    }
+    const error = await columnRequest(
+      '/api/network/add-column',
+      { toggleLinkedJobs: !showLinkedJobs },
+      "Couldn't update linked jobs"
+    );
+    if (error) showToast(error);
+    else router.refresh();
   }, [router, showLinkedJobs]);
 
   const showLastContacted = columnOrder.includes('_lastContacted');
 
   const handleToggleLastContacted = useCallback(async () => {
-    try {
-      const newOrder = showLastContacted
-        ? columnOrder.filter((c) => c !== '_lastContacted')
-        : [...columnOrder, '_lastContacted'];
-      const res = await fetch('/api/network/reorder-columns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columnOrder: newOrder }),
-      });
-      if (res.ok) router.refresh();
-    } catch {
-      // Silent fail
-    }
+    const newOrder = showLastContacted
+      ? columnOrder.filter((c) => c !== '_lastContacted')
+      : [...columnOrder, '_lastContacted'];
+    const error = await columnRequest(
+      '/api/network/reorder-columns',
+      { columnOrder: newOrder },
+      "Couldn't update the last-contacted column"
+    );
+    if (error) showToast(error);
+    else router.refresh();
   }, [router, columnOrder, showLastContacted]);
 
   return (
@@ -306,58 +308,54 @@ export function NetworkView({
         <>
           <div className="jobs-toolbar">
             <div className="jobs-toolbar-search-row">
-              {view === 'table' && (
-                <>
-                  <div className="search-wrapper jobs-toolbar-search">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      aria-hidden="true"
-                      className="search-icon"
-                    >
-                      <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+              <div className="search-wrapper jobs-toolbar-search">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                  className="search-icon"
+                >
+                  <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+                  <path
+                    d="M11 11l3.5 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search people..."
+                  aria-label="Search people"
+                  className="search-input"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="search-clear"
+                    aria-label="Clear search"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path
-                        d="M11 11l3.5 3.5"
+                        d="M3 3l6 6M9 3l-6 6"
                         stroke="currentColor"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                       />
                     </svg>
-                    <input
-                      type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search people..."
-                      className="search-input"
-                    />
-                    {search && (
-                      <button
-                        onClick={() => setSearch('')}
-                        className="search-clear"
-                        aria-label="Clear search"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path
-                            d="M3 3l6 6M9 3l-6 6"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  <p className="muted text-sm whitespace-nowrap">
-                    {isFiltered
-                      ? `${filteredPeople.length} of ${serverPeople.length}`
-                      : serverPeople.length}{' '}
-                    {serverPeople.length === 1 ? 'person' : 'people'}
-                  </p>
-                </>
-              )}
-              {view === 'orbit' && <div className="flex-1" />}
+                  </button>
+                )}
+              </div>
+              <p className="muted text-sm whitespace-nowrap">
+                {isFiltered
+                  ? `${filteredPeople.length} of ${serverPeople.length}`
+                  : serverPeople.length}{' '}
+                {serverPeople.length === 1 ? 'person' : 'people'}
+              </p>
             </div>
             <div className="jobs-toolbar-controls">
               {view === 'table' && (
@@ -370,13 +368,17 @@ export function NetworkView({
               )}
               <div className="view-toggle shrink-0">
                 <button
+                  type="button"
                   onClick={() => switchView('table')}
+                  aria-pressed={view === 'table'}
                   className={`view-toggle-btn ${view === 'table' ? 'active' : ''}`}
                 >
                   Table
                 </button>
                 <button
+                  type="button"
                   onClick={() => switchView('orbit')}
+                  aria-pressed={view === 'orbit'}
                   className={`view-toggle-btn ${view === 'orbit' ? 'active' : ''}`}
                 >
                   Orbit

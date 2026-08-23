@@ -39,10 +39,11 @@ export interface BoardColumnManagerProps {
     active: boolean;
     onToggle: () => void;
   }[];
-  onAddColumn: (column: Column) => Promise<boolean>;
-  onEditColumn: (oldName: string, column: Column) => Promise<boolean>;
-  onDeleteColumn: (name: string) => Promise<boolean>;
-  onReorderColumns: (names: string[]) => Promise<boolean>;
+  /** Each callback resolves to null on success, or an error message to show inline. */
+  onAddColumn: (column: Column) => Promise<string | null>;
+  onEditColumn: (oldName: string, column: Column) => Promise<string | null>;
+  onDeleteColumn: (name: string) => Promise<string | null>;
+  onReorderColumns: (names: string[]) => Promise<string | null>;
 }
 
 type EditingColumn = {
@@ -187,10 +188,10 @@ export function BoardColumnManager({
       const reordered = arrayMove(localColumns, oldIndex, newIndex);
       setLocalColumns(reordered);
 
-      const ok = await onReorderColumns(reordered.map((c) => c.name));
-      if (!ok) {
+      const error = await onReorderColumns(reordered.map((c) => c.name));
+      if (error) {
         setLocalColumns(columns);
-        setError('Failed to reorder columns');
+        setError(error);
       }
     }
   };
@@ -202,8 +203,8 @@ export function BoardColumnManager({
   const handleAddPrebuilt = async (col: Column) => {
     setError(null);
     setLoading(true);
-    const ok = await onAddColumn(col);
-    if (!ok) setError('Failed to add column');
+    const error = await onAddColumn(col);
+    if (error) setError(error);
     setLoading(false);
   };
 
@@ -243,14 +244,14 @@ export function BoardColumnManager({
       }
     }
 
-    const ok = await onAddColumn(column);
-    if (ok) {
+    const error = await onAddColumn(column);
+    if (!error) {
       setNewName('');
       setNewType('text');
       setNewOptions([{ value: '' }]);
       setIsAdding(false);
     } else {
-      setError('Failed to add column');
+      setError(error);
     }
     setLoading(false);
   };
@@ -286,11 +287,11 @@ export function BoardColumnManager({
       }
     }
 
-    const ok = await onEditColumn(editing.originalName, column);
-    if (ok) {
+    const error = await onEditColumn(editing.originalName, column);
+    if (!error) {
       setEditing(null);
     } else {
-      setError('Failed to update column');
+      setError(error);
     }
     setLoading(false);
   };
@@ -302,8 +303,8 @@ export function BoardColumnManager({
     }
     setDeletingCol(columnName);
     setError(null);
-    const ok = await onDeleteColumn(columnName);
-    if (!ok) setError('Failed to delete column');
+    const error = await onDeleteColumn(columnName);
+    if (error) setError(error);
     setDeletingCol(null);
   };
 

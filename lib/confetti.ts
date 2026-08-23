@@ -1,6 +1,8 @@
-import confetti from 'canvas-confetti';
+// canvas-confetti is loaded on demand so it stays out of the board's main bundle.
+export async function celebrateOffer(): Promise<void> {
+  const confetti = await import('canvas-confetti').then((m) => m.default).catch(() => null);
+  if (!confetti) return; // confetti is optional
 
-export function celebrateOffer() {
   // Fire confetti from both sides
   const duration = 2000;
   const end = Date.now() + duration;

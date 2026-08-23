@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 :root {
+  color-scheme: light;
   /* Refined amber — clean + professional */
   --background: #fafaf8;
   --background-2: #f5f4f1;
@@ -68,11 +69,6 @@
   --radius: var(--radius-lg); /* default */
 
   /* Accent tint scale */
-  --accent-tint-subtle: rgba(217, 119, 6, 0.03);
-  --accent-tint-light: rgba(217, 119, 6, 0.05);
-  --accent-tint-medium: rgba(217, 119, 6, 0.08);
-  --accent-tint-border: rgba(217, 119, 6, 0.15);
-  --accent-tint-strong: rgba(217, 119, 6, 0.4);
 
   /* Background gradient tint colors */
   --gradient-1: rgba(217, 119, 6, 0.08);
@@ -101,32 +97,6 @@
   --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Force the refined light palette even when the OS prefers dark. */
-    --background: #fafaf8;
-    --background-2: #f5f4f1;
-    --foreground: #1c1917;
-    --muted: #57534e;
-    --muted-2: #78716c;
-    --muted-3: #a8a29e;
-    --surface: rgba(255, 255, 255, 0.92);
-    --surface-solid: #ffffff;
-    --surface-hover: rgba(217, 119, 6, 0.04);
-    --border: rgba(217, 119, 6, 0.18);
-    --accent: #b45309;
-    --accent-2: #d97706;
-    --accent-soft: rgba(217, 119, 6, 0.07);
-    --ring: rgba(217, 119, 6, 0.22);
-    --success: #059669;
-    --success-soft: rgba(5, 150, 105, 0.08);
-    --danger: #dc2626;
-    --danger-soft: rgba(220, 38, 38, 0.08);
-    --shadow: 0 10px 26px rgba(28, 25, 23, 0.06);
-    --shadow-hover: 0 14px 34px rgba(28, 25, 23, 0.09);
-  }
 }
 
 html,
@@ -430,26 +400,6 @@ a:focus-visible {
 }
 
 /* Feedback */
-.feedback-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
-  font-size: 0.8rem;
-  font-weight: 550;
-  color: var(--muted-2);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all 150ms ease;
-}
-
-.feedback-trigger:hover {
-  color: var(--foreground);
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(217, 119, 6, 0.4);
-}
 
 .feedback-overlay {
   position: fixed;
@@ -1043,7 +993,8 @@ a:focus-visible {
   }
 }
 
-.card.card-highlight {
+.card.card-highlight,
+.kanban-card.card-highlight {
   animation: card-highlight-fade 2.5s ease-out;
 }
 
@@ -1308,24 +1259,6 @@ a:focus-visible {
 }
 
 /* Edit button in table */
-.edit-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--muted-2);
-  cursor: pointer;
-  transition: all 120ms ease;
-}
-
-.edit-btn:hover {
-  background: rgba(217, 119, 6, 0.1);
-  color: var(--accent);
-}
 
 /* Delete button in table */
 .delete-btn {
@@ -1353,30 +1286,6 @@ a:focus-visible {
 }
 
 /* Date input in table */
-.table-date {
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(217, 119, 6, 0.2);
-  background: var(--surface-solid);
-  cursor: pointer;
-  color: var(--foreground);
-}
-
-.table-date:focus {
-  outline: none;
-  border-color: var(--accent-2);
-  box-shadow: 0 0 0 2px var(--ring);
-}
-
-.table-date::-webkit-calendar-picker-indicator {
-  opacity: 0.6;
-  cursor: pointer;
-}
-
-.table-date::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
 
 /* Hamburger menu button */
 .hamburger-btn {
@@ -1900,9 +1809,6 @@ a:focus-visible {
   box-shadow: 0 4px 12px rgba(180, 83, 9, 0.15);
 }
 
-.parse-result {
-}
-
 .parse-result-inner {
   position: relative;
   border-radius: var(--radius-md);
@@ -2169,19 +2075,6 @@ a:focus-visible {
   .parse-fields {
     grid-template-columns: 1fr;
   }
-
-  .person-sidebar {
-    position: fixed;
-    top: 3.5rem;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 50;
-    width: 100%;
-    max-width: none;
-    border-left: none;
-    border-radius: 0;
-  }
 }
 
 /* ======================================
@@ -2280,112 +2173,6 @@ a:focus-visible {
   animation: row-highlight-fade 2.5s ease-out;
 }
 
-/* Quick action buttons on table rows */
-.quick-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  font-weight: 500;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-  white-space: nowrap;
-}
-
-.quick-action-btn:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/* Person sidebar */
-.person-sidebar {
-  position: fixed;
-  top: 3.5rem;
-  right: 0;
-  bottom: 0;
-  width: 420px;
-  max-width: 100vw;
-  background: var(--surface-solid);
-  border-left: 1px solid var(--border);
-  box-shadow: -8px 0 30px rgba(28, 25, 23, 0.08);
-  z-index: 40;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-.person-sidebar-backdrop {
-  position: fixed;
-  top: 3.5rem;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: rgba(0, 0, 0, 0.15);
-  z-index: 39;
-}
-
-/* Interaction timeline */
-.interaction-item {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-}
-
-.interaction-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-top: 0.4rem;
-  flex-shrink: 0;
-}
-
-.interaction-dot-note {
-  background: var(--muted-3);
-}
-
-/* Smart view filter tabs */
-.smart-view-tabs {
-  display: flex;
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
-
-.smart-view-tab {
-  font-size: 0.78rem;
-  font-weight: 500;
-  padding: 0.3rem 0.75rem;
-  border-radius: var(--radius-full);
-  color: var(--muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-  border: none;
-  background: none;
-}
-
-.smart-view-tab:hover {
-  background: var(--surface-hover);
-  color: var(--foreground);
-}
-
-.smart-view-tab.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
-}
-
 /* Orbit view */
 .orbit-canvas {
   background: #1c1714;
@@ -2408,10 +2195,6 @@ a:focus-visible {
 .orbit-node {
   cursor: pointer;
   transition: opacity 0.3s ease;
-}
-
-.orbit-node:hover .orbit-node-ring {
-  opacity: 0.6;
 }
 
 @keyframes orbitPulse {
@@ -2617,6 +2400,11 @@ a:focus-visible {
 .kanban-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.12);
+}
+
+.kanban-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .kanban-card.dragging {
@@ -2826,5 +2614,17 @@ a:focus-visible {
     flex: 0 0 85vw;
     min-width: 85vw;
     scroll-snap-align: center;
+  }
+}
+
+/* Respect reduced-motion preferences: stop the infinite shimmer/pulse loops and long transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -5,6 +5,7 @@ import { BUILTIN_NETWORK_COLUMN_LABELS, STATUS_LABELS, PERSON_STATUSES } from '@
 import type { Column, ParsedJob } from '@/lib/markdown';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { BoardTable, type BoardColumnDef, type CellHelpers } from './BoardTable';
+import { showToast } from './Toast';
 
 interface NetworkTableProps {
   people: Person[];
@@ -14,6 +15,24 @@ interface NetworkTableProps {
   jobs: ParsedJob[];
   highlightPersonId: string | null;
   onHighlightDone: () => void;
+}
+
+/** POST JSON and surface the server's message as a toast when it fails. */
+async function postJson(url: string, body: unknown, fallback: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return true;
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    showToast(typeof data.error === 'string' && data.error ? data.error : fallback);
+    return false;
+  } catch {
+    showToast(`${fallback} — check your connection.`);
+    return false;
+  }
 }
 
 function LinkedJobsCell({
@@ -47,9 +66,10 @@ function LinkedJobsCell({
     setOpen(true);
   };
 
+  // Click outside, Escape, or scrolling (the popover is position: fixed) closes it.
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       if (
         btnRef.current &&
         !btnRef.current.contains(e.target as Node) &&
@@ -58,10 +78,25 @@ function LinkedJobsCell({
       )
         setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
+        btnRef.current?.focus();
+      }
+    };
+    const handleScroll = () => setOpen(false);
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+    };
   }, [open]);
 
+  // Optimistic ids while a toggle is in flight; reset when the server value changes.
   const serverKey = person.linkedJobIds.join(',');
   const [prevServerKey, setPrevServerKey] = useState(serverKey);
   const [optimisticIds, setOptimisticIds] = useState<string[] | null>(null);
@@ -74,13 +109,14 @@ function LinkedJobsCell({
   const activeIds = optimisticIds ?? person.linkedJobIds;
   const linked = new Set(activeIds);
 
-  const toggle = (jobId: string) => {
+  const toggle = async (jobId: string) => {
     const next = new Set(linked);
     if (next.has(jobId)) next.delete(jobId);
     else next.add(jobId);
     const arr = [...next];
     setOptimisticIds(arr);
-    helpers.updateField(person.id, 'linkedJobIds', JSON.stringify(arr));
+    const ok = await helpers.updateField(person.id, 'linkedJobIds', JSON.stringify(arr));
+    if (!ok) setOptimisticIds(null); // roll back to the server's list
   };
 
   const linkedJobs = activeIds.map((id) => jobs.find((j) => j.id === id)).filter(Boolean);
@@ -99,6 +135,9 @@ function LinkedJobsCell({
           }
         }}
         className="text-left w-full"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Linked jobs for ${person.name || 'this person'}`}
       >
         {linkedJobs.length > 0 ? (
           <div className="flex flex-col gap-0.5">
@@ -118,6 +157,9 @@ function LinkedJobsCell({
         <div
           ref={dropRef}
           style={style}
+          data-popover="linked-jobs"
+          role="listbox"
+          aria-multiselectable="true"
           className="bg-surface-solid border border-border rounded-lg shadow-lg p-2 w-[360px] max-h-[260px] overflow-y-auto"
         >
           {jobs.length === 0 ? (
@@ -127,6 +169,8 @@ function LinkedJobsCell({
               <button
                 key={j.id}
                 type="button"
+                role="option"
+                aria-selected={linked.has(j.id)}
                 onClick={() => toggle(j.id)}
                 className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md text-sm hover:bg-black/5 transition-colors"
               >
@@ -134,7 +178,7 @@ function LinkedJobsCell({
                   className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${linked.has(j.id) ? 'bg-accent border-accent text-white' : 'border-border'}`}
                 >
                   {linked.has(j.id) && (
-                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <path
                         d="M3.5 8.5l3 3 6-6"
                         stroke="currentColor"
@@ -230,9 +274,11 @@ export function NetworkTable({
       cols.push({
         id: '_linkedJobs',
         label: 'Linked jobs',
-        field: '_linkedJobs',
+        // The cell writes `linkedJobIds` as JSON, so read it back the same way — that lets the
+        // table's optimistic-update reconcile recognise the server value once it lands.
+        field: 'linkedJobIds',
         type: 'custom',
-        getValue: () => '',
+        getValue: (p) => JSON.stringify(p.linkedJobIds),
         render: (person, helpers) => (
           <LinkedJobsCell person={person} jobs={jobs} helpers={helpers} />
         ),
@@ -254,62 +300,36 @@ export function NetworkTable({
   // -- API callbacks --------------------------------------------------------
 
   const handleUpdateField = useCallback(
-    async (personId: string, field: string, value: string): Promise<boolean> => {
-      try {
-        const res = await fetch('/api/network/update-person', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ personId, fields: [{ field, value }] }),
-        });
-        return res.ok;
-      } catch {
-        return false;
-      }
-    },
+    (personId: string, field: string, value: string) =>
+      postJson(
+        '/api/network/update-person',
+        { personId, fields: [{ field, value }] },
+        "Couldn't save that change."
+      ),
     []
   );
 
   const handleUpdateFields = useCallback(
-    async (personId: string, fields: { field: string; value: string }[]): Promise<boolean> => {
-      try {
-        const res = await fetch('/api/network/update-person', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ personId, fields }),
-        });
-        return res.ok;
-      } catch {
-        return false;
-      }
-    },
+    (personId: string, fields: { field: string; value: string }[]) =>
+      postJson('/api/network/update-person', { personId, fields }, "Couldn't save that change."),
     []
   );
 
-  const handleDeleteItem = useCallback(async (personId: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/network/delete-person', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personId }),
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }, []);
+  const handleDeleteItem = useCallback(
+    (personId: string) =>
+      postJson('/api/network/delete-person', { personId }, "Couldn't move them to trash."),
+    []
+  );
 
-  const handleReorderColumns = useCallback(async (order: string[]): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/network/reorder-columns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columnOrder: order }),
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }, []);
+  const handleReorderColumns = useCallback(
+    (order: string[]) =>
+      postJson(
+        '/api/network/reorder-columns',
+        { columnOrder: order },
+        "Couldn't save the column order."
+      ),
+    []
+  );
 
   // -- Render ---------------------------------------------------------------
 

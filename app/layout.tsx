@@ -3,6 +3,7 @@ import { Nunito, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SessionProvider } from 'next-auth/react';
 import { SiteHeader } from './components/SiteHeader';
+import { ToastHost } from './components/Toast';
 import './globals.css';
 
 const nunito = Nunito({
@@ -43,6 +44,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
         </SessionProvider>
+        <ToastHost />
         <Analytics />
       </body>
     </html>

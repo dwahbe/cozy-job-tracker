@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
 import { countUsers } from '@/lib/users';
 import { AnimatedCount } from '@/app/components/AnimatedCount';
 import { HowItWorks } from '@/app/components/HowItWorks';
@@ -6,11 +7,17 @@ import { HowItWorks } from '@/app/components/HowItWorks';
 // Static page, regenerated at most hourly — the user count is the only data on it.
 export const revalidate = 3600;
 
+// Cached so a landing-page hit never runs the Redis KEYS scan itself; the entry refreshes on
+// the same hourly cadence as the page.
+const getCachedUserCount = unstable_cache(countUsers, ['landing-user-count'], {
+  revalidate: 3600,
+});
+
 async function getUserCount(): Promise<number> {
   try {
-    return await countUsers();
+    return await getCachedUserCount();
   } catch (error) {
-    // Never let a KV hiccup (or a build without KV env) take the landing page down.
+    // Never let a Redis hiccup (or a build without Redis env) take the landing page down.
     console.error('Landing page user count failed:', error);
     return 0;
   }

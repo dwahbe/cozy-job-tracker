@@ -23,6 +23,7 @@ export function AnimatedCount({ value }: { value: number }) {
 
     if (ref.current) observer.observe(ref.current);
 
+    let frame = 0;
     function animate() {
       const duration = 1200;
       const start = performance.now();
@@ -33,13 +34,16 @@ export function AnimatedCount({ value }: { value: number }) {
         // ease-out cubic
         const eased = 1 - Math.pow(1 - progress, 3);
         setDisplay(Math.round(eased * value));
-        if (progress < 1) requestAnimationFrame(tick);
+        if (progress < 1) frame = requestAnimationFrame(tick);
       }
 
-      requestAnimationFrame(tick);
+      frame = requestAnimationFrame(tick);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
   }, [value]);
 
   return (

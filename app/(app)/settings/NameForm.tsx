@@ -1,10 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { DISPLAY_NAME_MAX } from '@/lib/limits';
 
 export function NameForm({ currentName }: { currentName: string | null }) {
+  const router = useRouter();
+  const { update } = useSession();
   const [name, setName] = useState(currentName || '');
+  // What the server has, so the button re-enables correctly after a save.
+  const [savedName, setSavedName] = useState(currentName || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +29,14 @@ export function NameForm({ currentName }: { currentName: string | null }) {
       });
 
       if (res.ok) {
+        const trimmed = name.trim();
+        setSavedName(trimmed);
+        setName(trimmed);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
+        // Session data comes from Redis; re-fetch it so the header shows the new name.
+        await update();
+        router.refresh();
       } else {
         const data = await res.json().catch(() => null);
         setError(data?.error || 'Failed to save name. Please try again.');
@@ -55,13 +67,21 @@ export function NameForm({ currentName }: { currentName: string | null }) {
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={saving || name.trim() === (currentName || '')}
+          disabled={saving || name.trim() === savedName}
           className="btn btn-primary text-sm"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>
-        {saved && <span className="text-sm text-success">Saved!</span>}
-        {error && <span className="text-sm text-danger">{error}</span>}
+        {saved && (
+          <span className="text-sm text-success" role="status">
+            Saved!
+          </span>
+        )}
+        {error && (
+          <span className="text-sm text-danger" role="alert">
+            {error}
+          </span>
+        )}
       </div>
     </form>
   );

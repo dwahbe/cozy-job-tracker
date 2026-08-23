@@ -45,7 +45,7 @@ export interface CellHelpers<T> {
   saveEdit: () => void;
   saveLinkEdit: () => void;
   cancelEdit: () => void;
-  updateField: (id: string, field: string, value: string) => void;
+  updateField: (id: string, field: string, value: string) => Promise<boolean>;
   item: T;
 }
 
@@ -455,17 +455,11 @@ export function BoardTable<T>({
   };
 
   // -- highlight ------------------------------------------------------------
-  const highlightRef = useCallback(
-    (node: HTMLTableRowElement | null) => {
-      if (node) {
-        requestAnimationFrame(() => {
-          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [highlightId]
-  );
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  useEffect(() => {
+    if (!highlightId) return;
+    rowRefs.current.get(highlightId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightId]);
 
   // -- editing helpers ------------------------------------------------------
   const isEditingCell = (id: string, field: string) =>
@@ -494,7 +488,7 @@ export function BoardTable<T>({
     });
   };
 
-  const doUpdateField = async (itemId: string, field: string, value: string) => {
+  const doUpdateField = async (itemId: string, field: string, value: string): Promise<boolean> => {
     setPendingUpdates((prev) => ({
       ...prev,
       [itemId]: { ...prev[itemId], [field]: value },
@@ -507,6 +501,7 @@ export function BoardTable<T>({
     } else {
       revertPendingUpdate(itemId, field);
     }
+    return ok;
   };
 
   const saveEdit = async (itemId: string, field: string, originalValue: string) => {
@@ -744,8 +739,8 @@ export function BoardTable<T>({
         onChange={(e) => doUpdateField(id, col.field, e.target.value)}
         className={`board-select ${colorCls}`}
         onClick={(e) => e.stopPropagation()}
+        aria-label={col.label}
       >
-        {!col.options?.some((o) => o.value === '') && <option value="">—</option>}
         {col.options?.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -865,6 +860,7 @@ export function BoardTable<T>({
           onChange={(e) => doUpdateField(id, fieldName, e.target.value)}
           className={`board-select ${colorCls}`}
           onClick={(e) => e.stopPropagation()}
+          aria-label={fieldName}
         >
           <option value="">—</option>
           {customCol.options.map((opt) => (
@@ -979,7 +975,10 @@ export function BoardTable<T>({
               return (
                 <tr
                   key={id}
-                  ref={isHighlighted ? highlightRef : undefined}
+                  ref={(node) => {
+                    if (node) rowRefs.current.set(id, node);
+                    else rowRefs.current.delete(id);
+                  }}
                   className={`group ${deleting === id ? 'row-deleting' : ''} ${isHighlighted ? 'row-highlight' : ''}`}
                   onAnimationEnd={isHighlighted ? onHighlightDone : undefined}
                 >
@@ -991,10 +990,12 @@ export function BoardTable<T>({
                   )}
                   <td className="td-actions">
                     <button
+                      type="button"
                       onClick={() => handleDelete(id)}
                       disabled={deleting === id}
                       className="delete-btn"
                       title="Delete"
+                      aria-label="Delete"
                     >
                       {TrashIcon}
                     </button>

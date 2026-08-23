@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { autoMapColumns, inferColumnType } from '@/lib/network';
 import type { MappableField, InferredColumnType } from '@/lib/network';
+import { isReservedColumnName } from '@/lib/custom-column-utils';
 
 interface ManualPerson {
   name: string;
@@ -205,6 +206,20 @@ export function AddPersonForm() {
   };
 
   const handleImport = async () => {
+    // Custom columns can't take a built-in field's name — catch it here so the message lands
+    // next to the mapping instead of coming back from the server.
+    const reserved = mapping
+      .map((m, i) =>
+        m === 'custom' && isReservedColumnName(headers[i], 'network') ? headers[i] : null
+      )
+      .filter((h): h is string => h !== null);
+    if (reserved.length > 0) {
+      setError(
+        `"${reserved[0]}" is a built-in column name — map it to the matching field or skip it.`
+      );
+      return;
+    }
+
     setImportStep('importing');
     setError(null);
 
@@ -400,6 +415,7 @@ export function AddPersonForm() {
                   value={sheetUrl}
                   onChange={(e) => setSheetUrl(e.target.value)}
                   placeholder="Paste Google Sheets URL..."
+                  aria-label="Google Sheets URL"
                   className="input w-full"
                   style={{ paddingLeft: '2.25rem' }}
                   disabled={fetching}
@@ -428,6 +444,12 @@ export function AddPersonForm() {
                 <span className="font-medium">{totalRows} rows</span> found.{' '}
                 <span className="muted">Map your columns to our fields:</span>
               </p>
+              {totalRows > rows.length && (
+                <p className="callout callout-warn text-sm mb-3">
+                  Showing the first {rows.length} of {totalRows} rows — import the rest in a second
+                  pass.
+                </p>
+              )}
 
               <div className="border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
@@ -450,6 +472,7 @@ export function AddPersonForm() {
                               onChange={(e) =>
                                 updateMapping(i, e.target.value as MappableField | 'custom')
                               }
+                              aria-label={`Map "${header}" to`}
                               className="input text-sm py-1 w-full max-w-[160px] cursor-pointer"
                             >
                               {FIELD_OPTIONS.map((opt) => (
@@ -559,7 +582,7 @@ export function AddPersonForm() {
                   disabled={mappedCount === 0}
                   className="btn btn-primary"
                 >
-                  Import {totalRows} {totalRows === 1 ? 'person' : 'people'}
+                  Import {rows.length} {rows.length === 1 ? 'person' : 'people'}
                 </button>
               </div>
             </div>
@@ -568,7 +591,7 @@ export function AddPersonForm() {
           {/* Step 3: Importing */}
           {importStep === 'importing' && (
             <div className="text-center py-8">
-              <p className="text-sm muted">Importing {totalRows} people...</p>
+              <p className="text-sm muted">Importing {rows.length} people...</p>
             </div>
           )}
 

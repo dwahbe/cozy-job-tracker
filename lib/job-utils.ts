@@ -2,10 +2,19 @@ import type { ParsedJob } from './markdown';
 
 export const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
+/** href for a stored link: bare "example.com/jobs/1" gets https://, anything with a scheme is kept. */
+export function toHref(link: string): string {
+  const trimmed = link.trim();
+  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export function formatDateDisplay(dateStr: string): string {
   if (!dateStr) return '';
   if (dateStr === 'rolling') return 'Rolling';
+  // Anything that isn't a plain YYYY-MM-DD (older free-text values) is shown as typed.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   const date = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(date.getTime())) return dateStr;
   const month = date.toLocaleDateString('en-US', { month: 'long' });
   const day = date.getDate();
   const year = date.getFullYear();
@@ -47,6 +56,8 @@ export function getFieldValue(job: ParsedJob, field: string): string {
       return job.title;
     case 'company':
       return job.company;
+    case 'link':
+      return job.link || '';
     case 'location':
       return job.location || '';
     case 'employment type':
@@ -70,6 +81,9 @@ export function applyFieldUpdate(job: ParsedJob, field: string, value: string): 
       break;
     case 'company':
       job.company = value;
+      break;
+    case 'link':
+      job.link = value;
       break;
     case 'location':
       job.location = value;

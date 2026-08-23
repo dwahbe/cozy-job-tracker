@@ -26,15 +26,18 @@ export default function CopyLink() {
   return (
     <span className="relative">
       <button
+        type="button"
         onClick={handleCopy}
         className="text-sm sm:text-base font-medium underline underline-offset-2 decoration-dashed hover:decoration-solid cursor-pointer"
       >
         📬 Send this to your unemployed friend
       </button>
       <span
+        role="status"
+        aria-live="polite"
         className={`absolute top-full left-1/2 -translate-x-1/2 mt-1 text-sm text-success whitespace-nowrap transition-opacity duration-200 ${copied ? 'opacity-100' : 'opacity-0'}`}
       >
-        Copied!
+        {copied ? 'Copied!' : ''}
       </span>
     </span>
   );

@@ -19,6 +19,23 @@ export const metadata: Metadata = {
   },
 };
 
+/** Internal links stay in this tab; external ones open a new one. */
+function ChangelogLink({ link }: { link: { url: string; text: string } }) {
+  const className = 'underline underline-offset-2 decoration-dashed hover:decoration-solid';
+  if (link.url.startsWith('/')) {
+    return (
+      <Link href={link.url} className={className}>
+        {link.text} →
+      </Link>
+    );
+  }
+  return (
+    <a href={link.url} target="_blank" rel="noopener noreferrer" className={className}>
+      {link.text} →
+    </a>
+  );
+}
+
 const tagLabels: Record<string, string> = {
   new: 'new',
   improvement: 'improvement',
@@ -62,27 +79,19 @@ export default function ChangelogPage() {
                 {Array.isArray(entry.description) ? (
                   <div className="changelog-entry-desc">
                     <p>{entry.description[0]}</p>
-                    <ul className="list-disc pl-5 my-2 space-y-1">
-                      {entry.description.slice(1, -1).map((item, j) => (
-                        <li key={j}>{item}</li>
-                      ))}
-                    </ul>
-                    <p>
-                      {entry.description[entry.description.length - 1]}
-                      {entry.link && (
-                        <>
-                          {' '}
-                          <a
-                            href={entry.link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
-                          >
-                            {entry.link.text} →
-                          </a>
-                        </>
-                      )}
-                    </p>
+                    {entry.description.length > 1 && (
+                      <ul className="list-disc pl-5 my-2 space-y-1">
+                        {entry.description.slice(1).map((item, j) => (
+                          <li key={j}>{item}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {entry.outro && <p>{entry.outro}</p>}
+                    {entry.link && (
+                      <p>
+                        <ChangelogLink link={entry.link} />
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p className="changelog-entry-desc">
@@ -90,14 +99,7 @@ export default function ChangelogPage() {
                     {entry.link && (
                       <>
                         {' '}
-                        <a
-                          href={entry.link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline underline-offset-2 decoration-dashed hover:decoration-solid"
-                        >
-                          {entry.link.text} →
-                        </a>
+                        <ChangelogLink link={entry.link} />
                       </>
                     )}
                   </p>

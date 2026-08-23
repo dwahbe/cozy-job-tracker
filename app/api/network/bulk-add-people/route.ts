@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
 import { withNetwork } from '@/lib/network-auth';
-import { generatePersonId, normalizeCheckboxValue } from '@/lib/network';
+import { generatePersonId, normalizeCheckboxValue, parseFlexibleDate } from '@/lib/network';
 import type { Person, PersonStatus } from '@/lib/network';
 import { PERSON_STATUSES } from '@/lib/network';
 import type { Column } from '@/lib/markdown';
@@ -112,6 +112,9 @@ export async function POST(request: NextRequest) {
             if (!column) continue;
             if (column.type === 'checkbox') {
               data.customFields[column.name] = normalizeCheckboxValue(value);
+            } else if (column.type === 'date') {
+              // Normalise spreadsheet spellings to ISO; anything else is kept as typed.
+              data.customFields[column.name] = parseFlexibleDate(value) ?? value;
             } else if (column.type === 'dropdown') {
               // Unseen dropdown values become options so the import never silently drops data.
               const options = column.options ?? (column.options = []);

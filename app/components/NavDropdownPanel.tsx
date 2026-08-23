@@ -39,13 +39,16 @@ export function NavDropdownPanel({
     >
       <div style={{ position: 'relative', overflow: 'hidden' }}>
         <div
+          inert={active !== 'about' ? true : undefined}
+          aria-hidden={active !== 'about'}
           style={{
             opacity: active === 'about' ? 1 : 0,
+            visibility: active === 'about' ? 'visible' : 'hidden',
             position: active === 'about' ? 'relative' : 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            transition: 'opacity 150ms ease',
+            transition: 'opacity 150ms ease, visibility 150ms',
             pointerEvents: active === 'about' ? 'auto' : 'none',
           }}
         >
@@ -89,13 +92,16 @@ export function NavDropdownPanel({
         </div>
 
         <div
+          inert={active !== 'user' ? true : undefined}
+          aria-hidden={active !== 'user'}
           style={{
             opacity: active === 'user' ? 1 : 0,
+            visibility: active === 'user' ? 'visible' : 'hidden',
             position: active === 'user' ? 'relative' : 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            transition: 'opacity 150ms ease',
+            transition: 'opacity 150ms ease, visibility 150ms',
             pointerEvents: active === 'user' ? 'auto' : 'none',
           }}
         >
@@ -133,6 +139,7 @@ export function NavDropdownPanel({
             Settings
           </Link>
           <button
+            type="button"
             onClick={() => signOut({ callbackUrl: '/' })}
             className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-foreground/5 transition-colors cursor-pointer"
           >

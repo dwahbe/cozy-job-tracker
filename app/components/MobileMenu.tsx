@@ -24,7 +24,10 @@ export function MobileMenu() {
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node | null;
+      // The feedback modal is portaled outside the menu; clicks inside it aren't "outside".
+      if (target instanceof Element && target.closest('[data-feedback-modal]')) return;
+      if (ref.current && target && !ref.current.contains(target)) {
         closeMenu();
       }
     }
@@ -35,7 +38,7 @@ export function MobileMenu() {
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') closeMenu();
+      if (e.key === 'Escape' && !document.querySelector('[data-feedback-modal]')) closeMenu();
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
