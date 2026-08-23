@@ -1,4 +1,3 @@
-import { redis } from '@/lib/redis';
 import type { Column } from './markdown';
 import { getOrderedColumnIds } from '@/lib/custom-column-utils';
 
@@ -100,6 +99,11 @@ export const OPTIONAL_BUILTIN_COLUMNS: BuiltinNetworkColumnId[] = ['_lastContact
 // ============================================================
 // Helpers
 // ============================================================
+
+/** A fresh, empty network — what a user has before their first write. */
+export function createEmptyNetwork(): NetworkData {
+  return { people: [], columns: [] };
+}
 
 export function generatePersonId(): string {
   return `p-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -365,35 +369,4 @@ export function normalizeCheckboxValue(value: string): string {
 export function extractGoogleSheetId(url: string): string | null {
   const match = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   return match ? match[1] : null;
-}
-
-// ============================================================
-// KV storage (auth-only, no legacy slug support)
-// ============================================================
-
-export function networkKey(userId: string): string {
-  return `network:${userId}`;
-}
-
-export async function getNetworkByUserId(userId: string): Promise<NetworkData | null> {
-  return await redis.get<NetworkData>(networkKey(userId));
-}
-
-/**
- * Save network data unconditionally. Writes that build on a previous read should go through
- * withNetwork() (lib/network-auth.ts), which uses compare-and-set instead.
- */
-export async function saveNetworkByUserId(userId: string, data: NetworkData): Promise<void> {
-  await redis.set(networkKey(userId), data);
-}
-
-/**
- * Get the user's network, creating an empty one on first use.
- */
-export async function getOrCreateNetwork(userId: string): Promise<NetworkData> {
-  const existing = await getNetworkByUserId(userId);
-  if (existing) return existing;
-  const network: NetworkData = { people: [], columns: [] };
-  await saveNetworkByUserId(userId, network);
-  return network;
 }

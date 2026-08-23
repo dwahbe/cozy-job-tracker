@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireUserId, unauthorized } from '@/lib/api-auth';
 import { parseCSV, extractGoogleSheetId } from '@/lib/network';
 import { limited } from '@/lib/ratelimit';
+import { MAX_IMPORT_ROWS } from '@/lib/limits';
 
 export const runtime = 'nodejs';
 
-const MAX_ROWS = 200;
-
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const blocked = await limited('sheet', session.user.id);
+    const blocked = await limited('sheet', userId);
     if (blocked) return blocked;
 
     const { url } = await request.json();
@@ -74,13 +71,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No columns found in the sheet.' }, { status: 422 });
     }
 
-    const trimmedRows = rows.slice(0, MAX_ROWS);
+    const trimmedRows = rows.slice(0, MAX_IMPORT_ROWS);
 
     return NextResponse.json({
       headers,
       rows: trimmedRows,
       totalRows: rows.length,
-      truncated: rows.length > MAX_ROWS,
+      truncated: rows.length > MAX_IMPORT_ROWS,
     });
   } catch (error) {
     console.error('Import sheet error:', error);

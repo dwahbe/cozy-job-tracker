@@ -150,7 +150,7 @@ export function JobCard({ job: serverJob, columns, highlight, onHighlightDone }:
       location: job.location || '',
       employmentType: job.employmentType || '',
       notes: job.notes || '',
-      link: serverJob.link,
+      link: job.link,
     });
     setIsEditing(true);
   };

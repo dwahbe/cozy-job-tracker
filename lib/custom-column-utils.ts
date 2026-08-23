@@ -5,7 +5,8 @@ import {
   MAX_COLUMNS,
   MAX_DROPDOWN_OPTIONS,
 } from '@/lib/limits';
-import { fail, ok, type Outcome } from '@/lib/outcome';
+import { fail, ok } from '@/lib/outcome';
+import type { Outcome } from '@/lib/outcome';
 
 export const VALID_COLUMN_TYPES: Column['type'][] = ['text', 'checkbox', 'dropdown', 'date'];
 
@@ -297,7 +298,8 @@ export function reorderCustomColumns(doc: ColumnDoc, order: unknown): Outcome<Co
   // Keep the saved display order in step: custom names keep their slots among the built-ins
   // but take the new relative order (names missing from the saved order are appended on read).
   if (doc.columnOrder && doc.columnOrder.length > 0) {
-    const saved = doc.columnOrder;
+    // Deduped: a saved order that names a column twice would otherwise run the queue dry.
+    const saved = [...new Set(doc.columnOrder)];
     const queue = order.filter((name) => saved.includes(name));
     const customNames = new Set(order);
     doc.columnOrder = saved.map((id) => (customNames.has(id) ? queue.shift()! : id));
@@ -305,12 +307,14 @@ export function reorderCustomColumns(doc: ColumnDoc, order: unknown): Outcome<Co
   return ok(doc.columns);
 }
 
-/** Column-order payloads (built-in ids plus custom names) — unknown ids are dropped on read. */
+/**
+ * Shape check for column-order payloads (built-in ids plus custom names). Ids aren't checked
+ * here — custom names predating COLUMN_NAME_MAX can be any length — the routes normalise the
+ * order against the document (getColumnOrder / getNetworkColumnOrder), which drops unknown ids.
+ */
 export function getColumnOrderError(order: unknown): string | null {
   if (!Array.isArray(order)) return 'columnOrder must be an array';
   if (order.length > 200) return 'columnOrder is too long';
-  if (order.some((id) => typeof id !== 'string' || id.length > COLUMN_NAME_MAX + 1)) {
-    return 'columnOrder must contain column ids';
-  }
+  if (order.some((id) => typeof id !== 'string')) return 'columnOrder must contain column ids';
   return null;
 }

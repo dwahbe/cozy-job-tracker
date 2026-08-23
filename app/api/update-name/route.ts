@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireUserId, unauthorized } from '@/lib/api-auth';
 import { redis } from '@/lib/redis';
 import { DISPLAY_NAME_MAX } from '@/lib/limits';
 
@@ -7,10 +7,8 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     // Update the user record in Redis (Auth.js stores users as user:{id})
-    const userKey = `user:${session.user.id}`;
+    const userKey = `user:${userId}`;
     const user = await redis.get(userKey);
     if (user && typeof user === 'object') {
       await redis.set(userKey, { ...user, name: trimmed });

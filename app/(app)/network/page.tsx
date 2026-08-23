@@ -1,5 +1,6 @@
 import { verifySession } from '@/lib/dal';
-import { getOrCreateNetwork, getNetworkColumnOrder, pruneNetworkTrash } from '@/lib/network';
+import { getNetworkColumnOrder, pruneNetworkTrash } from '@/lib/network';
+import { getNetworkOrDefault } from '@/lib/network-store';
 import { withNetwork } from '@/lib/network-auth';
 import { ok, unchanged } from '@/lib/outcome';
 import { getBoardByUserId } from '@/lib/kv';
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function NetworkPage() {
   const { userId, name: userName } = await verifySession();
 
-  const network = await getOrCreateNetwork(userId);
+  const network = await getNetworkOrDefault(userId);
 
   // Persist the prune with a compare-and-set write so it can't clobber a concurrent edit.
   if (pruneNetworkTrash(network)) {

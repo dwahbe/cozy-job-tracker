@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
 import { withNetwork } from '@/lib/network-auth';
+import { getNetworkColumnOrder } from '@/lib/network';
 import { getColumnOrderError } from '@/lib/custom-column-utils';
 import { ok } from '@/lib/outcome';
 
@@ -17,7 +18,12 @@ export async function POST(request: NextRequest) {
     if (orderError) return NextResponse.json({ error: orderError }, { status: 400 });
 
     const result = await withNetwork(userId, (network) => {
-      network.columnOrder = columnOrder as string[];
+      // Store the normalised order: known ids only, each once, in the requested order (this is
+      // also how the "Last contacted" column is toggled — by including or omitting its id).
+      network.columnOrder = getNetworkColumnOrder({
+        ...network,
+        columnOrder: columnOrder as string[],
+      });
       return ok();
     });
     if (!result.ok) return outcomeError(result);

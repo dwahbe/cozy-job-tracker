@@ -20,14 +20,20 @@ export function FeedbackButton({ className, children }: FeedbackButtonProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  // Whether the modal has been open, so the close branch below only runs on a real close — not
+  // on mount, where it would pull focus to this button (there's one in the footer of every page).
+  const wasOpenRef = useRef(false);
   const titleId = useId();
 
   // Focus the textarea when the modal opens; give focus back to the trigger when it closes.
   useEffect(() => {
     if (isOpen) {
+      wasOpenRef.current = true;
       textareaRef.current?.focus();
       return;
     }
+    if (!wasOpenRef.current) return;
+    wasOpenRef.current = false;
     if (triggerRef.current?.isConnected) triggerRef.current.focus();
   }, [isOpen]);
 

@@ -66,15 +66,19 @@ export function KanbanCard({
         }
       }}
     >
-      <a
-        href={toHref(job.link)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-semibold text-sm block hover:underline underline-offset-2 decoration-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {job.title}
-      </a>
+      {job.link ? (
+        <a
+          href={toHref(job.link)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-sm block hover:underline underline-offset-2 decoration-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {job.title}
+        </a>
+      ) : (
+        <span className="font-semibold text-sm block">{job.title}</span>
+      )}
       <p className="muted text-xs mt-0.5">{job.company}</p>
       {detail && <p className="muted text-xs mt-1">{detail}</p>}
       {job.dueDate && (

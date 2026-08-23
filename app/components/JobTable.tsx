@@ -349,12 +349,22 @@ export function JobTable({
   const [localOrder, setLocalOrder] = useState(columnOrder);
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, Record<string, string>>>({});
   const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const scrolledToRef = useRef<string | null>(null);
 
-  // Scroll the highlighted row into view once per highlight, not on every render.
+  // Scroll the highlighted row into view once per highlight. The row may not exist yet when the
+  // highlight is set (the add form sets it before router.refresh() delivers the new job), so this
+  // also re-runs as the job list changes and scrolls once the row has mounted.
   useEffect(() => {
-    if (!highlightJobId) return;
-    rowRefs.current.get(highlightJobId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [highlightJobId]);
+    if (!highlightJobId) {
+      scrolledToRef.current = null;
+      return;
+    }
+    if (scrolledToRef.current === highlightJobId) return;
+    const row = rowRefs.current.get(highlightJobId);
+    if (!row) return;
+    scrolledToRef.current = highlightJobId;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightJobId, serverJobs]);
 
   // Create a map of custom columns for quick lookup
   const customColumnMap = new Map(columns.map((c) => [c.name, c]));

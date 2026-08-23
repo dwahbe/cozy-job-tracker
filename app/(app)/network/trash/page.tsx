@@ -1,5 +1,6 @@
 import { verifySession } from '@/lib/dal';
-import { getNetworkByUserId, pruneNetworkTrash } from '@/lib/network';
+import { pruneNetworkTrash } from '@/lib/network';
+import { getNetworkByUserId } from '@/lib/network-store';
 import { withNetwork } from '@/lib/network-auth';
 import { ok, unchanged } from '@/lib/outcome';
 import { NetworkTrashList } from '@/app/components/NetworkTrashList';

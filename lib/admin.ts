@@ -1,6 +1,7 @@
 import 'server-only';
 import { redis } from '@/lib/redis';
-import { boardKey, type Board } from './kv';
+import { boardKey } from '@/lib/kv';
+import type { Board } from '@/lib/kv';
 import { listUserIds } from './users';
 
 export const ADMIN_EMAILS = new Set(['dylan@wahbe.com']);

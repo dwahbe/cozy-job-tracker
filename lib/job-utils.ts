@@ -2,10 +2,22 @@ import type { ParsedJob } from './markdown';
 
 export const STATUS_OPTIONS = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'];
 
+/**
+ * The scheme of a link ("https", "mailto", …), or null for a bare one ("example.com/jobs/1").
+ * A leading host:port ("careers.acme.com:8443/jobs/1") is a bare link, not a scheme: schemes
+ * don't contain dots unless "//" follows.
+ */
+export function linkScheme(link: string): string | null {
+  const match = /^([a-z][a-z0-9+.-]*):(\/\/)?/i.exec(link.trim());
+  if (!match) return null;
+  const scheme = match[1].toLowerCase();
+  return match[2] || !scheme.includes('.') ? scheme : null;
+}
+
 /** href for a stored link: bare "example.com/jobs/1" gets https://, anything with a scheme is kept. */
 export function toHref(link: string): string {
   const trimmed = link.trim();
-  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return linkScheme(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
 export function formatDateDisplay(dateStr: string): string {

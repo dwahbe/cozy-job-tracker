@@ -46,7 +46,13 @@ export function SiteHeader() {
   }, []);
 
   const scheduleClose = useCallback(() => {
-    timeoutRef.current = setTimeout(() => setActiveDropdown(null), 150);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      // The feedback modal is owned by a button inside the About panel: closing the panel while
+      // the modal is open (the pointer left the panel for the modal, or the window) would unmount it.
+      if (document.querySelector('[data-feedback-modal]')) return;
+      setActiveDropdown(null);
+    }, 150);
   }, []);
 
   const cancelClose = useCallback(() => {

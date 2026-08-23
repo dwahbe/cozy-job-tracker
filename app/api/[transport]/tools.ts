@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { getOrCreateBoard, pruneTrash } from '@/lib/kv';
+import { getBoardOrDefault, pruneTrash } from '@/lib/kv';
 import type { Job, TrashedJob } from '@/lib/kv';
-import { getOrCreateNetwork, pruneNetworkTrash, STATUS_LABELS } from '@/lib/network';
+import { pruneNetworkTrash, STATUS_LABELS } from '@/lib/network';
 import type { Person, TrashedPerson } from '@/lib/network';
+import { getNetworkOrDefault } from '@/lib/network-store';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -104,7 +105,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { status } = args as { status?: string };
-      const board = await getOrCreateBoard(getUserId(extra as Extra));
+      const board = await getBoardOrDefault(getUserId(extra as Extra));
 
       let jobs = board.jobs;
       if (status) jobs = jobs.filter((j) => j.status === status);
@@ -131,7 +132,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { jobId } = args as { jobId: string };
-      const board = await getOrCreateBoard(getUserId(extra as Extra));
+      const board = await getBoardOrDefault(getUserId(extra as Extra));
 
       const job = board.jobs.find((j) => j.id === jobId);
       if (!job) return txt(`Job "${jobId}" not found.`, true);
@@ -277,7 +278,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { query } = args as { query: string };
-      const board = await getOrCreateBoard(getUserId(extra as Extra));
+      const board = await getBoardOrDefault(getUserId(extra as Extra));
 
       const q = query.toLowerCase();
       const matches = board.jobs.filter(
@@ -306,7 +307,7 @@ export const toolDefinitions: ToolDef[] = [
       annotations: { readOnlyHint: true },
     },
     handler: async (_args: unknown, extra: unknown): Promise<TextResult> => {
-      const board = await getOrCreateBoard(getUserId(extra as Extra));
+      const board = await getBoardOrDefault(getUserId(extra as Extra));
 
       pruneTrash(board);
       const total = board.jobs.length;
@@ -430,7 +431,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { status } = args as { status?: string };
-      const network = await getOrCreateNetwork(getUserId(extra as Extra));
+      const network = await getNetworkOrDefault(getUserId(extra as Extra));
 
       let people = network.people;
       if (status) people = people.filter((p) => p.status === status);
@@ -457,7 +458,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { personId } = args as { personId: string };
-      const network = await getOrCreateNetwork(getUserId(extra as Extra));
+      const network = await getNetworkOrDefault(getUserId(extra as Extra));
 
       const person = network.people.find((p) => p.id === personId);
       if (!person) return txt(`Person "${personId}" not found.`, true);
@@ -489,7 +490,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { query } = args as { query: string };
-      const network = await getOrCreateNetwork(getUserId(extra as Extra));
+      const network = await getNetworkOrDefault(getUserId(extra as Extra));
 
       const q = query.toLowerCase();
       const matches = network.people.filter(
@@ -517,7 +518,7 @@ export const toolDefinitions: ToolDef[] = [
       annotations: { readOnlyHint: true },
     },
     handler: async (_args: unknown, extra: unknown): Promise<TextResult> => {
-      const network = await getOrCreateNetwork(getUserId(extra as Extra));
+      const network = await getNetworkOrDefault(getUserId(extra as Extra));
 
       pruneNetworkTrash(network);
       const total = network.people.length;

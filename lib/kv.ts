@@ -114,15 +114,18 @@ export async function saveBoardByUserId(userId: string, board: Board): Promise<v
 
 export const DEFAULT_BOARD_TITLE = 'My job board';
 
+/** A fresh, empty board — what a user has before their first write. */
+export function createEmptyBoard(): Board {
+  return { title: DEFAULT_BOARD_TITLE, columns: [], jobs: [] };
+}
+
 /**
- * Get the user's board, creating an empty one on first use.
+ * The user's board, or an empty one if they haven't got one yet. Nothing is written here: the
+ * first compare-and-set write (withBoard) creates the key, so a slow first-use create can never
+ * overwrite an edit that landed in the meantime.
  */
-export async function getOrCreateBoard(userId: string): Promise<Board> {
-  const existing = await getBoardByUserId(userId);
-  if (existing) return existing;
-  const board: Board = { title: DEFAULT_BOARD_TITLE, columns: [], jobs: [] };
-  await saveBoardByUserId(userId, board);
-  return board;
+export async function getBoardOrDefault(userId: string): Promise<Board> {
+  return (await getBoardByUserId(userId)) ?? createEmptyBoard();
 }
 
 const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days

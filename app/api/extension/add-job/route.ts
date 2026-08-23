@@ -3,7 +3,8 @@ import { validateExtensionToken } from '@/lib/extension-auth';
 import { createJobFromValidation } from '@/lib/kv';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 import { outcomeError, unauthorized, withBoard } from '@/lib/api-auth';
-import { addManualJob, applyJobUpdates, updatesFromObject } from '@/lib/job-updates';
+import { addManualJob, applyJobUpdates, findColumn, isDueDateValue } from '@/lib/job-updates';
+import type { FieldUpdate } from '@/lib/job-updates';
 import { ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
@@ -17,14 +18,7 @@ export async function POST(req: NextRequest) {
     const { job, manual, overrides, customFields } = (body ?? {}) as {
       job?: ValidatedJob;
       manual?: unknown;
-      overrides?: Partial<{
-        title: string;
-        company: string;
-        location: string;
-        employmentType: string;
-        notes: string;
-        dueDate: string;
-      }>;
+      overrides?: Record<string, unknown>;
       customFields?: Record<string, unknown>;
     };
 
@@ -50,15 +44,26 @@ export async function POST(req: NextRequest) {
       const newJob = createJobFromValidation(validatedJob, board.columns);
       board.jobs.push(newJob);
 
-      // Edits the user made in the extension's preview, validated like any other update.
-      const updates = updatesFromObject(
-        overrides && typeof overrides === 'object' ? overrides : undefined,
-        customFields && typeof customFields === 'object' ? customFields : undefined
-      ).filter(({ field, value }) => {
-        if (typeof value !== 'string') return false;
+      // Edits the user made in the extension's preview, validated like any other update — with
+      // two allowances for values the extension echoes back untouched: a parsed due date that
+      // isn't a real date ("Open until filled") keeps the parsed text rather than failing the
+      // save, and a custom column deleted since the popup loaded is skipped.
+      const updates: FieldUpdate[] = [];
+      for (const [field, value] of Object.entries(
+        overrides && typeof overrides === 'object' ? overrides : {}
+      )) {
+        if (typeof value !== 'string') continue;
         // Blank title/company overrides mean "keep what was parsed".
-        return !((field === 'title' || field === 'company') && !value.trim());
-      });
+        if ((field === 'title' || field === 'company') && !value.trim()) continue;
+        if (field === 'dueDate' && !isDueDateValue(value)) continue;
+        updates.push({ field, value });
+      }
+      for (const [field, value] of Object.entries(
+        customFields && typeof customFields === 'object' ? customFields : {}
+      )) {
+        if (typeof value !== 'string' || !findColumn(board.columns, field)) continue;
+        updates.push({ field, value });
+      }
       if (updates.length === 0) return ok(newJob);
 
       const applied = applyJobUpdates(board, newJob.id, updates);

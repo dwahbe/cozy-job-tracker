@@ -66,9 +66,11 @@ export function AddPersonForm() {
   const [rows, setRows] = useState<string[][]>([]);
   const [totalRows, setTotalRows] = useState(0);
   const [mapping, setMapping] = useState<(MappableField | 'custom')[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; skipped: number } | null>(
-    null
-  );
+  const [importResult, setImportResult] = useState<{
+    imported: number;
+    skipped: number;
+    dropped?: number;
+  } | null>(null);
   const [customTypes, setCustomTypes] = useState<Record<number, InferredColumnType>>({});
   const [dropdownOptionDrafts, setDropdownOptionDrafts] = useState<Record<number, string>>({});
 
@@ -606,6 +608,15 @@ export function AddPersonForm() {
                 )}
                 .
               </p>
+              {(importResult.dropped ?? 0) > 0 && (
+                <p className="muted text-sm mt-1">
+                  {importResult.dropped === 1
+                    ? '1 value didn’t fit its column'
+                    : `${importResult.dropped} values didn’t fit their column`}{' '}
+                  (date columns only hold dates, dropdowns only so many options) and{' '}
+                  {importResult.dropped === 1 ? 'was' : 'were'} left blank.
+                </p>
+              )}
             </div>
           )}
         </>

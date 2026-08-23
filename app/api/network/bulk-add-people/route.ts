@@ -6,15 +6,15 @@ import type { Person, PersonStatus } from '@/lib/network';
 import { PERSON_STATUSES } from '@/lib/network';
 import type { Column } from '@/lib/markdown';
 import { addCustomColumn } from '@/lib/custom-column-utils';
-import { MAX_IMPORT_ROWS, TEXT_FIELD_MAX } from '@/lib/limits';
+import {
+  CUSTOM_TEXT_MAX,
+  DROPDOWN_OPTION_MAX,
+  MAX_DROPDOWN_OPTIONS,
+  MAX_IMPORT_ROWS,
+  TEXT_FIELD_MAX,
+} from '@/lib/limits';
 import { getLinkError } from '@/lib/job-updates';
-import { fail, ok } from '@/lib/outcome';
-
-interface ColumnDef {
-  name: string;
-  type: 'text' | 'checkbox' | 'dropdown' | 'date';
-  options?: string[];
-}
+import { ok, unchanged } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
@@ -24,10 +24,36 @@ interface ImportRow {
   role?: string;
   linkedinUrl?: string;
   status?: string;
-  customFields: Record<string, string>;
+  /** Raw custom-column cells; normalised (and stored) only for rows that are imported. */
+  custom: { column: Column; value: string }[];
 }
 
 const clip = (value: string, max: number) => (value.length > max ? value.slice(0, max) : value);
+
+/**
+ * The value to store for a custom cell, normalised to the column's type, or null when it can't
+ * be stored as typed (free text in a date column, a dropdown value that doesn't fit within the
+ * column's option limits). Unseen dropdown values become options so the import doesn't silently
+ * drop data — up to MAX_DROPDOWN_OPTIONS, the same cap the column editor enforces.
+ */
+function importCustomValue(column: Column, value: string): string | null {
+  switch (column.type) {
+    case 'checkbox':
+      return normalizeCheckboxValue(value);
+    case 'date':
+      return parseFlexibleDate(value);
+    case 'dropdown': {
+      const options = column.options ?? (column.options = []);
+      const match = options.find((o) => o.toLowerCase() === value.toLowerCase());
+      if (match) return match;
+      if (value.length > DROPDOWN_OPTION_MAX || options.length >= MAX_DROPDOWN_OPTIONS) return null;
+      options.push(value);
+      return value;
+    }
+    default:
+      return clip(value, CUSTOM_TEXT_MAX);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,30 +83,29 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await withNetwork(userId, (network) => {
-      // Add the new custom columns first (validated like any other column), remembering types
-      // so imported values can be normalised.
-      const columnTypes = new Map<string, ColumnDef>();
+      // Add the new custom columns first (validated like any other column).
+      let columnsAdded = false;
       const existing = new Set(network.columns.map((c) => c.name.toLowerCase()));
       for (const colDef of Array.isArray(newColumns) ? newColumns : []) {
-        const def: ColumnDef | null =
+        const column: Column | null =
           typeof colDef === 'string'
             ? { name: colDef, type: 'text' }
             : colDef && typeof colDef === 'object' && typeof colDef.name === 'string'
-              ? { name: colDef.name, type: colDef.type, options: colDef.options }
+              ? {
+                  name: colDef.name,
+                  type: colDef.type,
+                  ...(colDef.type === 'dropdown' && colDef.options?.length
+                    ? { options: colDef.options }
+                    : {}),
+                }
               : null;
-        if (!def || !def.name.trim()) continue;
-
-        if (!existing.has(def.name.trim().toLowerCase())) {
-          const column: Column = { name: def.name.trim(), type: def.type };
-          if (def.type === 'dropdown' && def.options?.length) column.options = def.options;
-          const added = addCustomColumn(network, network.people, column, 'network');
-          if (!added.ok) return added;
-          existing.add(added.value.name.toLowerCase());
+        if (!column || !column.name.trim() || existing.has(column.name.trim().toLowerCase())) {
+          continue;
         }
-        const stored = network.columns.find(
-          (c) => c.name.toLowerCase() === def.name.trim().toLowerCase()
-        );
-        if (stored) columnTypes.set(def.name, { name: stored.name, type: stored.type });
+        const added = addCustomColumn(network, network.people, column, 'network');
+        if (!added.ok) return added;
+        existing.add(added.value.name.toLowerCase());
+        columnsAdded = true;
       }
 
       const columnByName = new Map(network.columns.map((c) => [c.name.toLowerCase(), c]));
@@ -91,9 +116,10 @@ export async function POST(request: NextRequest) {
 
       let imported = 0;
       let skipped = 0;
+      let dropped = 0; // custom cells left blank because they didn't fit their column
 
       for (const row of rows as unknown[][]) {
-        const data: ImportRow = { customFields: {} };
+        const data: ImportRow = { custom: [] };
 
         for (let i = 0; i < mapping.length; i++) {
           const field = mapping[i] as string;
@@ -109,27 +135,21 @@ export async function POST(request: NextRequest) {
             data.status = value;
           } else if (field.startsWith('custom:')) {
             const column = columnByName.get(field.slice(7).trim().toLowerCase());
-            if (!column) continue;
-            if (column.type === 'checkbox') {
-              data.customFields[column.name] = normalizeCheckboxValue(value);
-            } else if (column.type === 'date') {
-              // Normalise spreadsheet spellings to ISO; anything else is kept as typed.
-              data.customFields[column.name] = parseFlexibleDate(value) ?? value;
-            } else if (column.type === 'dropdown') {
-              // Unseen dropdown values become options so the import never silently drops data.
-              const options = column.options ?? (column.options = []);
-              const match = options.find((o) => o.toLowerCase() === value.toLowerCase());
-              if (!match) options.push(value);
-              data.customFields[column.name] = match ?? value;
-            } else {
-              data.customFields[column.name] = value;
-            }
+            if (column) data.custom.push({ column, value });
           }
         }
 
         if (!data.name && !data.company && !data.role) {
           skipped++;
           continue;
+        }
+
+        // Only rows that are actually imported get to touch the columns (dropdown options).
+        const customFields = { ...customFieldDefaults };
+        for (const { column, value } of data.custom) {
+          const stored = importCustomValue(column, value);
+          if (stored === null) dropped++;
+          else customFields[column.name] = stored;
         }
 
         let status: PersonStatus = 'not-contacted';
@@ -148,7 +168,7 @@ export async function POST(request: NextRequest) {
           lastContacted: null,
           linkedJobIds: [],
           interactions: [],
-          customFields: { ...customFieldDefaults, ...data.customFields },
+          customFields,
           createdAt: new Date().toISOString(),
         };
 
@@ -156,10 +176,8 @@ export async function POST(request: NextRequest) {
         imported++;
       }
 
-      if (imported === 0 && columnTypes.size === 0) {
-        return fail(400, 'Nothing to import — every row was empty');
-      }
-      return ok({ imported, skipped });
+      const summary = { imported, skipped, dropped };
+      return imported > 0 || columnsAdded ? ok(summary) : unchanged(summary);
     });
     if (!result.ok) return outcomeError(result);
 

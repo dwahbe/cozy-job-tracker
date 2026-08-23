@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { Column } from '@/lib/markdown';
 import { dropdownColorClass } from '@/lib/dropdown-colors';
+import { DueDatePicker } from './DueDatePicker';
 import {
   DndContext,
   closestCenter,
@@ -226,117 +227,6 @@ const TrashIcon = (
     />
   </svg>
 );
-
-// ---------------------------------------------------------------------------
-// Date picker (matches Job board DueDatePicker style)
-// ---------------------------------------------------------------------------
-
-const formatDateDisplay = (dateStr: string): string => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr + 'T00:00:00');
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
-  const day = date.getDate();
-  const year = date.getFullYear();
-  const ordinal = (n: number) => {
-    if (n > 3 && n < 21) return 'th';
-    switch (n % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  };
-  return `${month} ${day}${ordinal(day)}, ${year}`;
-};
-
-function DatePickerCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<Record<string, unknown>>({});
-
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        zIndex: 9999,
-      });
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node) &&
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const displayText = value ? formatDateDisplay(value) : '—';
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className={`hover:underline underline-offset-2 text-left whitespace-nowrap ${!value ? 'text-muted-3' : ''}`}
-      >
-        {displayText}
-      </button>
-      {isOpen && (
-        <div
-          ref={dropdownRef}
-          style={dropdownStyle}
-          className="bg-surface-solid border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
-        >
-          <div className="space-y-2">
-            <input
-              type="date"
-              value={value}
-              onChange={(e) => {
-                onChange(e.target.value);
-                setIsOpen(false);
-              }}
-              className="input w-full text-sm"
-            />
-            {value && (
-              <button
-                type="button"
-                onClick={() => {
-                  onChange('');
-                  setIsOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 rounded-md text-sm muted hover:bg-black/5 transition-colors"
-              >
-                Clear date
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // BoardTable
@@ -754,7 +644,14 @@ export function BoardTable<T>({
     const id = getItemId(item);
     const value = getEffectiveValue(item, col);
 
-    return <DatePickerCell value={value} onChange={(v) => doUpdateField(id, col.field, v)} />;
+    return (
+      <DueDatePicker
+        value={value}
+        onChange={(v) => doUpdateField(id, col.field, v)}
+        allowRolling={false}
+        buttonClassName={`hover:underline underline-offset-2 text-left whitespace-nowrap${value ? '' : ' text-muted-3'}`}
+      />
+    );
   };
 
   const renderCheckboxCell = (item: T, col: BoardColumnDef<T>) => {
@@ -849,7 +746,14 @@ export function BoardTable<T>({
     }
 
     if (customCol.type === 'date') {
-      return <DatePickerCell value={value} onChange={(v) => doUpdateField(id, fieldName, v)} />;
+      return (
+        <DueDatePicker
+          value={value}
+          onChange={(v) => doUpdateField(id, fieldName, v)}
+          allowRolling={false}
+          buttonClassName={`hover:underline underline-offset-2 text-left whitespace-nowrap${value ? '' : ' text-muted-3'}`}
+        />
+      );
     }
 
     if (customCol.type === 'dropdown' && customCol.options) {

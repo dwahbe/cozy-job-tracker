@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import { getOrCreateBoard, pruneTrash } from '@/lib/kv';
+import { getBoardOrDefault, pruneTrash } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const board = await getOrCreateBoard(user.userId);
+    const board = await getBoardOrDefault(user.userId);
 
     pruneTrash(board);
 

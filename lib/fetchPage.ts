@@ -151,7 +151,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const FETCH_TIMEOUT_MS = 10_000;
-const MAX_REDIRECTS = 3;
+const MAX_REDIRECTS = 5;
 // Job pages are small; anything past this is dropped rather than buffered.
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
@@ -173,10 +173,12 @@ function failure(finalUrl: string, fetchError: string, errorType: ErrorType): Fe
 
 /**
  * Fetch with redirects followed by hand (at most MAX_REDIRECTS hops) so that every hop —
- * not just the first URL — is checked against the private-address guard.
+ * not just the first URL — is checked against the private-address guard. One timeout covers
+ * the whole chain, so a redirect-happy host can't stretch a parse past the route's budget.
  */
 async function fetchFollowingRedirects(url: string): Promise<Fetched | FetchFailure> {
   let currentUrl = url;
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
 
   for (let hop = 0; ; hop++) {
     const reason = unsafeUrlReason(currentUrl);
@@ -187,7 +189,7 @@ async function fetchFollowingRedirects(url: string): Promise<Fetched | FetchFail
       response = await fetch(currentUrl, {
         headers: FETCH_HEADERS,
         redirect: 'manual',
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        signal,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : '';

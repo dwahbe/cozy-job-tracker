@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireUserId, unauthorized } from '@/lib/api-auth';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -10,12 +10,10 @@ export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const blocked = await limited('parse', session.user.id);
+    const blocked = await limited('parse', userId);
     if (blocked) return blocked;
 
     const body = await request.json().catch(() => null);

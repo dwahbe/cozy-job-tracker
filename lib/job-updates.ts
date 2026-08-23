@@ -3,7 +3,7 @@ import { generateJobId } from '@/lib/kv';
 import type { Interaction, NetworkData, Person, PersonStatus } from '@/lib/network';
 import { PERSON_STATUSES, generateInteractionId, generatePersonId } from '@/lib/network';
 import type { Column } from '@/lib/markdown';
-import { STATUS_OPTIONS } from '@/lib/job-utils';
+import { STATUS_OPTIONS, linkScheme } from '@/lib/job-utils';
 import {
   CUSTOM_TEXT_MAX,
   LINK_MAX,
@@ -11,7 +11,8 @@ import {
   NOTES_MAX,
   TEXT_FIELD_MAX,
 } from '@/lib/limits';
-import { fail, ok, type Outcome } from '@/lib/outcome';
+import { fail, ok } from '@/lib/outcome';
+import type { Outcome } from '@/lib/outcome';
 
 /**
  * The one place that decides what a job or person update may contain. The web app, the
@@ -33,10 +34,15 @@ export function isIsoDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
 }
 
+/** Due-date values: YYYY-MM-DD, "rolling" (no fixed deadline) or empty. */
+export function isDueDateValue(value: string): boolean {
+  return value === '' || value === 'rolling' || isIsoDate(value);
+}
+
 /** Links may be bare ("example.com/jobs") or http(s); other schemes (javascript:, data:) are refused. */
 export function getLinkError(link: string): string | null {
   if (link.length > LINK_MAX) return `Link must be ${LINK_MAX} characters or fewer`;
-  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(link.trim())?.[1].toLowerCase();
+  const scheme = linkScheme(link);
   if (scheme && scheme !== 'http' && scheme !== 'https') return 'Link must be an http(s) URL';
   return null;
 }
@@ -51,7 +57,8 @@ function matchOption(value: string, options: readonly string[]): string | undefi
   return options.find((option) => option.toLowerCase() === lower);
 }
 
-function findColumn(columns: Column[], name: string): Column | undefined {
+/** The custom column called `name` (case-insensitive), if the document has one. */
+export function findColumn(columns: Column[], name: string): Column | undefined {
   const lower = name.trim().toLowerCase();
   return columns.find((column) => column.name.toLowerCase() === lower);
 }
@@ -74,9 +81,10 @@ function checkCustomValue(column: Column, value: string): Checked {
         : { error: `${column.name} must be one of: ${options.join(', ')}` };
     }
     case 'date':
-      return value === '' || isIsoDate(value)
+      // Same rule as the built-in due date: the date picker offers "rolling" for these cells too.
+      return isDueDateValue(value)
         ? { value }
-        : { error: `${column.name} must be a date (YYYY-MM-DD)` };
+        : { error: `${column.name} must be a date (YYYY-MM-DD), "rolling", or empty` };
     default:
       return value.length > CUSTOM_TEXT_MAX
         ? { error: tooLong(column.name, CUSTOM_TEXT_MAX) }
@@ -169,7 +177,7 @@ function checkJobField(board: Board, field: string, value: string): JobWrite | {
           : { error: `Status must be one of: ${STATUS_OPTIONS.join(', ')}` };
       }
       case 'dueDate':
-        return value === '' || value === 'rolling' || isIsoDate(value)
+        return isDueDateValue(value)
           ? { builtin, value }
           : { error: 'Due date must be YYYY-MM-DD, "rolling", or empty' };
     }

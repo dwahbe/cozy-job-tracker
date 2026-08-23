@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { boardKey, getOrCreateBoard, type Board } from '@/lib/kv';
+import { boardKey, getBoardOrDefault } from '@/lib/kv';
+import type { Board } from '@/lib/kv';
 import { casSet } from '@/lib/cas';
-import { fail, type Outcome } from '@/lib/outcome';
+import { fail } from '@/lib/outcome';
+import type { Outcome } from '@/lib/outcome';
 import { scheduleRevalidate } from '@/lib/revalidate';
 
 const MAX_ATTEMPTS = 4; // one try plus three retries after a version conflict
@@ -30,7 +32,8 @@ export function outcomeError(outcome: { status: number; error: string }): NextRe
  * the write, or fail(status, error) to reject (nothing is written). If another writer got in
  * first the board is re-read and the mutator re-run, up to MAX_ATTEMPTS. The board pages are
  * revalidated after the response unless `revalidate` is false (pages that already render the
- * fresh data).
+ * fresh data). A user without a board yet starts from an empty one; the compare-and-set
+ * (expected version 0 = no key) is what creates it.
  */
 export async function withBoard<T>(
   userId: string,
@@ -38,7 +41,7 @@ export async function withBoard<T>(
   options: { revalidate?: boolean } = {}
 ): Promise<Outcome<T>> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const board = await getOrCreateBoard(userId);
+    const board = await getBoardOrDefault(userId);
     const expected = board.version ?? 0;
 
     const outcome = await mutate(board);

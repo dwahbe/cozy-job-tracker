@@ -64,15 +64,6 @@ function isPrivateIpv6(host: string): boolean {
   return false;
 }
 
-/** True when the URL's host is loopback, private, link-local, etc. Unparseable URLs count as private. */
-export function isPrivateUrl(urlString: string): boolean {
-  try {
-    return isPrivateHost(new URL(urlString).hostname);
-  } catch {
-    return true;
-  }
-}
-
 function isPrivateHost(hostname: string): boolean {
   const host = hostname
     .replace(/^\[|\]$/g, '')

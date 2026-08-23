@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/dal';
-import { getOrCreateBoard } from '@/lib/kv';
+import { getBoardOrDefault } from '@/lib/kv';
 import { SignOutButton } from './SignOutButton';
 import { BoardTitleForm } from './BoardTitleForm';
 import { NameForm } from './NameForm';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const { userId, email, name } = await verifySession();
-  const board = await getOrCreateBoard(userId);
+  const board = await getBoardOrDefault(userId);
 
   return (
     <main className="page">

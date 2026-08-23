@@ -137,6 +137,11 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
     return filtered.slice(0, MAX_NODES);
   }, [people, filter, hasStrengthCol, hasFollowUpCol, now]);
 
+  // Fresh person data for labels and tooltips. Nodes are only rebuilt when the layout changes
+  // (layoutKey below), so an edited name, company or "Next action" must not wait for that.
+  const personById = useMemo(() => new Map(orbitPeople.map((p) => [p.id, p])), [orbitPeople]);
+  const livePerson = (node: OrbitNode): Person => personById.get(node.id) ?? node.person;
+
   const maxRadius = Math.min(dimensions.width, dimensions.height) / 2 - 50;
   const cx = dimensions.width / 2;
   const cy = dimensions.height / 2;
@@ -285,6 +290,8 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
     setMousePos({ x: (node.x ?? 0) + 12, y: (node.y ?? 0) - 10 });
   }, []);
 
+  const hoveredPerson = hoveredNode ? livePerson(hoveredNode) : null;
+
   return (
     <div
       ref={containerRef}
@@ -377,7 +384,8 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
           const nodeX = node.x ?? 0;
           const nodeY = node.y ?? 0;
           const nameRight = nodeX > cx;
-          const label = node.person.name || node.person.company || '?';
+          const person = livePerson(node);
+          const label = person.name || person.company || '?';
 
           return (
             <g
@@ -390,7 +398,7 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
               onBlur={() => setHoveredNode(null)}
               tabIndex={0}
               role="button"
-              aria-label={`${label} — ${STATUS_LABELS[node.person.status]}`}
+              aria-label={`${label} — ${STATUS_LABELS[person.status]}`}
               style={{ cursor: 'pointer', outline: 'none' }}
               opacity={dimmed ? node.opacity * 0.3 : node.opacity}
             >
@@ -438,7 +446,7 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
       </svg>
 
       <AnimatePresence>
-        {hoveredNode && (
+        {hoveredNode && hoveredPerson && (
           <motion.div
             className="orbit-tooltip"
             role="tooltip"
@@ -450,20 +458,18 @@ export function OrbitView({ people, columns, userName }: OrbitViewProps) {
               top: mousePos.y - 10,
             }}
           >
-            <div className="orbit-tooltip-name">{hoveredNode.person.name || 'No name'}</div>
-            {hoveredNode.person.company && (
-              <div className="orbit-tooltip-detail">{hoveredNode.person.company}</div>
+            <div className="orbit-tooltip-name">{hoveredPerson.name || 'No name'}</div>
+            {hoveredPerson.company && (
+              <div className="orbit-tooltip-detail">{hoveredPerson.company}</div>
             )}
-            {hoveredNode.person.role && (
-              <div className="orbit-tooltip-detail">{hoveredNode.person.role}</div>
-            )}
+            {hoveredPerson.role && <div className="orbit-tooltip-detail">{hoveredPerson.role}</div>}
             <div className="orbit-tooltip-status">
-              {STATUS_LABELS[hoveredNode.person.status]}
-              {hoveredNode.person.lastContacted ? ` · ${conversationHint(hoveredNode.person)}` : ''}
+              {STATUS_LABELS[hoveredPerson.status]}
+              {hoveredPerson.lastContacted ? ` · ${conversationHint(hoveredPerson)}` : ''}
             </div>
-            {hoveredNode.person.customFields['Next action'] && (
+            {hoveredPerson.customFields['Next action'] && (
               <div className="orbit-tooltip-detail" style={{ marginTop: '0.25rem' }}>
-                Next: {hoveredNode.person.customFields['Next action']}
+                Next: {hoveredPerson.customFields['Next action']}
               </div>
             )}
           </motion.div>

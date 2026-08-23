@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/dal';
-import { getOrCreateBoard, getColumnOrder, pruneTrash } from '@/lib/kv';
+import { getBoardOrDefault, getColumnOrder, pruneTrash } from '@/lib/kv';
 import { withBoard } from '@/lib/api-auth';
 import { ok, unchanged } from '@/lib/outcome';
 import { JobForm } from '@/app/components/JobForm';
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function BoardPage() {
   const { userId } = await verifySession();
 
-  const board = await getOrCreateBoard(userId);
+  const board = await getBoardOrDefault(userId);
 
   // Persist the prune with a compare-and-set write so it can't clobber a concurrent edit.
   if (pruneTrash(board)) {

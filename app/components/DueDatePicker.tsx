@@ -9,6 +9,8 @@ interface DueDatePickerProps {
   disabled?: boolean;
   placeholder?: string;
   buttonClassName?: string;
+  /** Offer "Rolling basis" (no fixed date) next to the calendar. */
+  allowRolling?: boolean;
 }
 
 export function DueDatePicker({
@@ -17,6 +19,7 @@ export function DueDatePicker({
   disabled,
   placeholder = '\u2014',
   buttonClassName = 'hover:underline underline-offset-2 text-left whitespace-nowrap',
+  allowRolling = true,
 }: DueDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -34,7 +37,7 @@ export function DueDatePicker({
         zIndex: 9999,
       });
       // Move focus into the popover so Escape/Tab act on it rather than on whatever is behind.
-      dateInputRef.current?.focus();
+      dateInputRef.current?.focus({ preventScroll: true });
     }
   }, [isOpen]);
 
@@ -49,6 +52,7 @@ export function DueDatePicker({
   };
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (
         buttonRef.current &&
@@ -59,10 +63,15 @@ export function DueDatePicker({
         setIsOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // The popover is position: fixed, so it would float away from its cell when the page or
+    // the table scrolls — close it instead, like the other table popovers.
+    const handleScroll = () => setIsOpen(false);
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+    };
   }, [isOpen]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,15 +121,17 @@ export function DueDatePicker({
               aria-label="Date"
               className="input w-full text-sm"
             />
-            <button
-              type="button"
-              onClick={handleRollingClick}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
-              }`}
-            >
-              🔄 Rolling basis
-            </button>
+            {allowRolling && (
+              <button
+                type="button"
+                onClick={handleRollingClick}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  value === 'rolling' ? 'bg-accent-soft text-accent' : 'hover:bg-black/5'
+                }`}
+              >
+                🔄 Rolling basis
+              </button>
+            )}
             {value && (
               <button
                 type="button"
