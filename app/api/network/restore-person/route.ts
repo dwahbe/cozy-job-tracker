@@ -1,32 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
+import { fail, ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const { personId } = await request.json();
-    if (!personId) {
+    const body = await request.json().catch(() => null);
+    const { personId } = (body ?? {}) as { personId?: unknown };
+    if (typeof personId !== 'string' || !personId) {
       return NextResponse.json({ error: 'personId is required' }, { status: 400 });
     }
 
-    if (!ctx.network.trash || ctx.network.trash.length === 0) {
-      return NextResponse.json({ error: 'Trash is empty' }, { status: 404 });
-    }
+    const result = await withNetwork(userId, (network) => {
+      if (!network.trash || network.trash.length === 0) return fail(404, 'Trash is empty');
 
-    const trashIndex = ctx.network.trash.findIndex((p) => p.id === personId);
-    if (trashIndex === -1) {
-      return NextResponse.json({ error: 'Person not found in trash' }, { status: 404 });
-    }
+      const trashIndex = network.trash.findIndex((p) => p.id === personId);
+      if (trashIndex === -1) return fail(404, 'Person not found in trash');
 
-    const [trashedPerson] = ctx.network.trash.splice(trashIndex, 1);
-    const { deletedAt: _, ...restoredPerson } = trashedPerson;
-    ctx.network.people.unshift(restoredPerson);
-
-    await saveNetworkAndRevalidate(ctx);
+      const [trashedPerson] = network.trash.splice(trashIndex, 1);
+      const { deletedAt: _, ...restoredPerson } = trashedPerson;
+      network.people.unshift(restoredPerson);
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

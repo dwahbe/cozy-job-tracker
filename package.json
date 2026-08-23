@@ -21,7 +21,6 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/kv": "^3.0.0",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
     "d3-force": "^3.0.0",

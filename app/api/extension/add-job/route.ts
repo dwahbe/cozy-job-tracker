@@ -1,41 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import {
-  getOrCreateBoard,
-  saveBoardByUserId,
-  createJobFromValidation,
-  generateJobId,
-} from '@/lib/kv';
-import type { Job } from '@/lib/kv';
+import { createJobFromValidation } from '@/lib/kv';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
-import { revalidatePath } from 'next/cache';
+import { outcomeError, unauthorized, withBoard } from '@/lib/api-auth';
+import { addManualJob, applyJobUpdates, updatesFromObject } from '@/lib/job-updates';
+import { limited } from '@/lib/ratelimit';
+import { ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
-
-interface ManualJob {
-  title: string;
-  company: string;
-  link?: string;
-  location?: string;
-  employmentType?: string;
-  notes?: string;
-}
 
 export async function POST(req: NextRequest) {
   try {
     const user = await validateExtensionToken(req);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return unauthorized();
 
-    const body = await req.json();
-    const { job, url, manual, overrides, customFields } = body as {
+    const body = await req.json().catch(() => null);
+    const { job, url, manual, overrides, customFields } = (body ?? {}) as {
       job?: ValidatedJob;
       url?: string;
-      manual?: ManualJob;
+      manual?: unknown;
       overrides?: Partial<{
         title: string;
         company: string;
@@ -44,41 +30,17 @@ export async function POST(req: NextRequest) {
         notes: string;
         dueDate: string;
       }>;
-      customFields?: Record<string, string>;
+      customFields?: Record<string, unknown>;
     };
 
-    const board = await getOrCreateBoard(user.userId);
-
-    // Path 1: Manual job (MCP / direct field entry)
-    if (manual && manual.title && manual.company) {
-      const customFields: Record<string, string> = {};
-      for (const col of board.columns) {
-        customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
-      }
-
-      const newJob: Job = {
-        id: generateJobId(),
-        title: manual.title,
-        company: manual.company,
-        link: manual.link || '',
-        location: manual.location || 'Not listed',
-        employmentType: manual.employmentType || 'Not listed',
-        notes: manual.notes || '',
-        status: 'Saved',
-        dueDate: '',
-        parsedOn: new Date().toISOString().split('T')[0],
-        verified: 'No',
-        customFields,
-      };
-
-      board.jobs.push(newJob);
-      await saveBoardByUserId(user.userId, board);
-      revalidatePath('/board');
-
+    // Path 1: Manual job (direct field entry)
+    if (manual && typeof manual === 'object') {
+      const result = await withBoard(user.userId, (board) => addManualJob(board, manual, 'No'));
+      if (!result.ok) return outcomeError(result);
       return NextResponse.json({
         success: true,
-        title: newJob.title,
-        company: newJob.company,
+        title: result.value.title,
+        company: result.value.company,
       });
     }
 
@@ -90,6 +52,9 @@ export async function POST(req: NextRequest) {
     let fetchWarning: string | undefined;
 
     if (isLegacy) {
+      const blocked = await limited('parse', user.userId);
+      if (blocked) return blocked;
+
       try {
         new URL(url);
       } catch {
@@ -125,37 +90,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
 
-    const newJob = createJobFromValidation(validatedJob, board.columns);
+    const result = await withBoard(user.userId, (board) => {
+      const newJob = createJobFromValidation(validatedJob, board.columns);
+      board.jobs.push(newJob);
 
-    if (overrides) {
-      if (typeof overrides.title === 'string' && overrides.title.trim())
-        newJob.title = overrides.title.trim();
-      if (typeof overrides.company === 'string' && overrides.company.trim())
-        newJob.company = overrides.company.trim();
-      if (typeof overrides.location === 'string') newJob.location = overrides.location.trim();
-      if (typeof overrides.employmentType === 'string')
-        newJob.employmentType = overrides.employmentType.trim();
-      if (typeof overrides.notes === 'string') newJob.notes = overrides.notes;
-      if (typeof overrides.dueDate === 'string') newJob.dueDate = overrides.dueDate.trim();
-    }
+      // Edits the user made in the extension's preview, validated like any other update.
+      const updates = updatesFromObject(
+        overrides && typeof overrides === 'object' ? overrides : undefined,
+        customFields && typeof customFields === 'object' ? customFields : undefined
+      ).filter(({ field, value }) => {
+        if (typeof value !== 'string') return false;
+        // Blank title/company overrides mean "keep what was parsed".
+        return !((field === 'title' || field === 'company') && !value.trim());
+      });
+      if (updates.length === 0) return ok(newJob);
 
-    if (customFields) {
-      const allowed = new Set(board.columns.map((c) => c.name));
-      for (const [name, value] of Object.entries(customFields)) {
-        if (allowed.has(name) && typeof value === 'string') {
-          newJob.customFields[name] = value;
-        }
+      const applied = applyJobUpdates(board, newJob.id, updates);
+      if (!applied.ok) {
+        board.jobs.pop();
+        return applied;
       }
-    }
-
-    board.jobs.push(newJob);
-    await saveBoardByUserId(user.userId, board);
-    revalidatePath('/board');
+      return ok(newJob);
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({
       success: true,
-      title: newJob.title,
-      company: newJob.company,
+      title: result.value.title,
+      company: result.value.company,
       ...(fetchWarning ? { warning: fetchWarning } : {}),
     });
   } catch (error) {

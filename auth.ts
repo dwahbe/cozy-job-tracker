@@ -1,12 +1,7 @@
 import NextAuth from 'next-auth';
 import Resend from 'next-auth/providers/resend';
 import { UpstashRedisAdapter } from '@auth/upstash-redis-adapter';
-import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
+import { redis } from '@/lib/redis';
 
 function magicLinkHtml(url: string) {
   return `<!DOCTYPE html>

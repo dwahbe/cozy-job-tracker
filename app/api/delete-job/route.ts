@@ -1,39 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { outcomeError, requireUserId, unauthorized, withBoard } from '@/lib/api-auth';
+import { fail, ok } from '@/lib/outcome';
 import type { TrashedJob } from '@/lib/kv';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { jobId } = body as { jobId?: string };
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    if (!jobId) {
+    const body = await request.json().catch(() => null);
+    const { jobId } = (body ?? {}) as { jobId?: unknown };
+    if (typeof jobId !== 'string' || !jobId) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 });
     }
 
-    // Resolve the signed-in user's board
-    const ctx = await resolveBoard();
-    if (!ctx) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Move to trash instead of deleting outright (restorable for 30 days).
+    const result = await withBoard(userId, (board) => {
+      const jobIndex = board.jobs.findIndex((j) => j.id === jobId);
+      if (jobIndex === -1) return fail(404, 'Job not found');
 
-    // Find the job by id
-    const jobIndex = ctx.board.jobs.findIndex((j) => j.id === jobId);
-    if (jobIndex === -1) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
-    }
-
-    // Move to trash instead of permanent delete
-    const [job] = ctx.board.jobs.splice(jobIndex, 1);
-    const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
-
-    if (!ctx.board.trash) ctx.board.trash = [];
-    ctx.board.trash.unshift(trashedJob);
-
-    // Save board
-    await saveBoardAndRevalidate(ctx);
+      const [job] = board.jobs.splice(jobIndex, 1);
+      const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
+      if (!board.trash) board.trash = [];
+      board.trash.unshift(trashedJob);
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ success: true });
   } catch (error) {

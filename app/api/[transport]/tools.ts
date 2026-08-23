@@ -1,24 +1,26 @@
 import { z } from 'zod';
-import { getOrCreateBoard, saveBoardByUserId, generateJobId, pruneTrash } from '@/lib/kv';
+import { getOrCreateBoard, pruneTrash } from '@/lib/kv';
 import type { Job, TrashedJob } from '@/lib/kv';
-import {
-  getNetworkByUserId,
-  saveNetworkByUserId,
-  generatePersonId,
-  generateInteractionId,
-  pruneNetworkTrash,
-  PERSON_STATUSES,
-  STATUS_LABELS,
-} from '@/lib/network';
-import type { Person, PersonStatus, Interaction, NetworkData, TrashedPerson } from '@/lib/network';
+import { getOrCreateNetwork, pruneNetworkTrash, STATUS_LABELS } from '@/lib/network';
+import type { Person, TrashedPerson } from '@/lib/network';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
 import { checkLimit } from '@/lib/ratelimit';
-import { revalidatePath } from 'next/cache';
+import { withBoard } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
+import {
+  addManualJob,
+  addPerson,
+  applyJobUpdates,
+  applyPersonUpdates,
+  logInteraction,
+  updatesFromObject,
+} from '@/lib/job-updates';
+import { fail, ok } from '@/lib/outcome';
 
 type TextResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
-type Extra = { authInfo?: { extra?: Record<string, unknown> } };
+type Extra = { authInfo?: { scopes?: string[]; extra?: Record<string, unknown> } };
 
 function txt(msg: string, isError?: boolean): TextResult {
   return { content: [{ type: 'text', text: msg }], ...(isError ? { isError: true } : {}) };
@@ -26,6 +28,15 @@ function txt(msg: string, isError?: boolean): TextResult {
 
 function getUserId(extra: Extra): string {
   return extra.authInfo?.extra?.userId as string;
+}
+
+/** Mutating tools need the board:write scope; read-only connections get a clear error back. */
+function requireWrite(extra: Extra): TextResult | null {
+  if (extra.authInfo?.scopes?.includes('board:write')) return null;
+  return txt(
+    'This connection is read-only (board:read). Re-authorize cozy job tracker with the board:write scope to make changes.',
+    true
+  );
 }
 
 function formatJob(job: Job): string {
@@ -45,17 +56,6 @@ function formatJob(job: Job): string {
   }
 
   return lines.join('\n');
-}
-
-const NETWORK_NOT_FOUND = txt(
-  'Network not found. Enable networking at cozyjobtracker.com/network.',
-  true
-);
-
-async function getNetwork(userId: string): Promise<NetworkData | null> {
-  const data = await getNetworkByUserId(userId);
-  if (!data) return null;
-  return data;
 }
 
 function formatPerson(person: Person): string {
@@ -164,34 +164,15 @@ export const toolDefinitions: ToolDef[] = [
         employmentType?: string;
         notes?: string;
       };
-      const userId = getUserId(extra as Extra);
-      const board = await getOrCreateBoard(userId);
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const customFields: Record<string, string> = {};
-      for (const col of board.columns) {
-        customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
-      }
+      const result = await withBoard(getUserId(extra as Extra), (board) =>
+        addManualJob(board, { title, company, link, location, employmentType, notes }, 'No')
+      );
+      if (!result.ok) return txt(result.error, true);
 
-      const newJob: Job = {
-        id: generateJobId(),
-        title,
-        company,
-        link: link || '',
-        location: location || 'Not listed',
-        employmentType: employmentType || 'Not listed',
-        notes: notes || '',
-        status: 'Saved',
-        dueDate: '',
-        parsedOn: new Date().toISOString().split('T')[0],
-        verified: 'No',
-        customFields,
-      };
-
-      board.jobs.push(newJob);
-      await saveBoardByUserId(userId, board);
-      revalidatePath('/board');
-
-      return txt(`Added "${title}" at ${company} to the board.`);
+      return txt(`Added "${result.value.title}" at ${result.value.company} to the board.`);
     },
   },
 
@@ -236,54 +217,18 @@ export const toolDefinitions: ToolDef[] = [
         status?: string;
         dueDate?: string;
       };
-      const userId = getUserId(extra as Extra);
-      const board = await getOrCreateBoard(userId);
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const job = board.jobs.find((j) => j.id === jobId);
-      if (!job) return txt(`Job "${jobId}" not found.`, true);
+      const updates = updatesFromObject(fields, customFields);
+      if (updates.length === 0) return txt('No fields to update.', true);
 
-      const standardUpdates = Object.entries(fields).filter(([, v]) => v !== undefined);
-      const hasCustom = customFields && Object.keys(customFields).length > 0;
+      const result = await withBoard(getUserId(extra as Extra), (board) =>
+        applyJobUpdates(board, jobId, updates)
+      );
+      if (!result.ok) return txt(result.error, true);
 
-      if (standardUpdates.length === 0 && !hasCustom) {
-        return txt('No fields to update.', true);
-      }
-
-      for (const [key, value] of standardUpdates) {
-        if (key === 'title') job.title = value as string;
-        else if (key === 'company') job.company = value as string;
-        else if (key === 'link') job.link = value as string;
-        else if (key === 'location') job.location = value as string;
-        else if (key === 'employmentType') job.employmentType = value as string;
-        else if (key === 'notes') job.notes = value as string;
-        else if (key === 'status') job.status = value as string;
-        else if (key === 'dueDate') job.dueDate = value as string;
-      }
-
-      if (hasCustom) {
-        const colMap = new Map(board.columns.map((c) => [c.name, c]));
-        for (const [name, value] of Object.entries(customFields)) {
-          const col = colMap.get(name);
-          if (!col) return txt(`Custom column "${name}" does not exist on this board.`, true);
-
-          if (col.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
-            return txt(`Column "${name}" is a checkbox — use "Yes" or "No".`, true);
-          }
-          if (col.type === 'dropdown' && col.options && !col.options.includes(value)) {
-            return txt(
-              `Column "${name}" only accepts: ${col.options.join(', ')}. Got "${value}".`,
-              true
-            );
-          }
-
-          job.customFields[name] = value;
-        }
-      }
-
-      await saveBoardByUserId(userId, board);
-      revalidatePath('/board');
-
-      return txt(`Updated job "${job.title}" at ${job.company}.`);
+      return txt(`Updated job "${result.value.title}" at ${result.value.company}.`);
     },
   },
 
@@ -300,20 +245,20 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { jobId } = args as { jobId: string };
-      const userId = getUserId(extra as Extra);
-      const board = await getOrCreateBoard(userId);
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const idx = board.jobs.findIndex((j) => j.id === jobId);
-      if (idx === -1) return txt(`Job "${jobId}" not found.`, true);
+      const result = await withBoard(getUserId(extra as Extra), (board) => {
+        const idx = board.jobs.findIndex((j) => j.id === jobId);
+        if (idx === -1) return fail(404, `Job "${jobId}" not found.`);
 
-      const [job] = board.jobs.splice(idx, 1);
-      const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
-      if (!board.trash) board.trash = [];
-      board.trash.unshift(trashedJob);
-
-      await saveBoardByUserId(userId, board);
-      revalidatePath('/board');
-      revalidatePath('/board/trash');
+        const [job] = board.jobs.splice(idx, 1);
+        const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
+        if (!board.trash) board.trash = [];
+        board.trash.unshift(trashedJob);
+        return ok();
+      });
+      if (!result.ok) return txt(result.error, true);
 
       return txt('Job moved to trash.');
     },
@@ -485,8 +430,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { status } = args as { status?: string };
-      const network = await getNetwork(getUserId(extra as Extra));
-      if (!network) return NETWORK_NOT_FOUND;
+      const network = await getOrCreateNetwork(getUserId(extra as Extra));
 
       let people = network.people;
       if (status) people = people.filter((p) => p.status === status);
@@ -513,8 +457,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { personId } = args as { personId: string };
-      const network = await getNetwork(getUserId(extra as Extra));
-      if (!network) return NETWORK_NOT_FOUND;
+      const network = await getOrCreateNetwork(getUserId(extra as Extra));
 
       const person = network.people.find((p) => p.id === personId);
       if (!person) return txt(`Person "${personId}" not found.`, true);
@@ -546,8 +489,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { query } = args as { query: string };
-      const network = await getNetwork(getUserId(extra as Extra));
-      if (!network) return NETWORK_NOT_FOUND;
+      const network = await getOrCreateNetwork(getUserId(extra as Extra));
 
       const q = query.toLowerCase();
       const matches = network.people.filter(
@@ -575,8 +517,7 @@ export const toolDefinitions: ToolDef[] = [
       annotations: { readOnlyHint: true },
     },
     handler: async (_args: unknown, extra: unknown): Promise<TextResult> => {
-      const network = await getNetwork(getUserId(extra as Extra));
-      if (!network) return NETWORK_NOT_FOUND;
+      const network = await getOrCreateNetwork(getUserId(extra as Extra));
 
       pruneNetworkTrash(network);
       const total = network.people.length;
@@ -643,37 +584,13 @@ export const toolDefinitions: ToolDef[] = [
         linkedinUrl?: string;
         status?: string;
       };
-      const userId = getUserId(extra as Extra);
-      const network = await getNetwork(userId);
-      if (!network) return NETWORK_NOT_FOUND;
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const personStatus: PersonStatus =
-        status && PERSON_STATUSES.includes(status as PersonStatus)
-          ? (status as PersonStatus)
-          : 'not-contacted';
-
-      const customFields: Record<string, string> = {};
-      for (const col of network.columns) {
-        customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
-      }
-
-      const person: Person = {
-        id: generatePersonId(),
-        name,
-        linkedinUrl: linkedinUrl || '',
-        company: company || '',
-        role: role || '',
-        status: personStatus,
-        lastContacted: null,
-        linkedJobIds: [],
-        interactions: [],
-        customFields,
-        createdAt: new Date().toISOString(),
-      };
-
-      network.people.unshift(person);
-      await saveNetworkByUserId(userId, network);
-      revalidatePath('/network');
+      const result = await withNetwork(getUserId(extra as Extra), (network) =>
+        addPerson(network, { name, company, role, linkedinUrl, status })
+      );
+      if (!result.ok) return txt(result.error, true);
 
       return txt(`Added ${name}${company ? ` at ${company}` : ''} to the network.`);
     },
@@ -714,56 +631,18 @@ export const toolDefinitions: ToolDef[] = [
         linkedinUrl?: string;
         status?: string;
       };
-      const userId = getUserId(extra as Extra);
-      const network = await getNetwork(userId);
-      if (!network) return NETWORK_NOT_FOUND;
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const person = network.people.find((p) => p.id === personId);
-      if (!person) return txt(`Person "${personId}" not found.`, true);
+      const updates = updatesFromObject(fields, customFields);
+      if (updates.length === 0) return txt('No fields to update.', true);
 
-      const standardUpdates = Object.entries(fields).filter(([, v]) => v !== undefined);
-      const hasCustom = customFields && Object.keys(customFields).length > 0;
+      const result = await withNetwork(getUserId(extra as Extra), (network) =>
+        applyPersonUpdates(network, personId, updates)
+      );
+      if (!result.ok) return txt(result.error, true);
 
-      if (standardUpdates.length === 0 && !hasCustom) {
-        return txt('No fields to update.', true);
-      }
-
-      if (fields.status && !PERSON_STATUSES.includes(fields.status as PersonStatus)) {
-        return txt(`Invalid status "${fields.status}". Use: ${PERSON_STATUSES.join(', ')}.`, true);
-      }
-
-      for (const [key, value] of standardUpdates) {
-        if (key === 'name') person.name = value as string;
-        else if (key === 'company') person.company = value as string;
-        else if (key === 'role') person.role = value as string;
-        else if (key === 'linkedinUrl') person.linkedinUrl = value as string;
-        else if (key === 'status') person.status = value as PersonStatus;
-      }
-
-      if (hasCustom) {
-        const colMap = new Map(network.columns.map((c) => [c.name, c]));
-        for (const [colName, value] of Object.entries(customFields)) {
-          const col = colMap.get(colName);
-          if (!col) return txt(`Custom column "${colName}" does not exist on the network.`, true);
-
-          if (col.type === 'checkbox' && value !== 'Yes' && value !== 'No') {
-            return txt(`Column "${colName}" is a checkbox — use "Yes" or "No".`, true);
-          }
-          if (col.type === 'dropdown' && col.options && !col.options.includes(value)) {
-            return txt(
-              `Column "${colName}" only accepts: ${col.options.join(', ')}. Got "${value}".`,
-              true
-            );
-          }
-
-          person.customFields[colName] = value;
-        }
-      }
-
-      await saveNetworkByUserId(userId, network);
-      revalidatePath('/network');
-
-      return txt(`Updated ${person.name}.`);
+      return txt(`Updated ${result.value.name}.`);
     },
   },
 
@@ -780,23 +659,22 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { personId } = args as { personId: string };
-      const userId = getUserId(extra as Extra);
-      const network = await getNetwork(userId);
-      if (!network) return NETWORK_NOT_FOUND;
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const idx = network.people.findIndex((p) => p.id === personId);
-      if (idx === -1) return txt(`Person "${personId}" not found.`, true);
+      const result = await withNetwork(getUserId(extra as Extra), (network) => {
+        const idx = network.people.findIndex((p) => p.id === personId);
+        if (idx === -1) return fail(404, `Person "${personId}" not found.`);
 
-      const [person] = network.people.splice(idx, 1);
-      const trashedPerson: TrashedPerson = { ...person, deletedAt: new Date().toISOString() };
-      if (!network.trash) network.trash = [];
-      network.trash.unshift(trashedPerson);
+        const [person] = network.people.splice(idx, 1);
+        const trashedPerson: TrashedPerson = { ...person, deletedAt: new Date().toISOString() };
+        if (!network.trash) network.trash = [];
+        network.trash.unshift(trashedPerson);
+        return ok(person);
+      });
+      if (!result.ok) return txt(result.error, true);
 
-      await saveNetworkByUserId(userId, network);
-      revalidatePath('/network');
-      revalidatePath('/network/trash');
-
-      return txt(`${person.name} moved to trash.`);
+      return txt(`${result.value.name} moved to trash.`);
     },
   },
 
@@ -819,35 +697,15 @@ export const toolDefinitions: ToolDef[] = [
         type: string;
         note?: string;
       };
-      const userId = getUserId(extra as Extra);
-      const network = await getNetwork(userId);
-      if (!network) return NETWORK_NOT_FOUND;
+      const denied = requireWrite(extra as Extra);
+      if (denied) return denied;
 
-      const validTypes = ['reached-out', 'met', 'followed-up', 'note'] as const;
-      if (!validTypes.includes(type as Interaction['type'])) {
-        return txt(`Invalid interaction type "${type}". Use: ${validTypes.join(', ')}.`, true);
-      }
+      const result = await withNetwork(getUserId(extra as Extra), (network) =>
+        logInteraction(network, personId, { type, note })
+      );
+      if (!result.ok) return txt(result.error, true);
 
-      const person = network.people.find((p) => p.id === personId);
-      if (!person) return txt(`Person "${personId}" not found.`, true);
-
-      const interaction: Interaction = {
-        id: generateInteractionId(),
-        type: type as Interaction['type'],
-        date: new Date().toISOString().split('T')[0],
-        ...(note ? { note } : {}),
-      };
-
-      person.interactions.unshift(interaction);
-      person.lastContacted = interaction.date;
-
-      if (type !== 'note') {
-        person.status = type === 'reached-out' ? 'reached-out' : 'in-conversation';
-      }
-
-      await saveNetworkByUserId(userId, network);
-      revalidatePath('/network');
-
+      const { person } = result.value;
       const label = STATUS_LABELS[person.status] ?? person.status;
       return txt(`Logged "${type}" interaction with ${person.name}. Status is now "${label}".`);
     },

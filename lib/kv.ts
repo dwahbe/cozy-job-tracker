@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { redis } from '@/lib/redis';
 import type { Column } from './markdown';
 import type { ValidatedJob } from './validateExtraction';
 import { getOrderedColumnIds } from '@/lib/custom-column-utils';
@@ -37,6 +37,7 @@ export interface Board {
   sortPreference?: SortRule[]; // Synced sort rules
   jobs: Job[];
   trash?: TrashedJob[]; // Soft-deleted jobs (auto-pruned after 30 days)
+  version?: number; // Bumped by every compare-and-set write (absent = 0 for older blobs)
 }
 
 // Built-in column IDs
@@ -92,18 +93,23 @@ export function createJobFromValidation(validatedJob: ValidatedJob, columns: Col
   };
 }
 
+export function boardKey(userId: string): string {
+  return `board:${userId}`;
+}
+
 /**
  * Get a board by userId
  */
 export async function getBoardByUserId(userId: string): Promise<Board | null> {
-  return await kv.get<Board>(`board:${userId}`);
+  return await redis.get<Board>(boardKey(userId));
 }
 
 /**
- * Save a board for a user
+ * Save a board for a user, unconditionally. Writes that build on a previous read should go
+ * through withBoard() (lib/api-auth.ts), which uses compare-and-set instead.
  */
 export async function saveBoardByUserId(userId: string, board: Board): Promise<void> {
-  await kv.set(`board:${userId}`, board);
+  await redis.set(boardKey(userId), board);
 }
 
 export const DEFAULT_BOARD_TITLE = 'My job board';

@@ -1,7 +1,7 @@
 import 'server-only';
-import { kv } from '@vercel/kv';
-import type { Board } from './kv';
-import { listUserKeys } from './users';
+import { redis } from '@/lib/redis';
+import { boardKey, type Board } from './kv';
+import { listUserIds } from './users';
 
 export const ADMIN_EMAILS = new Set(['dylan@wahbe.com']);
 
@@ -45,14 +45,13 @@ const EMPTY_STATS: AdminStats = {
 };
 
 export async function getAdminStats(): Promise<AdminStats> {
-  const userKeys = await listUserKeys();
-  if (userKeys.length === 0) return EMPTY_STATS;
+  const userIds = await listUserIds();
+  if (userIds.length === 0) return EMPTY_STATS;
 
   // board:{userId} is derivable from user:{userId}, so both lookups can go out together.
-  const boardKeys = userKeys.map((k) => `board:${k.slice('user:'.length)}`);
   const [userRecords, boards] = await Promise.all([
-    kv.mget<(AdapterUser | null)[]>(userKeys),
-    kv.mget<(Board | null)[]>(boardKeys),
+    redis.mget<(AdapterUser | null)[]>(userIds.map((id) => `user:${id}`)),
+    redis.mget<(Board | null)[]>(userIds.map(boardKey)),
   ]);
 
   const users: UserStats[] = userRecords

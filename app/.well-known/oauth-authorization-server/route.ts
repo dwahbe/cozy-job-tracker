@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { SUPPORTED_SCOPES } from '@/lib/oauth';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +23,7 @@ export function GET() {
       code_challenge_methods_supported: ['S256'],
       token_endpoint_auth_methods_supported: ['none'],
       client_id_metadata_document_supported: true,
-      scopes_supported: ['board:read', 'board:write'],
+      scopes_supported: [...SUPPORTED_SCOPES],
     },
     { headers: CORS_HEADERS }
   );

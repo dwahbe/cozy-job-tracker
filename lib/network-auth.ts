@@ -1,36 +1,36 @@
-import { auth } from '@/auth';
-import { getNetworkByUserId, saveNetworkByUserId } from '@/lib/network';
-import type { NetworkData } from '@/lib/network';
-import { revalidatePath } from 'next/cache';
+import { getOrCreateNetwork, networkKey, type NetworkData } from '@/lib/network';
+import { casSet } from '@/lib/cas';
+import { fail, type Outcome } from '@/lib/outcome';
+import { scheduleRevalidate } from '@/lib/revalidate';
 
-export interface NetworkContext {
-  network: NetworkData;
-  userId: string;
-}
+const MAX_ATTEMPTS = 4; // one try plus three retries after a version conflict
+const NETWORK_PATHS = ['/network', '/network/trash'];
 
 /**
- * Resolve the network for an authenticated API request.
- * Returns null if not authenticated or no network exists.
- * Creates an empty network if one doesn't exist yet.
+ * Read → mutate → compare-and-set write for the user's network. Same contract as withBoard():
+ * the mutator sees a fresh document, returns ok()/unchanged()/fail(), and is re-run on a
+ * version conflict.
  */
-export async function resolveNetwork(): Promise<NetworkContext | null> {
-  const session = await auth();
-  if (!session?.user?.id) return null;
+export async function withNetwork<T>(
+  userId: string,
+  mutate: (network: NetworkData) => Outcome<T> | Promise<Outcome<T>>,
+  options: { revalidate?: boolean } = {}
+): Promise<Outcome<T>> {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const network = await getOrCreateNetwork(userId);
+    const expected = network.version ?? 0;
 
-  let network = await getNetworkByUserId(session.user.id);
-  if (!network) {
-    network = { people: [], columns: [] };
-    await saveNetworkByUserId(session.user.id, network);
+    const outcome = await mutate(network);
+    if (!outcome.ok || !outcome.changed) return outcome;
+
+    const saved = await casSet(networkKey(userId), expected, {
+      ...network,
+      version: expected + 1,
+    });
+    if (saved) {
+      if (options.revalidate !== false) scheduleRevalidate(NETWORK_PATHS);
+      return outcome;
+    }
   }
-
-  return { network, userId: session.user.id };
-}
-
-/**
- * Save network data and revalidate the network page.
- */
-export async function saveNetworkAndRevalidate(ctx: NetworkContext): Promise<void> {
-  await saveNetworkByUserId(ctx.userId, ctx.network);
-  revalidatePath('/network');
-  revalidatePath('/network/trash');
+  return fail(409, 'Your network changed while saving — please try again.');
 }

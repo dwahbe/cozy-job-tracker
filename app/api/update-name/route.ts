@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { Redis } from '@upstash/redis';
+import { redis } from '@/lib/redis';
 import { DISPLAY_NAME_MAX } from '@/lib/limits';
 
 export const runtime = 'nodejs';
-
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
 
 export async function POST(request: Request) {
   try {

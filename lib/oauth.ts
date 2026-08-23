@@ -1,11 +1,6 @@
-import { Redis } from '@upstash/redis';
 import { createHash, randomBytes } from 'crypto';
+import { redis } from '@/lib/redis';
 import { unsafeUrlReason } from '@/lib/safe-url';
-
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -39,6 +34,19 @@ const REFRESH_TOKEN_TTL = 60 * 60 * 24 * 365; // 1 year
 const PREFIX_CODE = 'oauth:code:';
 const PREFIX_ACCESS = 'oauth:access:';
 const PREFIX_REFRESH = 'oauth:refresh:';
+
+export const SUPPORTED_SCOPES = ['board:read', 'board:write'] as const;
+export const DEFAULT_SCOPE = SUPPORTED_SCOPES.join(' ');
+
+/** Split a space-delimited scope string; `unsupported` lists anything we don't offer. */
+export function parseScopes(scope: string | undefined): {
+  scopes: string[];
+  unsupported: string[];
+} {
+  const scopes = (scope ?? '').split(/\s+/).filter(Boolean);
+  const unsupported = scopes.filter((s) => !(SUPPORTED_SCOPES as readonly string[]).includes(s));
+  return { scopes, unsupported };
+}
 
 // ── Crypto helpers ─────────────────────────────────────────
 

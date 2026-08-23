@@ -1,13 +1,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import type { Duration } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
 import { NextResponse } from 'next/server';
-
-// One client for the limiters. Phase 4a replaces this with the shared lib/redis.ts client.
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
+import { redis } from '@/lib/redis';
 
 export type LimitKind = 'parse' | 'signin' | 'sheet';
 

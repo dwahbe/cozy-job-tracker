@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { isReservedColumnName } from '@/lib/custom-column-utils';
 import {
   DndContext,
   closestCenter,
@@ -203,6 +204,12 @@ export function ColumnManager({ columns }: ColumnManagerProps) {
         name: newName.trim(),
         type: newType,
       };
+
+      if (isReservedColumnName(column.name, 'board')) {
+        setError(`"${column.name}" is a built-in column name — pick another`);
+        setLoading(false);
+        return;
+      }
 
       if (newType === 'dropdown') {
         const opts = newOptions.map((o) => o.value.trim()).filter(Boolean);

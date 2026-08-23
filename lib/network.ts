@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { redis } from '@/lib/redis';
 import type { Column } from './markdown';
 import { getOrderedColumnIds } from '@/lib/custom-column-utils';
 
@@ -56,6 +56,7 @@ export interface NetworkData {
   columnOrder?: string[];
   showLinkedJobs?: boolean;
   trash?: TrashedPerson[];
+  version?: number; // Bumped by every compare-and-set write (absent = 0 for older blobs)
 }
 
 // Built-in column IDs (always visible, not stored in columns[])
@@ -313,10 +314,29 @@ export function extractGoogleSheetId(url: string): string | null {
 // KV storage (auth-only, no legacy slug support)
 // ============================================================
 
-export async function getNetworkByUserId(userId: string): Promise<NetworkData | null> {
-  return await kv.get<NetworkData>(`network:${userId}`);
+export function networkKey(userId: string): string {
+  return `network:${userId}`;
 }
 
+export async function getNetworkByUserId(userId: string): Promise<NetworkData | null> {
+  return await redis.get<NetworkData>(networkKey(userId));
+}
+
+/**
+ * Save network data unconditionally. Writes that build on a previous read should go through
+ * withNetwork() (lib/network-auth.ts), which uses compare-and-set instead.
+ */
 export async function saveNetworkByUserId(userId: string, data: NetworkData): Promise<void> {
-  await kv.set(`network:${userId}`, data);
+  await redis.set(networkKey(userId), data);
+}
+
+/**
+ * Get the user's network, creating an empty one on first use.
+ */
+export async function getOrCreateNetwork(userId: string): Promise<NetworkData> {
+  const existing = await getNetworkByUserId(userId);
+  if (existing) return existing;
+  const network: NetworkData = { people: [], columns: [] };
+  await saveNetworkByUserId(userId, network);
+  return network;
 }

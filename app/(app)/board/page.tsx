@@ -1,5 +1,7 @@
 import { verifySession } from '@/lib/dal';
-import { getOrCreateBoard, saveBoardByUserId, getColumnOrder, pruneTrash } from '@/lib/kv';
+import { getOrCreateBoard, getColumnOrder, pruneTrash } from '@/lib/kv';
+import { withBoard } from '@/lib/api-auth';
+import { ok, unchanged } from '@/lib/outcome';
 import { JobForm } from '@/app/components/JobForm';
 import { JobsView } from '@/app/components/JobsView';
 import { ColumnManager } from '@/app/components/ColumnManager';
@@ -13,8 +15,11 @@ export default async function BoardPage() {
 
   const board = await getOrCreateBoard(userId);
 
+  // Persist the prune with a compare-and-set write so it can't clobber a concurrent edit.
   if (pruneTrash(board)) {
-    await saveBoardByUserId(userId, board);
+    await withBoard(userId, (fresh) => (pruneTrash(fresh) ? ok() : unchanged()), {
+      revalidate: false,
+    });
   }
 
   return (

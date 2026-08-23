@@ -1,10 +1,7 @@
 import { verifySession } from '@/lib/dal';
-import {
-  getNetworkByUserId,
-  saveNetworkByUserId,
-  getNetworkColumnOrder,
-  pruneNetworkTrash,
-} from '@/lib/network';
+import { getOrCreateNetwork, getNetworkColumnOrder, pruneNetworkTrash } from '@/lib/network';
+import { withNetwork } from '@/lib/network-auth';
+import { ok, unchanged } from '@/lib/outcome';
 import { getBoardByUserId } from '@/lib/kv';
 import { NetworkView } from '@/app/components/NetworkView';
 import { RefreshOnFocus } from '@/app/components/RefreshOnFocus';
@@ -15,14 +12,13 @@ export const dynamic = 'force-dynamic';
 export default async function NetworkPage() {
   const { userId, name: userName } = await verifySession();
 
-  let network = await getNetworkByUserId(userId);
-  if (!network) {
-    network = { people: [], columns: [] };
-    await saveNetworkByUserId(userId, network);
-  }
+  const network = await getOrCreateNetwork(userId);
 
+  // Persist the prune with a compare-and-set write so it can't clobber a concurrent edit.
   if (pruneNetworkTrash(network)) {
-    await saveNetworkByUserId(userId, network);
+    await withNetwork(userId, (fresh) => (pruneNetworkTrash(fresh) ? ok() : unchanged()), {
+      revalidate: false,
+    });
   }
 
   const board = await getBoardByUserId(userId);

@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { outcomeError, requireUserId, unauthorized, withBoard } from '@/lib/api-auth';
+import { ok, unchanged } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST() {
   try {
-    const ctx = await resolveBoard();
-    if (!ctx) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    ctx.board.trash = [];
-
-    await saveBoardAndRevalidate(ctx);
+    const result = await withBoard(userId, (board) => {
+      if (!board.trash || board.trash.length === 0) return unchanged();
+      board.trash = [];
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ success: true });
   } catch (error) {

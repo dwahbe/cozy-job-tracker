@@ -1,41 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import { getOrCreateBoard, saveBoardByUserId } from '@/lib/kv';
 import type { TrashedJob } from '@/lib/kv';
-import { revalidatePath } from 'next/cache';
+import { outcomeError, unauthorized, withBoard } from '@/lib/api-auth';
+import { fail, ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
     const user = await validateExtensionToken(req);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return unauthorized();
 
-    const body = await req.json();
-    const { jobId } = body as { jobId?: string };
-
-    if (!jobId) {
+    const body = await req.json().catch(() => null);
+    const { jobId } = (body ?? {}) as { jobId?: unknown };
+    if (typeof jobId !== 'string' || !jobId) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 });
     }
 
-    const board = await getOrCreateBoard(user.userId);
+    const result = await withBoard(user.userId, (board) => {
+      const jobIndex = board.jobs.findIndex((j) => j.id === jobId);
+      if (jobIndex === -1) return fail(404, 'Job not found');
 
-    const jobIndex = board.jobs.findIndex((j) => j.id === jobId);
-    if (jobIndex === -1) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
-    }
-
-    const [job] = board.jobs.splice(jobIndex, 1);
-    const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
-
-    if (!board.trash) board.trash = [];
-    board.trash.unshift(trashedJob);
-
-    await saveBoardByUserId(user.userId, board);
-    revalidatePath('/board');
-    revalidatePath('/board/trash');
+      const [job] = board.jobs.splice(jobIndex, 1);
+      const trashedJob: TrashedJob = { ...job, deletedAt: new Date().toISOString() };
+      if (!board.trash) board.trash = [];
+      board.trash.unshift(trashedJob);
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ success: true });
   } catch (error) {

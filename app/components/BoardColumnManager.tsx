@@ -19,6 +19,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Column } from '@/lib/markdown';
+import { isReservedColumnName } from '@/lib/custom-column-utils';
+import type { ColumnKind } from '@/lib/custom-column-utils';
 import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +29,8 @@ import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor
 
 export interface BoardColumnManagerProps {
   columns: Column[];
+  /** Which document's built-in field names are off-limits for custom columns. */
+  kind: ColumnKind;
   prebuiltColumns?: Column[];
   prebuiltDescriptions?: Record<string, string>;
   extraToggles?: {
@@ -143,6 +147,7 @@ function SortableColumnChip({
 
 export function BoardColumnManager({
   columns,
+  kind,
   prebuiltColumns,
   prebuiltDescriptions,
   extraToggles,
@@ -212,6 +217,12 @@ export function BoardColumnManager({
       name: newName.trim(),
       type: newType,
     };
+
+    if (isReservedColumnName(column.name, kind)) {
+      setError(`"${column.name}" is a built-in column name — pick another`);
+      setLoading(false);
+      return;
+    }
 
     if (newType === 'dropdown') {
       const opts = newOptions.map((o) => o.value.trim()).filter(Boolean);

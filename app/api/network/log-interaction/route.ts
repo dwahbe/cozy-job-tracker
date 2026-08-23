@@ -1,52 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
-import { generateInteractionId } from '@/lib/network';
-import type { Interaction } from '@/lib/network';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
+import { logInteraction } from '@/lib/job-updates';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const { personId, type, note, followUpDate } = await request.json();
-
-    if (!personId || !type) {
-      return NextResponse.json({ error: 'personId and type are required' }, { status: 400 });
-    }
-
-    const validTypes = ['reached-out', 'met', 'followed-up', 'note'];
-    if (!validTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 });
-    }
-
-    const person = ctx.network.people.find((p) => p.id === personId);
-    if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
-    }
-
-    const interaction: Interaction = {
-      id: generateInteractionId(),
-      type,
-      date: new Date().toISOString().split('T')[0],
-      ...(note ? { note } : {}),
+    const body = await request.json().catch(() => null);
+    const { personId, type, note, followUpDate } = (body ?? {}) as {
+      personId?: unknown;
+      type?: unknown;
+      note?: unknown;
+      followUpDate?: unknown;
     };
 
-    person.interactions.unshift(interaction);
-    person.lastContacted = interaction.date;
+    const result = await withNetwork(userId, (network) =>
+      logInteraction(network, personId, { type, note, followUpDate })
+    );
+    if (!result.ok) return outcomeError(result);
 
-    if (type !== 'note') {
-      person.status = type === 'reached-out' ? 'reached-out' : 'in-conversation';
-    }
-
-    if (followUpDate) {
-      person.customFields['Follow-up date'] = followUpDate;
-    }
-
-    await saveNetworkAndRevalidate(ctx);
-
-    return NextResponse.json({ interactionId: interaction.id });
+    return NextResponse.json({ interactionId: result.value.interaction.id });
   } catch (error) {
     console.error('Log interaction error:', error);
     return NextResponse.json(

@@ -1,32 +1,54 @@
+import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getOrCreateBoard, saveBoardByUserId, type Board } from '@/lib/kv';
-import { revalidatePath } from 'next/cache';
-import { after } from 'next/server';
+import { boardKey, getOrCreateBoard, type Board } from '@/lib/kv';
+import { casSet } from '@/lib/cas';
+import { fail, type Outcome } from '@/lib/outcome';
+import { scheduleRevalidate } from '@/lib/revalidate';
 
-export interface BoardContext {
-  board: Board;
-  userId: string;
-}
+const MAX_ATTEMPTS = 4; // one try plus three retries after a version conflict
+const BOARD_PATHS = ['/board', '/board/trash'];
 
-/**
- * Resolve the signed-in user's board for an API request (created on first use).
- * Returns null only when there is no session — callers should answer 401.
- */
-export async function resolveBoard(): Promise<BoardContext | null> {
+/** The signed-in user's id, or null when there is no session (callers answer 401). */
+export async function requireUserId(): Promise<string | null> {
   const session = await auth();
-  if (!session?.user?.id) return null;
+  return session?.user?.id ?? null;
+}
 
-  const board = await getOrCreateBoard(session.user.id);
-  return { board, userId: session.user.id };
+export function unauthorized(): NextResponse {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+
+/** JSON error response for a rejected mutation. */
+export function outcomeError(outcome: { status: number; error: string }): NextResponse {
+  return NextResponse.json({ error: outcome.error }, { status: outcome.status });
 }
 
 /**
- * Save the board and revalidate the board pages (deferred until after the response).
+ * Read → mutate → compare-and-set write for the user's board.
+ *
+ * `mutate` runs against a freshly read board and returns ok(value) to save, unchanged() to skip
+ * the write, or fail(status, error) to reject (nothing is written). If another writer got in
+ * first the board is re-read and the mutator re-run, up to MAX_ATTEMPTS. The board pages are
+ * revalidated after the response unless `revalidate` is false (pages that already render the
+ * fresh data).
  */
-export async function saveBoardAndRevalidate(ctx: BoardContext): Promise<void> {
-  await saveBoardByUserId(ctx.userId, ctx.board);
-  after(() => {
-    revalidatePath('/board');
-    revalidatePath('/board/trash');
-  });
+export async function withBoard<T>(
+  userId: string,
+  mutate: (board: Board) => Outcome<T> | Promise<Outcome<T>>,
+  options: { revalidate?: boolean } = {}
+): Promise<Outcome<T>> {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const board = await getOrCreateBoard(userId);
+    const expected = board.version ?? 0;
+
+    const outcome = await mutate(board);
+    if (!outcome.ok || !outcome.changed) return outcome;
+
+    const saved = await casSet(boardKey(userId), expected, { ...board, version: expected + 1 });
+    if (saved) {
+      if (options.revalidate !== false) scheduleRevalidate(BOARD_PATHS);
+      return outcome;
+    }
+  }
+  return fail(409, 'Your board changed while saving — please try again.');
 }

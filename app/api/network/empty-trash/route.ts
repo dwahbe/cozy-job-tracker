@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
+import { ok, unchanged } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST() {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    ctx.network.trash = [];
-
-    await saveNetworkAndRevalidate(ctx);
+    const result = await withNetwork(userId, (network) => {
+      if (!network.trash || network.trash.length === 0) return unchanged();
+      network.trash = [];
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

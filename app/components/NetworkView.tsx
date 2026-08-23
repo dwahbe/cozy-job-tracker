@@ -275,6 +275,7 @@ export function NetworkView({
 
       <BoardColumnManager
         columns={columns}
+        kind="network"
         prebuiltColumns={PREBUILT_NETWORK_COLUMNS}
         prebuiltDescriptions={PREBUILT_DESCRIPTIONS}
         extraToggles={[

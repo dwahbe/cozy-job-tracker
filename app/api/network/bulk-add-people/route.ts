@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
 import { generatePersonId, normalizeCheckboxValue } from '@/lib/network';
 import type { Person, PersonStatus } from '@/lib/network';
+import { PERSON_STATUSES } from '@/lib/network';
 import type { Column } from '@/lib/markdown';
+import { addCustomColumn } from '@/lib/custom-column-utils';
+import { MAX_IMPORT_ROWS, TEXT_FIELD_MAX } from '@/lib/limits';
+import { getLinkError } from '@/lib/job-updates';
+import { fail, ok } from '@/lib/outcome';
 
 interface ColumnDef {
   name: string;
@@ -18,131 +24,143 @@ interface ImportRow {
   role?: string;
   linkedinUrl?: string;
   status?: string;
-  customFields?: Record<string, string>;
+  customFields: Record<string, string>;
 }
 
-const VALID_STATUSES = new Set([
-  'not-contacted',
-  'reached-out',
-  'waiting',
-  'in-conversation',
-  'paused',
-]);
+const clip = (value: string, max: number) => (value.length > max ? value.slice(0, max) : value);
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const { rows, mapping, newColumns } = (await request.json()) as {
-      rows: string[][];
-      mapping: string[];
-      newColumns: ColumnDef[] | string[];
+    const body = await request.json().catch(() => null);
+    const { rows, mapping, newColumns } = (body ?? {}) as {
+      rows?: unknown;
+      mapping?: unknown;
+      newColumns?: unknown;
     };
 
-    if (!rows || !mapping) {
+    if (
+      !Array.isArray(rows) ||
+      !Array.isArray(mapping) ||
+      !mapping.every((m) => typeof m === 'string') ||
+      !rows.every((row) => Array.isArray(row))
+    ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-
-    // Build a map of custom column types for normalization during import
-    const customColTypes = new Map<string, ColumnDef>();
-
-    // Add new custom columns that don't already exist
-    const existingColNames = new Set(ctx.network.columns.map((c) => c.name));
-    const columnsToAdd: Column[] = [];
-    for (const colDef of newColumns || []) {
-      const name = typeof colDef === 'string' ? colDef : colDef.name;
-      const type = typeof colDef === 'string' ? 'text' : colDef.type;
-      const options = typeof colDef === 'string' ? undefined : colDef.options;
-
-      if (name) {
-        customColTypes.set(name, { name, type, options });
-        if (!existingColNames.has(name)) {
-          const col: Column = { name, type };
-          if (type === 'dropdown' && options?.length) col.options = options;
-          columnsToAdd.push(col);
-          existingColNames.add(name);
-        }
-      }
-    }
-    ctx.network.columns.push(...columnsToAdd);
-
-    const customFieldDefaults: Record<string, string> = {};
-    for (const col of ctx.network.columns) {
-      customFieldDefaults[col.name] = col.type === 'checkbox' ? 'No' : '';
+    if (rows.length > MAX_IMPORT_ROWS) {
+      return NextResponse.json(
+        { error: `Import up to ${MAX_IMPORT_ROWS} rows at a time` },
+        { status: 400 }
+      );
     }
 
-    let imported = 0;
-    let skipped = 0;
+    const result = await withNetwork(userId, (network) => {
+      // Add the new custom columns first (validated like any other column), remembering types
+      // so imported values can be normalised.
+      const columnTypes = new Map<string, ColumnDef>();
+      const existing = new Set(network.columns.map((c) => c.name.toLowerCase()));
+      for (const colDef of Array.isArray(newColumns) ? newColumns : []) {
+        const def: ColumnDef | null =
+          typeof colDef === 'string'
+            ? { name: colDef, type: 'text' }
+            : colDef && typeof colDef === 'object' && typeof colDef.name === 'string'
+              ? { name: colDef.name, type: colDef.type, options: colDef.options }
+              : null;
+        if (!def || !def.name.trim()) continue;
 
-    for (const row of rows) {
-      const data: ImportRow = { customFields: {} };
-
-      for (let i = 0; i < mapping.length; i++) {
-        const field = mapping[i];
-        const value = (row[i] || '').trim();
-        if (!value || field === 'skip') continue;
-
-        if (
-          field === 'name' ||
-          field === 'company' ||
-          field === 'role' ||
-          field === 'linkedinUrl'
-        ) {
-          data[field] = value;
-        } else if (field === 'status') {
-          data.status = value;
-        } else if (field.startsWith('custom:')) {
-          const colName = field.slice(7);
-          const colType = customColTypes.get(colName);
-          data.customFields![colName] =
-            colType?.type === 'checkbox' ? normalizeCheckboxValue(value) : value;
+        if (!existing.has(def.name.trim().toLowerCase())) {
+          const column: Column = { name: def.name.trim(), type: def.type };
+          if (def.type === 'dropdown' && def.options?.length) column.options = def.options;
+          const added = addCustomColumn(network, network.people, column, 'network');
+          if (!added.ok) return added;
+          existing.add(added.value.name.toLowerCase());
         }
+        const stored = network.columns.find(
+          (c) => c.name.toLowerCase() === def.name.trim().toLowerCase()
+        );
+        if (stored) columnTypes.set(def.name, { name: stored.name, type: stored.type });
       }
 
-      if (!data.name && !data.company && !data.role) {
-        skipped++;
-        continue;
+      const columnByName = new Map(network.columns.map((c) => [c.name.toLowerCase(), c]));
+      const customFieldDefaults: Record<string, string> = {};
+      for (const col of network.columns) {
+        customFieldDefaults[col.name] = col.type === 'checkbox' ? 'No' : '';
       }
 
-      let status: PersonStatus = 'not-contacted';
-      if (data.status) {
-        const lower = data.status.toLowerCase().trim();
-        if (VALID_STATUSES.has(lower)) {
-          status = lower as PersonStatus;
+      let imported = 0;
+      let skipped = 0;
+
+      for (const row of rows as unknown[][]) {
+        const data: ImportRow = { customFields: {} };
+
+        for (let i = 0; i < mapping.length; i++) {
+          const field = mapping[i] as string;
+          const raw = row[i];
+          const value = typeof raw === 'string' ? raw.trim() : '';
+          if (!value || field === 'skip') continue;
+
+          if (field === 'name' || field === 'company' || field === 'role') {
+            data[field] = clip(value, TEXT_FIELD_MAX);
+          } else if (field === 'linkedinUrl') {
+            if (!getLinkError(value)) data.linkedinUrl = value;
+          } else if (field === 'status') {
+            data.status = value;
+          } else if (field.startsWith('custom:')) {
+            const column = columnByName.get(field.slice(7).trim().toLowerCase());
+            if (!column) continue;
+            if (column.type === 'checkbox') {
+              data.customFields[column.name] = normalizeCheckboxValue(value);
+            } else if (column.type === 'dropdown') {
+              // Unseen dropdown values become options so the import never silently drops data.
+              const options = column.options ?? (column.options = []);
+              const match = options.find((o) => o.toLowerCase() === value.toLowerCase());
+              if (!match) options.push(value);
+              data.customFields[column.name] = match ?? value;
+            } else {
+              data.customFields[column.name] = value;
+            }
+          }
         }
-      }
 
-      const person: Person = {
-        id: generatePersonId(),
-        name: data.name || '',
-        linkedinUrl: data.linkedinUrl || '',
-        company: data.company || '',
-        role: data.role || '',
-        status,
-        lastContacted: null,
-        linkedJobIds: [],
-        interactions: [],
-        customFields: { ...customFieldDefaults, ...data.customFields },
-        createdAt: new Date().toISOString(),
-      };
-
-      ctx.network.people.push(person);
-      imported++;
-    }
-
-    // Initialize new custom fields on existing people
-    for (const col of columnsToAdd) {
-      for (const person of ctx.network.people) {
-        if (!(col.name in person.customFields)) {
-          person.customFields[col.name] = col.type === 'checkbox' ? 'No' : '';
+        if (!data.name && !data.company && !data.role) {
+          skipped++;
+          continue;
         }
+
+        let status: PersonStatus = 'not-contacted';
+        if (data.status) {
+          const lower = data.status.toLowerCase().trim();
+          if ((PERSON_STATUSES as string[]).includes(lower)) status = lower as PersonStatus;
+        }
+
+        const person: Person = {
+          id: generatePersonId(),
+          name: data.name || '',
+          linkedinUrl: data.linkedinUrl || '',
+          company: data.company || '',
+          role: data.role || '',
+          status,
+          lastContacted: null,
+          linkedJobIds: [],
+          interactions: [],
+          customFields: { ...customFieldDefaults, ...data.customFields },
+          createdAt: new Date().toISOString(),
+        };
+
+        network.people.push(person);
+        imported++;
       }
-    }
 
-    await saveNetworkAndRevalidate(ctx);
+      if (imported === 0 && columnTypes.size === 0) {
+        return fail(400, 'Nothing to import — every row was empty');
+      }
+      return ok({ imported, skipped });
+    });
+    if (!result.ok) return outcomeError(result);
 
-    return NextResponse.json({ imported, skipped });
+    return NextResponse.json(result.value);
   } catch (error) {
     console.error('Bulk add people error:', error);
     return NextResponse.json(

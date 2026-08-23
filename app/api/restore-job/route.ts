@@ -1,38 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { outcomeError, requireUserId, unauthorized, withBoard } from '@/lib/api-auth';
+import { fail, ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { jobId } = body as { jobId: string };
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    if (!jobId) {
+    const body = await request.json().catch(() => null);
+    const { jobId } = (body ?? {}) as { jobId?: unknown };
+    if (typeof jobId !== 'string' || !jobId) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 });
     }
 
-    const ctx = await resolveBoard();
-    if (!ctx) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const result = await withBoard(userId, (board) => {
+      if (!board.trash || board.trash.length === 0) return fail(404, 'Trash is empty');
 
-    if (!ctx.board.trash || ctx.board.trash.length === 0) {
-      return NextResponse.json({ error: 'Trash is empty' }, { status: 404 });
-    }
+      const trashIndex = board.trash.findIndex((j) => j.id === jobId);
+      if (trashIndex === -1) return fail(404, 'Job not found in trash');
 
-    // Find the trashed job by id
-    const trashIndex = ctx.board.trash.findIndex((j) => j.id === jobId);
-    if (trashIndex === -1) {
-      return NextResponse.json({ error: 'Job not found in trash' }, { status: 404 });
-    }
-
-    // Remove from trash and add back to jobs
-    const [trashedJob] = ctx.board.trash.splice(trashIndex, 1);
-    const { deletedAt: _, ...restoredJob } = trashedJob;
-    ctx.board.jobs.unshift(restoredJob);
-
-    await saveBoardAndRevalidate(ctx);
+      const [trashedJob] = board.trash.splice(trashIndex, 1);
+      const { deletedAt: _, ...restoredJob } = trashedJob;
+      board.jobs.unshift(restoredJob);
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ success: true });
   } catch (error) {

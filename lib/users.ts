@@ -1,15 +1,15 @@
 import 'server-only';
-import { kv } from '@vercel/kv';
+import { redis } from '@/lib/redis';
 
-/** Auth.js adapter keys that live under user:* but are not user records */
-export const NON_USER_KEY = /^user:(email|account|session|token):/;
+/** Auth.js adapter keys that live under user:* but are not user records. */
+const NON_USER_KEY = /^user:(email|account|session|token):/;
 
-/** Keys of every user record (`user:{id}`). */
-export async function listUserKeys(): Promise<string[]> {
-  const keys = await kv.keys('user:*');
-  return keys.filter((k) => !NON_USER_KEY.test(k));
+/** Ids of every user record (`user:{id}`). */
+export async function listUserIds(): Promise<string[]> {
+  const keys = await redis.keys('user:*');
+  return keys.filter((key) => !NON_USER_KEY.test(key)).map((key) => key.slice('user:'.length));
 }
 
 export async function countUsers(): Promise<number> {
-  return (await listUserKeys()).length;
+  return (await listUserIds()).length;
 }

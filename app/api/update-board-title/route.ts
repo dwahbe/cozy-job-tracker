@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
-import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { outcomeError, requireUserId, unauthorized, withBoard } from '@/lib/api-auth';
 import { BOARD_TITLE_MAX } from '@/lib/limits';
+import { ok, unchanged } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
+
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -22,13 +26,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const ctx = await resolveBoard();
-    if (!ctx) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    ctx.board.title = trimmed;
-    await saveBoardAndRevalidate(ctx);
+    const result = await withBoard(userId, (board) => {
+      if (board.title === trimmed) return unchanged();
+      board.title = trimmed;
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -1,31 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
+import { outcomeError, requireUserId, unauthorized, withBoard } from '@/lib/api-auth';
+import { getColumnOrderError } from '@/lib/custom-column-utils';
+import { ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { columnOrder } = body as {
-      columnOrder: string[];
-    };
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    // Validate columnOrder
-    if (!Array.isArray(columnOrder)) {
-      return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
-    }
+    const body = await request.json().catch(() => null);
+    const { columnOrder } = (body ?? {}) as { columnOrder?: unknown };
+    const orderError = getColumnOrderError(columnOrder);
+    if (orderError) return NextResponse.json({ error: orderError }, { status: 400 });
 
-    // Resolve the signed-in user's board
-    const ctx = await resolveBoard();
-    if (!ctx) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Save the new column order
-    ctx.board.columnOrder = columnOrder;
-
-    // Save board
-    await saveBoardAndRevalidate(ctx);
+    const result = await withBoard(userId, (board) => {
+      board.columnOrder = columnOrder as string[];
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ success: true });
   } catch (error) {

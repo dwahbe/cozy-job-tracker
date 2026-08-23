@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { validateRedirectUri } from '@/lib/oauth';
+import { DEFAULT_SCOPE, SUPPORTED_SCOPES, parseScopes, validateRedirectUri } from '@/lib/oauth';
 import { ConsentForm } from './ConsentForm';
 
 interface OAuthParams {
@@ -34,7 +34,9 @@ export default async function AuthorizePage({
   const params = await searchParams;
   const { response_type, client_id, redirect_uri, code_challenge, code_challenge_method, state } =
     params;
-  const scope = params.scope || 'board:read board:write';
+  // Scopes default to everything we offer; anything outside scopes_supported is refused up front.
+  const { scopes, unsupported } = parseScopes(params.scope?.trim() ? params.scope : DEFAULT_SCOPE);
+  const scope = scopes.join(' ');
 
   if (response_type !== 'code') {
     return <ErrorCard title="Unsupported request" detail="Only response_type=code is supported." />;
@@ -54,6 +56,15 @@ export default async function AuthorizePage({
       <ErrorCard
         title="Unsupported challenge method"
         detail="Only S256 code challenge method is supported."
+      />
+    );
+  }
+
+  if (unsupported.length > 0) {
+    return (
+      <ErrorCard
+        title="Unsupported scope"
+        detail={`This app asked for "${unsupported.join(' ')}", which cozy job tracker doesn't offer. Supported scopes: ${SUPPORTED_SCOPES.join(', ')}.`}
       />
     );
   }

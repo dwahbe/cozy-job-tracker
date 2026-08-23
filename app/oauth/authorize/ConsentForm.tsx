@@ -13,6 +13,14 @@ interface ConsentFormProps {
   userEmail: string;
 }
 
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 export function ConsentForm({
   clientName,
   clientId,
@@ -23,27 +31,35 @@ export function ConsentForm({
   userEmail,
 }: ConsentFormProps) {
   const [loading, setLoading] = useState(false);
-  const [connected, setConnected] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const displayName = clientName.startsWith('https://')
     ? clientName.replace(/^https?:\/\//, '')
     : clientName;
+  const redirectHost = hostOf(redirectUri);
+  const scopes = scope.split(/\s+/).filter(Boolean);
 
   async function handleAllow() {
     setLoading(true);
+    setError(null);
     try {
-      const callbackUrl = await approveConsent({
+      const result = await approveConsent({
         clientId,
         redirectUri,
         codeChallenge,
         state,
         scope,
       });
-      setConnected(true);
-      setTimeout(() => {
-        window.location.href = callbackUrl;
-      }, 1500);
+      if ('error' in result) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+      setRedirecting(true);
+      window.location.href = result.url;
     } catch {
+      setError('Something went wrong — please try again.');
       setLoading(false);
     }
   }
@@ -55,15 +71,15 @@ export function ConsentForm({
     window.location.href = url.toString();
   }
 
-  if (connected) {
+  if (redirecting) {
     return (
       <main className="page">
         <div className="container-app max-w-md">
-          <div className="card p-8 text-center">
-            <p className="text-3xl mb-3">✓</p>
-            <h1 className="text-2xl font-bold mb-2">Connected!</h1>
+          <div className="card p-8 text-center" role="status">
+            <h1 className="text-2xl font-bold mb-2">Redirecting…</h1>
             <p className="muted">
-              {displayName} is now linked to your board. You can close this tab.
+              Sending you back to <strong>{redirectHost}</strong>. If nothing happens, you can close
+              this tab.
             </p>
           </div>
         </div>
@@ -83,14 +99,23 @@ export function ConsentForm({
           <div className="mb-6 text-sm space-y-1.5">
             <p className="font-medium mb-2">This will allow it to:</p>
             <ul className="list-disc pl-5 space-y-1 muted">
-              {scope.includes('board:read') && <li>View your jobs and board</li>}
-              {scope.includes('board:write') && <li>Add, update, and delete jobs</li>}
+              {scopes.includes('board:read') && <li>View your jobs, board and network</li>}
+              {scopes.includes('board:write') && <li>Add, update, and delete jobs and people</li>}
             </ul>
           </div>
 
-          <p className="text-sm muted mb-6">
+          <p className="text-sm muted mb-2">
             Signed in as <strong>{userEmail}</strong>
           </p>
+          <p className="text-sm muted mb-6">
+            You&apos;ll be sent back to <strong>{redirectHost}</strong> after you allow access.
+          </p>
+
+          {error && (
+            <p className="text-sm text-red-600 mb-4" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-3">
             <button

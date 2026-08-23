@@ -1,31 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
 import type { TrashedPerson } from '@/lib/network';
+import { fail, ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const { personId } = await request.json();
-    if (!personId) {
+    const body = await request.json().catch(() => null);
+    const { personId } = (body ?? {}) as { personId?: unknown };
+    if (typeof personId !== 'string' || !personId) {
       return NextResponse.json({ error: 'personId is required' }, { status: 400 });
     }
 
-    const idx = ctx.network.people.findIndex((p) => p.id === personId);
-    if (idx === -1) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
-    }
+    const result = await withNetwork(userId, (network) => {
+      const idx = network.people.findIndex((p) => p.id === personId);
+      if (idx === -1) return fail(404, 'Person not found');
 
-    const [person] = ctx.network.people.splice(idx, 1);
-    const trashedPerson: TrashedPerson = { ...person, deletedAt: new Date().toISOString() };
-
-    if (!ctx.network.trash) ctx.network.trash = [];
-    ctx.network.trash.unshift(trashedPerson);
-
-    await saveNetworkAndRevalidate(ctx);
+      const [person] = network.people.splice(idx, 1);
+      const trashedPerson: TrashedPerson = { ...person, deletedAt: new Date().toISOString() };
+      if (!network.trash) network.trash = [];
+      network.trash.unshift(trashedPerson);
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

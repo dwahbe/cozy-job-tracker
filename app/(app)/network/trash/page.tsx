@@ -1,5 +1,7 @@
 import { verifySession } from '@/lib/dal';
-import { getNetworkByUserId, saveNetworkByUserId, pruneNetworkTrash } from '@/lib/network';
+import { getNetworkByUserId, pruneNetworkTrash } from '@/lib/network';
+import { withNetwork } from '@/lib/network-auth';
+import { ok, unchanged } from '@/lib/outcome';
 import { NetworkTrashList } from '@/app/components/NetworkTrashList';
 import Link from 'next/link';
 
@@ -20,7 +22,9 @@ export default async function NetworkTrashPage() {
   }
 
   if (pruneNetworkTrash(network)) {
-    await saveNetworkByUserId(userId, network);
+    await withNetwork(userId, (fresh) => (pruneNetworkTrash(fresh) ? ok() : unchanged()), {
+      revalidate: false,
+    });
   }
 
   const trashItems = network.trash || [];

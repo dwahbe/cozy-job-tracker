@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveNetwork, saveNetworkAndRevalidate } from '@/lib/network-auth';
+import { outcomeError, requireUserId, unauthorized } from '@/lib/api-auth';
+import { withNetwork } from '@/lib/network-auth';
+import { getColumnOrderError } from '@/lib/custom-column-utils';
+import { ok } from '@/lib/outcome';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await resolveNetwork();
-    if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await requireUserId();
+    if (!userId) return unauthorized();
 
-    const { columnOrder } = await request.json();
+    const body = await request.json().catch(() => null);
+    const { columnOrder } = (body ?? {}) as { columnOrder?: unknown };
+    const orderError = getColumnOrderError(columnOrder);
+    if (orderError) return NextResponse.json({ error: orderError }, { status: 400 });
 
-    if (!Array.isArray(columnOrder)) {
-      return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
-    }
-
-    ctx.network.columnOrder = columnOrder;
-    await saveNetworkAndRevalidate(ctx);
+    const result = await withNetwork(userId, (network) => {
+      network.columnOrder = columnOrder as string[];
+      return ok();
+    });
+    if (!result.ok) return outcomeError(result);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

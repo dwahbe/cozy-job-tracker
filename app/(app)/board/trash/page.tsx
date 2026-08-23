@@ -1,5 +1,7 @@
 import { verifySession } from '@/lib/dal';
-import { getOrCreateBoard, saveBoardByUserId, pruneTrash } from '@/lib/kv';
+import { getOrCreateBoard, pruneTrash } from '@/lib/kv';
+import { withBoard } from '@/lib/api-auth';
+import { ok, unchanged } from '@/lib/outcome';
 import { TrashList } from '@/app/components/TrashList';
 import Link from 'next/link';
 
@@ -10,9 +12,11 @@ export default async function TrashPage() {
 
   const board = await getOrCreateBoard(userId);
 
-  // Auto-prune expired trash items
+  // Auto-prune expired trash items (compare-and-set so it can't clobber a concurrent edit)
   if (pruneTrash(board)) {
-    await saveBoardByUserId(userId, board);
+    await withBoard(userId, (fresh) => (pruneTrash(fresh) ? ok() : unchanged()), {
+      revalidate: false,
+    });
   }
 
   const trashItems = board.trash || [];
