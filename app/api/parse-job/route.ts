@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
+import { limited } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -13,6 +14,9 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const blocked = await limited('parse', session.user.id);
+    if (blocked) return blocked;
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {

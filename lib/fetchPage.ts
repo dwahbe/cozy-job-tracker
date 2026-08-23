@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { unsafeUrlReason } from '@/lib/safe-url';
 
 export interface StructuredJobData {
   title?: string;
@@ -150,99 +151,123 @@ const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const FETCH_TIMEOUT_MS = 10_000;
-const MAX_REDIRECT_DEPTH = 3;
+const MAX_REDIRECTS = 3;
+// Job pages are small; anything past this is dropped rather than buffered.
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-function isPrivateUrl(urlString: string): boolean {
-  try {
-    const { hostname } = new URL(urlString);
-    const host = hostname.replace(/^\[|\]$/g, '');
+// No explicit Accept-Encoding: the runtime negotiates gzip/br and decodes transparently.
+const FETCH_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.5',
+};
 
-    if (host === 'localhost' || host === '::1') return true;
+type ErrorType = NonNullable<FetchPageResult['errorType']>;
+type FetchFailure = { finalUrl: string; fetchError: string; errorType: ErrorType };
+type Fetched = { finalUrl: string; response: Response };
 
-    const parts = host.split('.').map(Number);
-    if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
-      const [a, b] = parts;
-      if (a === 0 || a === 10 || a === 127) return true;
-      if (a === 169 && b === 254) return true;
-      if (a === 172 && b >= 16 && b <= 31) return true;
-      if (a === 192 && b === 168) return true;
-    }
-
-    return false;
-  } catch {
-    return true;
-  }
+function failure(finalUrl: string, fetchError: string, errorType: ErrorType): FetchFailure {
+  return { finalUrl, fetchError, errorType };
 }
 
-export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult> {
-  const fetchedAt = new Date().toISOString();
+/**
+ * Fetch with redirects followed by hand (at most MAX_REDIRECTS hops) so that every hop —
+ * not just the first URL — is checked against the private-address guard.
+ */
+async function fetchFollowingRedirects(url: string): Promise<Fetched | FetchFailure> {
+  let currentUrl = url;
 
-  if (isPrivateUrl(url)) {
-    return {
-      finalUrl: url,
-      title: null,
-      text: '',
-      fetchedAt,
-      fetchError: 'This URL points to an internal address and cannot be accessed.',
-      errorType: 'network_error',
-    };
-  }
+  for (let hop = 0; ; hop++) {
+    const reason = unsafeUrlReason(currentUrl);
+    if (reason) return failure(currentUrl, reason, 'network_error');
 
-  if (depth > MAX_REDIRECT_DEPTH) {
-    return {
-      finalUrl: url,
-      title: null,
-      text: '',
-      fetchedAt,
-      fetchError: 'Too many redirects. Try using manual entry instead.',
-      errorType: 'network_error',
-    };
-  }
+    let response: Response;
+    try {
+      response = await fetch(currentUrl, {
+        headers: FETCH_HEADERS,
+        redirect: 'manual',
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      return failure(currentUrl, getFriendlyNetworkError(message), 'network_error');
+    }
 
-  const isLinkedInJob = url.includes('linkedin.com/jobs/view/');
+    if (!REDIRECT_STATUSES.has(response.status)) return { finalUrl: currentUrl, response };
 
-  try {
-    // For LinkedIn jobs, don't auto-follow redirects so we can detect expired jobs
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-      redirect: isLinkedInJob ? 'manual' : 'follow',
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
+    const location = response.headers.get('location') ?? '';
+    await response.body?.cancel();
 
-    // Check for LinkedIn expired job redirect
+    // LinkedIn sends expired postings to a search page instead of answering 404.
     if (
-      isLinkedInJob &&
-      (response.status === 301 ||
-        response.status === 302 ||
-        response.status === 303 ||
-        response.status === 307 ||
-        response.status === 308)
+      currentUrl.includes('linkedin.com/jobs/view/') &&
+      (location.includes('expired_jd_redirect') || location.includes('/jobs/search'))
     ) {
-      const redirectUrl = response.headers.get('location') || '';
-      if (redirectUrl.includes('expired_jd_redirect') || redirectUrl.includes('/jobs/search')) {
-        return {
-          finalUrl: redirectUrl || url,
-          title: null,
-          text: '',
-          fetchedAt,
-          fetchError: 'This LinkedIn job posting has expired. Please use manual entry instead.',
-          errorType: 'http_error',
-        };
-      }
-      // If it's a different redirect, follow it manually
-      return fetchPage(
-        redirectUrl.startsWith('http') ? redirectUrl : `https://www.linkedin.com${redirectUrl}`,
-        depth + 1
+      return failure(
+        location || currentUrl,
+        'This LinkedIn job posting has expired. Please use manual entry instead.',
+        'http_error'
       );
     }
 
+    // A redirect without a Location header has nowhere to go.
+    if (!location) return failure(currentUrl, getFriendlyHttpError(response.status), 'http_error');
+
+    if (hop >= MAX_REDIRECTS) {
+      return failure(
+        currentUrl,
+        'Too many redirects. Try using manual entry instead.',
+        'network_error'
+      );
+    }
+
+    try {
+      currentUrl = new URL(location, currentUrl).toString();
+    } catch {
+      return failure(currentUrl, getFriendlyHttpError(response.status), 'http_error');
+    }
+  }
+}
+
+/** Read at most `maxBytes` of the body as UTF-8; the remainder is discarded. */
+async function readBodyCapped(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let text = '';
+  let received = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > maxBytes) {
+      const keep = value.byteLength - (received - maxBytes);
+      text += decoder.decode(value.subarray(0, keep), { stream: true });
+      await reader.cancel();
+      break;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+
+  return text + decoder.decode();
+}
+
+export async function fetchPage(url: string): Promise<FetchPageResult> {
+  const fetchedAt = new Date().toISOString();
+
+  const fetched = await fetchFollowingRedirects(url);
+  if (!('response' in fetched)) {
+    return { ...fetched, title: null, text: '', fetchedAt };
+  }
+  const { response, finalUrl } = fetched;
+
+  try {
     if (!response.ok) {
+      await response.body?.cancel();
       return {
-        finalUrl: response.url || url,
+        finalUrl,
         title: null,
         text: '',
         fetchedAt,
@@ -251,7 +276,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
       };
     }
 
-    const html = await response.text();
+    const html = await readBodyCapped(response, MAX_BODY_BYTES);
     const $ = cheerio.load(html);
 
     // Extract title (prefer og:title over <title>)
@@ -264,7 +289,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
       // Still include OG description for meta-tag extraction fallback
       const ogDesc = $('meta[property="og:description"]').attr('content')?.trim() || '';
       return {
-        finalUrl: response.url || url,
+        finalUrl,
         title,
         text: ogDesc,
         fetchedAt,
@@ -382,7 +407,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
     // Check if content seems gated/empty
     if (text.length < 100) {
       return {
-        finalUrl: response.url || url,
+        finalUrl,
         title,
         text,
         fetchedAt,
@@ -393,7 +418,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
     }
 
     return {
-      finalUrl: response.url || url,
+      finalUrl,
       title,
       text,
       fetchedAt,
@@ -402,7 +427,7 @@ export async function fetchPage(url: string, depth = 0): Promise<FetchPageResult
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     return {
-      finalUrl: url,
+      finalUrl,
       title: null,
       text: '',
       fetchedAt,

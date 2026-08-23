@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { parseCSV, extractGoogleSheetId } from '@/lib/network';
+import { limited } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const blocked = await limited('sheet', session.user.id);
+    if (blocked) return blocked;
 
     const { url } = await request.json();
     if (!url || typeof url !== 'string') {

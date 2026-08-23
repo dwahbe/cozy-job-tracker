@@ -85,7 +85,6 @@ export function NetworkView({
   const [sorts, setSorts] = useState<SortRule[]>([]);
   const [search, setSearch] = useState('');
   const [highlightPersonId, setHighlightPersonId] = useState<string | null>(null);
-  const [parsingUrl, setParsingUrl] = useState<string | null>(null);
 
   const switchView = useCallback((v: ViewMode) => {
     setView(v);
@@ -151,10 +150,6 @@ export function NetworkView({
       return haystack.includes(q);
     });
   }, [sortedPeople, search]);
-
-  const handleManualAdd = useCallback(() => {
-    setParsingUrl(null);
-  }, []);
 
   const isFiltered = search.trim().length > 0;
 
@@ -276,7 +271,7 @@ export function NetworkView({
         </h1>
       </header>
 
-      <AddPersonForm onManualAdd={handleManualAdd} />
+      <AddPersonForm />
 
       <BoardColumnManager
         columns={columns}
@@ -302,7 +297,7 @@ export function NetworkView({
         onReorderColumns={handleReorderColumns}
       />
 
-      {serverPeople.length === 0 && !parsingUrl ? (
+      {serverPeople.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-lg muted">Add someone you&apos;d like to stay in touch with.</p>
         </div>
@@ -410,7 +405,6 @@ export function NetworkView({
                 columnOrder={columnOrder}
                 showLinkedJobs={showLinkedJobs}
                 jobs={jobs}
-                parsingUrl={parsingUrl}
                 highlightPersonId={highlightPersonId}
                 onHighlightDone={() => setHighlightPersonId(null)}
               />

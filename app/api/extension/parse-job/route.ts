@@ -3,6 +3,7 @@ import { validateExtensionToken } from '@/lib/extension-auth';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
+import { limited } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const blocked = await limited('parse', user.userId);
+    if (blocked) return blocked;
 
     const body = await req.json();
     const { url } = body;

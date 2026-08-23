@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { createHash, randomBytes } from 'crypto';
+import { unsafeUrlReason } from '@/lib/safe-url';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -97,11 +98,14 @@ export async function consumeRefreshToken(token: string): Promise<TokenData | nu
 // ── Client metadata (Client ID Metadata Documents) ────────
 
 export async function fetchClientMetadata(clientId: string): Promise<ClientMetadata | null> {
-  if (!clientId.startsWith('https://')) return null;
+  // Client IDs are URLs fetched server-side: https only, public hosts only, no redirects
+  // (a document reached through a redirect could never carry a matching client_id anyway).
+  if (!clientId.startsWith('https://') || unsafeUrlReason(clientId)) return null;
 
   try {
     const res = await fetch(clientId, {
       headers: { Accept: 'application/json' },
+      redirect: 'error',
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;

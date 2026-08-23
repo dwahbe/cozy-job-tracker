@@ -84,7 +84,6 @@ export interface BoardTableProps<T> {
   tableClassName?: string;
   getDateAdded?: (item: T) => string;
   dateAddedLabel?: string;
-  extraRows?: ReactNode;
   /** Called after a successful field update (e.g. for confetti) */
   onFieldUpdated?: (id: string, field: string, value: string) => void;
 }
@@ -360,7 +359,6 @@ export function BoardTable<T>({
   tableClassName = '',
   getDateAdded,
   dateAddedLabel = 'Added',
-  extraRows,
   onFieldUpdated,
 }: BoardTableProps<T>) {
   const router = useRouter();
@@ -975,7 +973,6 @@ export function BoardTable<T>({
             </tr>
           </thead>
           <tbody>
-            {extraRows}
             {items.map((item) => {
               const id = getItemId(item);
               const isHighlighted = id === highlightId;

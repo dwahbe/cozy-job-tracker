@@ -14,6 +14,7 @@ import type { Person, PersonStatus, Interaction, NetworkData, TrashedPerson } fr
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
+import { checkLimit } from '@/lib/ratelimit';
 import { revalidatePath } from 'next/cache';
 
 type TextResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
@@ -413,8 +414,14 @@ export const toolDefinitions: ToolDef[] = [
       },
       annotations: { readOnlyHint: true },
     },
-    handler: async (args: unknown): Promise<TextResult> => {
+    handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { url } = args as { url: string };
+
+      const verdict = await checkLimit('parse', getUserId(extra as Extra));
+      if (!verdict.ok) {
+        return txt(`${verdict.message} (retry in ${verdict.retryAfter}s)`, true);
+      }
+
       try {
         const pageResult = await fetchPage(url);
 

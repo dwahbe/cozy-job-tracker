@@ -1,12 +1,7 @@
 'use client';
 
 import type { Person, PersonStatus } from '@/lib/network';
-import {
-  BUILTIN_NETWORK_COLUMN_LABELS,
-  STATUS_LABELS,
-  PERSON_STATUSES,
-  linkedinUsername,
-} from '@/lib/network';
+import { BUILTIN_NETWORK_COLUMN_LABELS, STATUS_LABELS, PERSON_STATUSES } from '@/lib/network';
 import type { Column, ParsedJob } from '@/lib/markdown';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { BoardTable, type BoardColumnDef, type CellHelpers } from './BoardTable';
@@ -17,7 +12,6 @@ interface NetworkTableProps {
   columnOrder: string[];
   showLinkedJobs: boolean;
   jobs: ParsedJob[];
-  parsingUrl: string | null;
   highlightPersonId: string | null;
   onHighlightDone: () => void;
 }
@@ -178,7 +172,6 @@ export function NetworkTable({
   columnOrder,
   showLinkedJobs,
   jobs,
-  parsingUrl,
   highlightPersonId,
   onHighlightDone,
 }: NetworkTableProps) {
@@ -318,37 +311,6 @@ export function NetworkTable({
     }
   }, []);
 
-  // -- Skeleton rows for URL parsing ----------------------------------------
-
-  const skeletonRow = parsingUrl ? (
-    <tr className="opacity-80">
-      {effectiveOrder.map((colId) => (
-        <td key={colId}>
-          {colId === '_linkedin' ? (
-            <span className="text-xs truncate block max-w-[140px]">
-              {linkedinUsername(parsingUrl) || parsingUrl}
-            </span>
-          ) : (
-            <span
-              className={`skeleton-cell ${
-                colId === '_name'
-                  ? 'skeleton-cell-name'
-                  : colId === '_company'
-                    ? 'skeleton-cell-company'
-                    : colId === '_role'
-                      ? 'skeleton-cell-role'
-                      : 'skeleton-cell-short'
-              }`}
-            >
-              &nbsp;
-            </span>
-          )}
-        </td>
-      ))}
-      <td></td>
-    </tr>
-  ) : null;
-
   // -- Render ---------------------------------------------------------------
 
   return (
@@ -367,7 +329,6 @@ export function NetworkTable({
       highlightId={highlightPersonId}
       onHighlightDone={onHighlightDone}
       tableClassName="network-table"
-      extraRows={skeletonRow}
     />
   );
 }

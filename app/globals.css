@@ -2280,46 +2280,6 @@ a:focus-visible {
   animation: row-highlight-fade 2.5s ease-out;
 }
 
-/* Shimmer skeleton for parsing rows */
-.skeleton-cell {
-  display: inline-block;
-  height: 1em;
-  border-radius: 4px;
-  background: linear-gradient(
-    90deg,
-    rgba(217, 119, 6, 0.06) 0%,
-    rgba(217, 119, 6, 0.14) 50%,
-    rgba(217, 119, 6, 0.06) 100%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.skeleton-cell-name {
-  width: 120px;
-}
-
-.skeleton-cell-company {
-  width: 100px;
-}
-
-.skeleton-cell-role {
-  width: 140px;
-}
-
-.skeleton-cell-short {
-  width: 80px;
-}
-
 /* Quick action buttons on table rows */
 .quick-action-btn {
   display: inline-flex;

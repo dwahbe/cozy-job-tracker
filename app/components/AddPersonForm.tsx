@@ -49,11 +49,7 @@ function parseDropdownOptions(value: string): string[] {
 
 type ImportStep = 'url' | 'mapping' | 'importing' | 'done';
 
-interface AddPersonFormProps {
-  onManualAdd?: () => void;
-}
-
-export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
+export function AddPersonForm() {
   const router = useRouter();
   const [mode, setMode] = useState<'manual' | 'import'>('manual');
 
@@ -120,7 +116,6 @@ export function AddPersonForm({ onManualAdd }: AddPersonFormProps) {
       }
 
       setManualPerson(emptyManualPerson);
-      onManualAdd?.();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

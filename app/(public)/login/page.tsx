@@ -20,7 +20,11 @@ function LoginForm() {
     try {
       const result = await signIn('resend', { email, callbackUrl, redirect: false });
       if (result?.error) {
-        setError('Something went wrong — please try again.');
+        setError(
+          result.error === 'RateLimited'
+            ? 'Too many sign-in attempts from this network — try again in a little while.'
+            : 'Something went wrong — please try again.'
+        );
         setLoading(false);
       } else {
         router.push('/login?verify=1');
