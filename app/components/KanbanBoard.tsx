@@ -25,7 +25,6 @@ const DROP_ANIMATION: DropAnimation = { duration: 200, easing: 'ease' };
 
 interface KanbanBoardProps {
   jobs: ParsedJob[];
-  slug: string;
   columns: Column[];
   highlightJobId: string | null;
   onHighlightDone: () => void;
@@ -103,13 +102,7 @@ function KanbanColumn({
   );
 }
 
-export function KanbanBoard({
-  jobs,
-  slug,
-  columns,
-  highlightJobId,
-  onHighlightDone,
-}: KanbanBoardProps) {
+export function KanbanBoard({ jobs, columns, highlightJobId, onHighlightDone }: KanbanBoardProps) {
   const router = useRouter();
   const [localJobs, setLocalJobs] = useState(jobs);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -161,7 +154,6 @@ export function KanbanBoard({
       const jobId = active.id as string;
       const dragData = active.data.current as { status: string; link: string } | undefined;
       const oldStatus = dragData?.status;
-      const jobLink = dragData?.link;
 
       let newStatus = over.id as string;
       if (!STATUS_OPTIONS.includes(newStatus)) {
@@ -177,7 +169,7 @@ export function KanbanBoard({
         const response = await fetch('/api/update-job', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, jobId, jobLink, field: 'Status', value: newStatus }),
+          body: JSON.stringify({ jobId, field: 'Status', value: newStatus }),
         });
 
         if (response.ok) {
@@ -192,7 +184,7 @@ export function KanbanBoard({
         setLocalJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: oldStatus } : j)));
       }
     },
-    [slug, router]
+    [router]
   );
 
   const handleDragCancel = useCallback(() => {
@@ -240,7 +232,6 @@ export function KanbanBoard({
       {expandedJob && (
         <KanbanExpandPanel
           job={expandedJob}
-          slug={slug}
           columns={columns}
           onClose={() => setExpandedJobId(null)}
         />

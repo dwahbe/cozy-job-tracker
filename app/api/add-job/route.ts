@@ -18,8 +18,7 @@ interface ManualJob {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, job, manualJob } = body as {
-      slug: string;
+    const { job, manualJob } = body as {
       job?: ValidatedJob;
       manualJob?: ManualJob;
     };
@@ -39,10 +38,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and company are required' }, { status: 400 });
     }
 
-    // Resolve board (auth session or legacy slug)
-    const ctx = await resolveBoard(slug);
+    // Resolve the signed-in user's board
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let newJob: Job;

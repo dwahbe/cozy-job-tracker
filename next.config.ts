@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Keep `next dev` from appending its managed agent-rules block to the hand-written AGENTS.md.
   agentRules: false,
+  async redirects() {
+    // Public /b/<slug> boards were retired in favour of accounts.
+    return [{ source: '/b/:slug*', destination: '/login', permanent: true }];
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },

@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/dal';
-import { getBoardByUserId } from '@/lib/kv';
+import { getOrCreateBoard } from '@/lib/kv';
 import { SignOutButton } from './SignOutButton';
 import { BoardTitleForm } from './BoardTitleForm';
 import { NameForm } from './NameForm';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const { userId, email, name } = await verifySession();
-  const board = await getBoardByUserId(userId);
+  const board = await getOrCreateBoard(userId);
 
   return (
     <main className="page">
@@ -32,7 +32,7 @@ export default async function SettingsPage() {
           {/* Board Settings */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold mb-4">Board</h2>
-            <BoardTitleForm currentTitle={board?.title || 'My job board'} />
+            <BoardTitleForm currentTitle={board.title} />
           </div>
 
           {/* AI Integration */}

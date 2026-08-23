@@ -10,7 +10,6 @@ import { DueDatePicker } from './DueDatePicker';
 
 interface JobCardProps {
   job: ParsedJob;
-  slug: string;
   columns: Column[];
   highlight?: boolean;
   onHighlightDone?: () => void;
@@ -25,13 +24,7 @@ interface EditableFields {
   link: string;
 }
 
-export function JobCard({
-  job: serverJob,
-  slug,
-  columns,
-  highlight,
-  onHighlightDone,
-}: JobCardProps) {
+export function JobCard({ job: serverJob, columns, highlight, onHighlightDone }: JobCardProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const highlightRef = useCallback(
@@ -92,7 +85,7 @@ export function JobCard({
       const response = await fetch('/api/update-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId: serverJob.id, jobLink: serverJob.link, field, value }),
+        body: JSON.stringify({ jobId: serverJob.id, field, value }),
       });
 
       if (response.ok) {
@@ -125,7 +118,7 @@ export function JobCard({
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId: serverJob.id, jobLink: serverJob.link || undefined }),
+        body: JSON.stringify({ jobId: serverJob.id }),
       });
 
       if (response.ok) {
@@ -189,9 +182,7 @@ export function JobCard({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug,
             jobId: serverJob.id,
-            jobLink: serverJob.link,
             fields: updates,
           }),
         });

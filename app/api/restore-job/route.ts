@@ -6,15 +6,15 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, jobId } = body as { slug: string; jobId: string };
+    const { jobId } = body as { jobId: string };
 
     if (!jobId) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 });
     }
 
-    const ctx = await resolveBoard(slug);
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!ctx.board.trash || ctx.board.trash.length === 0) {

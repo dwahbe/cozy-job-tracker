@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import { getBoardByUserId, saveBoardByUserId } from '@/lib/kv';
+import { getOrCreateBoard, saveBoardByUserId } from '@/lib/kv';
 import { revalidatePath } from 'next/cache';
 
 export const runtime = 'nodejs';
@@ -36,13 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'fields is required' }, { status: 400 });
     }
 
-    const board = await getBoardByUserId(user.userId);
-    if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found. Create a board on cozyjobtracker.com first.' },
-        { status: 404 }
-      );
-    }
+    const board = await getOrCreateBoard(user.userId);
 
     const job = board.jobs.find((j) => j.id === jobId);
     if (!job) {

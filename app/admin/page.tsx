@@ -84,47 +84,6 @@ export default async function AdminPage() {
               </table>
             </div>
           </section>
-
-          {/* Legacy boards */}
-          {stats.legacyBoards.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold mb-3">Legacy boards</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <StatCard label="Total" value={stats.totalLegacyBoards} />
-                <StatCard label="Migrated" value={stats.migratedLegacyBoards} />
-              </div>
-              <div className="table-wrapper !mx-0">
-                <table className="job-table">
-                  <thead>
-                    <tr>
-                      <th>Slug</th>
-                      <th>Title</th>
-                      <th>Jobs</th>
-                      <th>Trash</th>
-                      <th>Migrated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.legacyBoards.map((b) => (
-                      <tr key={b.slug}>
-                        <td className="font-mono text-sm">{b.slug}</td>
-                        <td>{b.title}</td>
-                        <td className="tabular-nums">{b.jobCount}</td>
-                        <td className="tabular-nums muted">{b.trashCount}</td>
-                        <td>
-                          {b.migrated ? (
-                            <span className="text-sm text-success font-medium">Yes</span>
-                          ) : (
-                            <span className="text-sm muted">No</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
         </div>
       </div>
     </main>

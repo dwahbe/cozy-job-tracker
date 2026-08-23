@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
-import { getBoardByUserId } from '@/lib/kv';
 import { fetchPage } from '@/lib/fetchPage';
 import { extractJob } from '@/lib/extractJob';
 import { validateExtraction } from '@/lib/validateExtraction';
@@ -26,15 +25,6 @@ export async function POST(req: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
-
-    const board = await getBoardByUserId(user.userId);
-    if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found. Create a board on cozyjobtracker.com first.' },
-        { status: 404 }
-      );
-    }
-
     const pageResult = await fetchPage(url);
 
     if (pageResult.fetchError && pageResult.text.length === 0) {

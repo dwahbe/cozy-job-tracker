@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getBoardByUserId, saveBoardByUserId, generateJobId, pruneTrash } from '@/lib/kv';
+import { getOrCreateBoard, saveBoardByUserId, generateJobId, pruneTrash } from '@/lib/kv';
 import type { Job, TrashedJob } from '@/lib/kv';
 import {
   getNetworkByUserId,
@@ -22,8 +22,6 @@ type Extra = { authInfo?: { extra?: Record<string, unknown> } };
 function txt(msg: string, isError?: boolean): TextResult {
   return { content: [{ type: 'text', text: msg }], ...(isError ? { isError: true } : {}) };
 }
-
-const BOARD_NOT_FOUND = txt('Board not found. Create one at cozyjobtracker.com.', true);
 
 function getUserId(extra: Extra): string {
   return extra.authInfo?.extra?.userId as string;
@@ -105,8 +103,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { status } = args as { status?: string };
-      const board = await getBoardByUserId(getUserId(extra as Extra));
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(getUserId(extra as Extra));
 
       let jobs = board.jobs;
       if (status) jobs = jobs.filter((j) => j.status === status);
@@ -133,8 +130,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { jobId } = args as { jobId: string };
-      const board = await getBoardByUserId(getUserId(extra as Extra));
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(getUserId(extra as Extra));
 
       const job = board.jobs.find((j) => j.id === jobId);
       if (!job) return txt(`Job "${jobId}" not found.`, true);
@@ -168,8 +164,7 @@ export const toolDefinitions: ToolDef[] = [
         notes?: string;
       };
       const userId = getUserId(extra as Extra);
-      const board = await getBoardByUserId(userId);
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(userId);
 
       const customFields: Record<string, string> = {};
       for (const col of board.columns) {
@@ -241,8 +236,7 @@ export const toolDefinitions: ToolDef[] = [
         dueDate?: string;
       };
       const userId = getUserId(extra as Extra);
-      const board = await getBoardByUserId(userId);
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(userId);
 
       const job = board.jobs.find((j) => j.id === jobId);
       if (!job) return txt(`Job "${jobId}" not found.`, true);
@@ -306,8 +300,7 @@ export const toolDefinitions: ToolDef[] = [
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { jobId } = args as { jobId: string };
       const userId = getUserId(extra as Extra);
-      const board = await getBoardByUserId(userId);
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(userId);
 
       const idx = board.jobs.findIndex((j) => j.id === jobId);
       if (idx === -1) return txt(`Job "${jobId}" not found.`, true);
@@ -338,8 +331,7 @@ export const toolDefinitions: ToolDef[] = [
     },
     handler: async (args: unknown, extra: unknown): Promise<TextResult> => {
       const { query } = args as { query: string };
-      const board = await getBoardByUserId(getUserId(extra as Extra));
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(getUserId(extra as Extra));
 
       const q = query.toLowerCase();
       const matches = board.jobs.filter(
@@ -368,8 +360,7 @@ export const toolDefinitions: ToolDef[] = [
       annotations: { readOnlyHint: true },
     },
     handler: async (_args: unknown, extra: unknown): Promise<TextResult> => {
-      const board = await getBoardByUserId(getUserId(extra as Extra));
-      if (!board) return BOARD_NOT_FOUND;
+      const board = await getOrCreateBoard(getUserId(extra as Extra));
 
       pruneTrash(board);
       const total = board.jobs.length;

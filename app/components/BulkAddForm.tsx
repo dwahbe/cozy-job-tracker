@@ -4,10 +4,6 @@ import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ValidatedJob } from '@/lib/validateExtraction';
 
-interface BulkAddFormProps {
-  slug: string;
-}
-
 type UrlStatus = 'pending' | 'parsing' | 'success' | 'failed';
 
 interface UrlEntry {
@@ -53,7 +49,7 @@ async function parseJsonResponse(response: Response): Promise<Record<string, unk
   }
 }
 
-export function BulkAddForm({ slug }: BulkAddFormProps) {
+export function BulkAddForm() {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<UrlEntry[]>([]);
@@ -99,7 +95,7 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
           const response = await fetch('/api/parse-job', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: initial[idx].url, slug }),
+            body: JSON.stringify({ url: initial[idx].url }),
           });
 
           if (abortRef.current) return;
@@ -170,7 +166,6 @@ export function BulkAddForm({ slug }: BulkAddFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slug,
           jobs: successEntries.map((e) => e.job),
         }),
       });

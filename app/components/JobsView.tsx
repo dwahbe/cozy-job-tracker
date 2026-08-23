@@ -100,19 +100,12 @@ function getSortFieldValue(job: ParsedJob, field: string): string {
 
 interface JobsViewProps {
   jobs: ParsedJob[];
-  slug: string;
   columns: Column[];
   columnOrder: string[];
   initialSortPreference?: SortRule[];
 }
 
-export function JobsView({
-  jobs,
-  slug,
-  columns,
-  columnOrder,
-  initialSortPreference,
-}: JobsViewProps) {
+export function JobsView({ jobs, columns, columnOrder, initialSortPreference }: JobsViewProps) {
   const [view, setStoredView] = useLocalStorage<JobView>(VIEW_STORAGE_KEY, 'kanban');
   const [sorts, setSorts] = useState<SortRule[]>(initialSortPreference ?? []);
   const [search, setSearch] = useState('');
@@ -124,18 +117,15 @@ export function JobsView({
     setStoredView(newView);
   };
 
-  const handleSortsChange = useCallback(
-    (newSorts: SortRule[]) => {
-      setSorts(newSorts);
-      // Persist to server
-      fetch('/api/update-sort', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, sortPreference: newSorts }),
-      }).catch(console.error);
-    },
-    [slug]
-  );
+  const handleSortsChange = useCallback((newSorts: SortRule[]) => {
+    setSorts(newSorts);
+    // Persist to server
+    fetch('/api/update-sort', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sortPreference: newSorts }),
+    }).catch(console.error);
+  }, []);
 
   const sortedJobs = useMemo(() => {
     // No active sorts — default to newest first
@@ -306,7 +296,6 @@ export function JobsView({
         ) : view === 'kanban' ? (
           <KanbanBoard
             jobs={filteredJobs}
-            slug={slug}
             columns={columns}
             highlightJobId={highlightJobId}
             onHighlightDone={clearHighlight}
@@ -317,7 +306,6 @@ export function JobsView({
               <JobCard
                 key={job.link}
                 job={job}
-                slug={slug}
                 columns={columns}
                 highlight={job.id === highlightJobId}
                 onHighlightDone={clearHighlight}
@@ -327,7 +315,6 @@ export function JobsView({
         ) : (
           <JobTable
             jobs={filteredJobs}
-            slug={slug}
             columns={columns}
             columnOrder={columnOrder}
             highlightJobId={highlightJobId}

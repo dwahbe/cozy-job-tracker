@@ -132,7 +132,6 @@ function SortableHeader({
 
 interface JobTableProps {
   jobs: ParsedJob[];
-  slug: string;
   columns: Column[];
   columnOrder: string[];
   highlightJobId?: string | null;
@@ -141,7 +140,6 @@ interface JobTableProps {
 
 export function JobTable({
   jobs: serverJobs,
-  slug,
   columns,
   columnOrder,
   highlightJobId,
@@ -243,7 +241,7 @@ export function JobTable({
         const response = await fetch('/api/reorder-columns', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, columnOrder: newOrder }),
+          body: JSON.stringify({ columnOrder: newOrder }),
         });
 
         if (!response.ok) {
@@ -268,7 +266,7 @@ export function JobTable({
     });
   };
 
-  const updateField = async (jobId: string, jobLink: string, field: string, value: string) => {
+  const updateField = async (jobId: string, field: string, value: string) => {
     // Optimistic update - UI reflects change immediately
     setPendingUpdates((prev) => ({
       ...prev,
@@ -279,7 +277,7 @@ export function JobTable({
       const response = await fetch('/api/update-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId, jobLink, field, value }),
+        body: JSON.stringify({ jobId, field, value }),
       });
 
       if (response.ok) {
@@ -296,7 +294,7 @@ export function JobTable({
     }
   };
 
-  const handleDelete = async (jobId: string, jobLink: string) => {
+  const handleDelete = async (jobId: string) => {
     if (!confirm('Move this job to trash?')) return;
 
     setDeleting(jobId);
@@ -304,7 +302,7 @@ export function JobTable({
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId, jobLink: jobLink || undefined }),
+        body: JSON.stringify({ jobId }),
       });
 
       if (response.ok) {
@@ -328,19 +326,14 @@ export function JobTable({
     setEditLinkValue(currentLinkUrl ?? '');
   };
 
-  const saveEdit = async (jobId: string, jobLink: string, field: string, originalValue: string) => {
+  const saveEdit = async (jobId: string, field: string, originalValue: string) => {
     setEditingCell(null);
     if (editValue !== originalValue) {
-      await updateField(jobId, jobLink, field, editValue);
+      await updateField(jobId, field, editValue);
     }
   };
 
-  const saveTitleAndLink = async (
-    jobId: string,
-    jobLink: string,
-    originalTitle: string,
-    originalLink: string
-  ) => {
+  const saveTitleAndLink = async (jobId: string, originalTitle: string, originalLink: string) => {
     setEditingCell(null);
     const titleChanged = editValue !== originalTitle;
     const linkChanged = editLinkValue !== originalLink;
@@ -361,7 +354,7 @@ export function JobTable({
       const response = await fetch('/api/update-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId, jobLink, fields }),
+        body: JSON.stringify({ jobId, fields }),
       });
       if (response.ok) {
         router.refresh();
@@ -382,13 +375,12 @@ export function JobTable({
   const handleKeyDown = (
     e: React.KeyboardEvent,
     jobId: string,
-    jobLink: string,
     field: string,
     originalValue: string
   ) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      saveEdit(jobId, jobLink, field, originalValue);
+      saveEdit(jobId, field, originalValue);
     } else if (e.key === 'Escape') {
       cancelEdit();
     }
@@ -399,14 +391,12 @@ export function JobTable({
 
   const EditableCell = ({
     jobId,
-    jobLink,
     field,
     value,
     placeholder = '—',
     className = '',
   }: {
     jobId: string;
-    jobLink: string;
     field: string;
     value: string;
     placeholder?: string;
@@ -417,8 +407,8 @@ export function JobTable({
         <AutoHeightTextarea
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
-          onBlur={() => saveEdit(jobId, jobLink, field, value)}
-          onKeyDown={(e) => handleKeyDown(e, jobId, jobLink, field, value)}
+          onBlur={() => saveEdit(jobId, field, value)}
+          onKeyDown={(e) => handleKeyDown(e, jobId, field, value)}
           className="inline-edit"
           autoFocus
         />
@@ -450,7 +440,7 @@ export function JobTable({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                saveTitleAndLink(job.id, job.link, job.title, job.link);
+                saveTitleAndLink(job.id, job.title, job.link);
               } else if (e.key === 'Escape') {
                 cancelEdit();
               }
@@ -478,11 +468,11 @@ export function JobTable({
               type="text"
               value={editLinkValue}
               onChange={(e) => setEditLinkValue(e.target.value)}
-              onBlur={() => saveTitleAndLink(job.id, job.link, job.title, job.link)}
+              onBlur={() => saveTitleAndLink(job.id, job.title, job.link)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  saveTitleAndLink(job.id, job.link, job.title, job.link);
+                  saveTitleAndLink(job.id, job.title, job.link);
                 } else if (e.key === 'Escape') {
                   cancelEdit();
                 }
@@ -558,7 +548,7 @@ export function JobTable({
         case '_company':
           return (
             <td key={colId} className={col.tdClass}>
-              <EditableCell jobId={job.id} jobLink={job.link} field="Company" value={job.company} />
+              <EditableCell jobId={job.id} field="Company" value={job.company} />
             </td>
           );
         case '_location':
@@ -566,7 +556,7 @@ export function JobTable({
             <td key={colId} className={col.tdClass}>
               <EditableCell
                 jobId={job.id}
-                jobLink={job.link}
+
                 field="Location"
                 value={job.location || ''}
               />
@@ -577,7 +567,7 @@ export function JobTable({
             <td key={colId} className={col.tdClass}>
               <EditableCell
                 jobId={job.id}
-                jobLink={job.link}
+
                 field="Employment type"
                 value={job.employmentType || ''}
               />
@@ -588,7 +578,7 @@ export function JobTable({
             <td key={colId} className={col.tdClass}>
               <DueDatePicker
                 value={job.dueDate || ''}
-                onChange={(value) => updateField(job.id, job.link, 'Due date', value)}
+                onChange={(value) => updateField(job.id, 'Due date', value)}
               />
             </td>
           );
@@ -597,7 +587,7 @@ export function JobTable({
             <td key={colId} className={col.tdClass}>
               <EditableCell
                 jobId={job.id}
-                jobLink={job.link}
+
                 field="Notes"
                 value={job.notes || ''}
                 className="notes-text"
@@ -609,7 +599,7 @@ export function JobTable({
             <td key={colId} className={col.tdClass}>
               <select
                 value={job.status}
-                onChange={(e) => updateField(job.id, job.link, 'Status', e.target.value)}
+                onChange={(e) => updateField(job.id, 'Status', e.target.value)}
                 className={`status-select ${statusColor(job.status)}`}
               >
                 {STATUS_OPTIONS.map((status) => (
@@ -638,16 +628,14 @@ export function JobTable({
           <input
             type="checkbox"
             checked={job.customFields[customCol.name] === 'Yes'}
-            onChange={(e) =>
-              updateField(job.id, job.link, customCol.name, e.target.checked ? 'Yes' : 'No')
-            }
+            onChange={(e) => updateField(job.id, customCol.name, e.target.checked ? 'Yes' : 'No')}
             className="table-checkbox"
           />
         )}
         {customCol.type === 'dropdown' && customCol.options && (
           <select
             value={job.customFields[customCol.name] || ''}
-            onChange={(e) => updateField(job.id, job.link, customCol.name, e.target.value)}
+            onChange={(e) => updateField(job.id, customCol.name, e.target.value)}
             className={`table-select ${dropdownColorClass(customCol.optionColors?.[job.customFields[customCol.name]])}`}
           >
             <option value="">—</option>
@@ -661,7 +649,7 @@ export function JobTable({
         {customCol.type === 'date' && (
           <DueDatePicker
             value={job.customFields[customCol.name] || ''}
-            onChange={(v) => updateField(job.id, job.link, customCol.name, v)}
+            onChange={(v) => updateField(job.id, customCol.name, v)}
           />
         )}
         {customCol.type === 'text' && (
@@ -678,7 +666,7 @@ export function JobTable({
               const newValue = e.target.value;
               const oldValue = job.customFields[customCol.name] || '';
               if (newValue !== oldValue) {
-                updateField(job.id, job.link, customCol.name, newValue);
+                updateField(job.id, customCol.name, newValue);
               }
               setTextFields((prev) => {
                 const next = { ...prev };
@@ -734,7 +722,7 @@ export function JobTable({
                   </td>
                   <td className="td-actions">
                     <button
-                      onClick={() => handleDelete(job.id, job.link)}
+                      onClick={() => handleDelete(job.id)}
                       disabled={deleting === job.id}
                       className="delete-btn"
                       title="Delete job"

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExtensionToken } from '@/lib/extension-auth';
 import {
-  getBoardByUserId,
+  getOrCreateBoard,
   saveBoardByUserId,
   createJobFromValidation,
   generateJobId,
@@ -47,13 +47,7 @@ export async function POST(req: NextRequest) {
       customFields?: Record<string, string>;
     };
 
-    const board = await getBoardByUserId(user.userId);
-    if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found. Create a board on cozyjobtracker.com first.' },
-        { status: 404 }
-      );
-    }
+    const board = await getOrCreateBoard(user.userId);
 
     // Path 1: Manual job (MCP / direct field entry)
     if (manual && manual.title && manual.company) {

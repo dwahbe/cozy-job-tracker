@@ -24,10 +24,9 @@ function daysUntilPermanentDelete(dateStr: string): number {
 
 interface TrashListProps {
   items: TrashedJob[];
-  slug: string;
 }
 
-export function TrashList({ items, slug }: TrashListProps) {
+export function TrashList({ items }: TrashListProps) {
   const router = useRouter();
   const [restoring, setRestoring] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
@@ -40,7 +39,7 @@ export function TrashList({ items, slug }: TrashListProps) {
       const response = await fetch('/api/restore-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId }),
+        body: JSON.stringify({ jobId }),
       });
       if (response.ok) {
         router.refresh();
@@ -60,11 +59,7 @@ export function TrashList({ items, slug }: TrashListProps) {
     setEmptying(true);
     setError(null);
     try {
-      const response = await fetch('/api/empty-trash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug }),
-      });
+      const response = await fetch('/api/empty-trash', { method: 'POST' });
       if (response.ok) {
         router.refresh();
       } else {

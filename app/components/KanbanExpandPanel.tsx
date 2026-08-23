@@ -16,17 +16,11 @@ import { DueDatePicker } from './DueDatePicker';
 
 interface KanbanExpandPanelProps {
   job: ParsedJob;
-  slug: string;
   columns: Column[];
   onClose: () => void;
 }
 
-export function KanbanExpandPanel({
-  job: serverJob,
-  slug,
-  columns,
-  onClose,
-}: KanbanExpandPanelProps) {
+export function KanbanExpandPanel({ job: serverJob, columns, onClose }: KanbanExpandPanelProps) {
   const router = useRouter();
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, string>>({});
   const [textFields, setTextFields] = useState<Record<string, string>>({});
@@ -97,9 +91,7 @@ export function KanbanExpandPanel({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug,
             jobId: serverJob.id,
-            jobLink: serverJob.link,
             field,
             value,
           }),
@@ -122,7 +114,7 @@ export function KanbanExpandPanel({
         });
       }
     },
-    [slug, serverJob.id, serverJob.link, router]
+    [serverJob.id, router]
   );
 
   const handleSaveEdit = async () => {
@@ -150,9 +142,7 @@ export function KanbanExpandPanel({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug,
             jobId: serverJob.id,
-            jobLink: serverJob.link,
             fields: updates,
           }),
         });
@@ -173,7 +163,7 @@ export function KanbanExpandPanel({
       const response = await fetch('/api/delete-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, jobId: serverJob.id, jobLink: serverJob.link || undefined }),
+        body: JSON.stringify({ jobId: serverJob.id }),
       });
       if (response.ok) {
         onClose();

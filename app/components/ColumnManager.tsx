@@ -23,7 +23,6 @@ import type { Column } from '@/lib/markdown';
 import { DropdownOptionsEditor, type OptionEntry } from './DropdownOptionsEditor';
 
 interface ColumnManagerProps {
-  slug: string;
   columns: Column[];
 }
 
@@ -121,7 +120,7 @@ function SortableColumnChip({
   );
 }
 
-export function ColumnManager({ slug, columns }: ColumnManagerProps) {
+export function ColumnManager({ columns }: ColumnManagerProps) {
   const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [editing, setEditing] = useState<EditingColumn | null>(null);
@@ -170,7 +169,6 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug,
             columnOrder: newColumns.map((c) => c.name),
           }),
         });
@@ -228,7 +226,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       const response = await fetch('/api/add-column', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, column }),
+        body: JSON.stringify({ column }),
       });
 
       if (!response.ok) {
@@ -289,7 +287,7 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
       const response = await fetch('/api/manage-column', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, oldName: editing.originalName, column }),
+        body: JSON.stringify({ oldName: editing.originalName, column }),
       });
 
       if (!response.ok) {
@@ -316,10 +314,9 @@ export function ColumnManager({ slug, columns }: ColumnManagerProps) {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/manage-column?slug=${encodeURIComponent(slug)}&name=${encodeURIComponent(columnName)}`,
-        { method: 'DELETE' }
-      );
+      const response = await fetch(`/api/manage-column?name=${encodeURIComponent(columnName)}`, {
+        method: 'DELETE',
+      });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));

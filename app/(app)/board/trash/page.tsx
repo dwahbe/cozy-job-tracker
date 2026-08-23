@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/dal';
-import { getBoardByUserId, saveBoardByUserId, pruneTrash } from '@/lib/kv';
+import { getOrCreateBoard, saveBoardByUserId, pruneTrash } from '@/lib/kv';
 import { TrashList } from '@/app/components/TrashList';
 import Link from 'next/link';
 
@@ -8,16 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function TrashPage() {
   const { userId } = await verifySession();
 
-  const board = await getBoardByUserId(userId);
-  if (!board) {
-    return (
-      <main className="page">
-        <div className="container-app max-w-3xl text-center py-16">
-          <p className="muted">No board found.</p>
-        </div>
-      </main>
-    );
-  }
+  const board = await getOrCreateBoard(userId);
 
   // Auto-prune expired trash items
   if (pruneTrash(board)) {
@@ -38,7 +29,7 @@ export default async function TrashPage() {
           <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">Trash</h1>
         </header>
 
-        <TrashList items={trashItems} slug={userId} />
+        <TrashList items={trashItems} />
       </div>
     </main>
   );

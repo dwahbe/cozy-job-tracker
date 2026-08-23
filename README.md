@@ -11,7 +11,6 @@ I built this because job hunting is stressful enough without fighting your track
 - **board & table views** — drag jobs through your pipeline: saved → applied → interview → offer
 - **custom columns** — add whatever fields make sense for your search (referral? vibe check? notes to self?)
 - **notes & due dates** — keep track of deadlines and details without a separate app
-- **share your board** — send a public link to a friend who's also in the thick of it
 
 No AI cover letter generators, no LinkedIn integrations, no "career coaching." just a clean board for keeping track of where you applied.
 

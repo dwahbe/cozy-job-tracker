@@ -22,9 +22,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const ctx = await resolveBoard(undefined);
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     ctx.board.title = trimmed;

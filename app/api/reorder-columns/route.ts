@@ -6,8 +6,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, columnOrder } = body as {
-      slug: string;
+    const { columnOrder } = body as {
       columnOrder: string[];
     };
 
@@ -16,10 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'columnOrder must be an array' }, { status: 400 });
     }
 
-    // Resolve board (auth session or legacy slug)
-    const ctx = await resolveBoard(slug);
+    // Resolve the signed-in user's board
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Save the new column order

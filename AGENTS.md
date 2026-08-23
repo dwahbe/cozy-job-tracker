@@ -41,7 +41,6 @@ For UI changes, run `bun run dev` and verify in the browser. There is no test su
 - **State**: React hooks only (no Redux/Zustand). Optimistic updates with rollback
 - **MCP**: Remote MCP server at `/api/[transport]` (Streamable HTTP). OAuth 2.1 with PKCE — see `lib/oauth.ts`
 - **Chrome extension**: Separate package in `extension/`, communicates via `/api/extension/*` routes
-- **Legacy boards**: slug-based with optional PIN, being migrated to auth-based
 
 ## Coding conventions
 
@@ -63,5 +62,5 @@ For UI changes, run `bun run dev` and verify in the browser. There is no test su
 
 - `proxy.ts` is the Next.js middleware file (not named `middleware.ts`)
 - `proxy.ts` only checks for a session cookie on protected routes and handles `/login` redirects (with `callbackUrl`); real session validation is `verifySession()` (pages) / `resolveBoard()` (API routes)
-- Two board key patterns in Redis: `board:{userId}` (auth) and `board:{slug}` (legacy)
+- Board data lives at `board:{userId}` and network data at `network:{userId}` (one JSON blob each, read-modify-write)
 - Data types live in `lib/kv.ts` with Column defined separately in `lib/markdown.ts`

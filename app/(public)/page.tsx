@@ -1,14 +1,23 @@
 import Link from 'next/link';
-import { listLegacyBoards } from '@/lib/kv';
-import { LegacyBoardAccess } from '@/app/components/LegacyBoardAccess';
+import { countUsers } from '@/lib/users';
 import { AnimatedCount } from '@/app/components/AnimatedCount';
 import { HowItWorks } from '@/app/components/HowItWorks';
 
-export const dynamic = 'force-dynamic';
+// Static page, regenerated at most hourly — the user count is the only data on it.
+export const revalidate = 3600;
+
+async function getUserCount(): Promise<number> {
+  try {
+    return await countUsers();
+  } catch (error) {
+    // Never let a KV hiccup (or a build without KV env) take the landing page down.
+    console.error('Landing page user count failed:', error);
+    return 0;
+  }
+}
 
 export default async function HomePage() {
-  const legacyBoards = await listLegacyBoards();
-  const boardCount = legacyBoards.length;
+  const userCount = await getUserCount();
 
   return (
     <main className="page">
@@ -53,37 +62,15 @@ export default async function HomePage() {
             open source
           </a>
           , and I use it myself.
-          {boardCount > 0 && (
+          {userCount > 0 && (
             <>
               {' '}
-              Currently helping <AnimatedCount value={boardCount} /> people track job apps!
+              Currently helping <AnimatedCount value={userCount} /> people track job apps!
             </>
           )}
         </p>
         <p className="muted mt-2">—Dylan</p>
       </div>
-
-      {/* Legacy Board Migration -- TEMPORARY */}
-      {boardCount > 0 && (
-        <div className="container-app max-w-xl mb-4 sm:mb-6">
-          <div className="card p-6 border-2 border-foreground/15">
-            <h2 className="text-xl font-semibold mb-2">Already have a board?</h2>
-            <p className="muted mb-5">
-              cozy job tracker now has email accounts — your board is safe and waiting. Sign in to
-              claim it and keep your data secure, or access it directly below.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-5">
-              <Link href="/login" className="btn btn-primary text-sm text-center">
-                Sign in &amp; import your board
-              </Link>
-            </div>
-            <div>
-              <p className="text-sm muted mb-2">Or go to your board directly:</p>
-              <LegacyBoardAccess />
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { resolveBoard, saveBoardAndRevalidate } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const { slug } = body as { slug: string };
-
-    const ctx = await resolveBoard(slug);
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     ctx.board.trash = [];

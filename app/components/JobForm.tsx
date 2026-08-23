@@ -9,7 +9,6 @@ import { BulkAddForm } from './BulkAddForm';
 import { setHighlightJob } from './JobsView';
 
 interface JobFormProps {
-  slug: string;
   columns: Column[];
 }
 
@@ -43,7 +42,7 @@ async function parseJsonResponse(response: Response): Promise<Record<string, unk
   }
 }
 
-export function JobForm({ slug, columns }: JobFormProps) {
+export function JobForm({ columns }: JobFormProps) {
   const router = useRouter();
   const [mode, setMode] = useState<'url' | 'manual' | 'bulk'>('url');
   const [url, setUrl] = useState('');
@@ -67,7 +66,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
       const response = await fetch('/api/parse-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, slug }),
+        body: JSON.stringify({ url }),
       });
 
       const data = await parseJsonResponse(response);
@@ -112,7 +111,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
       const response = await fetch('/api/add-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, job: parsedJob }),
+        body: JSON.stringify({ job: parsedJob }),
       });
 
       const data = await parseJsonResponse(response);
@@ -145,7 +144,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
       const response = await fetch('/api/add-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, manualJob }),
+        body: JSON.stringify({ manualJob }),
       });
 
       const data = await parseJsonResponse(response);
@@ -212,7 +211,7 @@ export function JobForm({ slug, columns }: JobFormProps) {
       </div>
 
       {mode === 'bulk' ? (
-        <BulkAddForm slug={slug} />
+        <BulkAddForm />
       ) : mode === 'url' ? (
         <>
           <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-3 mb-4">

@@ -9,6 +9,15 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: 'Aug 21, 2026',
+    title: 'Old /b/ boards retired',
+    emoji: '🧹',
+    description: [
+      "The link-based boards from before accounts existed are gone — everyone's on email sign-in now, and the old boards had been idle for months.",
+      "If you had one and still want the data, send me a note through the feedback button and I'll dig it out.",
+    ],
+  },
+  {
     date: 'Apr 3, 2026',
     title: 'Board view for jobs',
     emoji: '📋',
@@ -68,7 +77,7 @@ export const changelog: ChangelogEntry[] = [
     title: 'Email accounts',
     emoji: '🔑',
     description:
-      'Sign in with your email to get a personal board tied to your account. No password needed — just a magic link. Already have a board? Import it after creating your account.',
+      'Sign in with your email to get a personal board tied to your account. No password needed — just a magic link.',
   },
   {
     date: 'Feb 6, 2026',

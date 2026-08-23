@@ -73,9 +73,6 @@ function LoginForm() {
             </button>
             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
           </form>
-          <p className="text-sm muted mt-5 text-center">
-            Already have a board with a /b/ link? Sign in and you&apos;ll be able to import it.
-          </p>
         </div>
       </div>
     </main>

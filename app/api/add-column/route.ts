@@ -9,7 +9,7 @@ const VALID_COLUMN_TYPES = ['text', 'checkbox', 'dropdown', 'date'];
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, column } = body as { slug: string; column: Column };
+    const { column } = body as { column: Column };
 
     // Validate column
     if (!column || !column.name || !column.type) {
@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve board (auth session or legacy slug)
-    const ctx = await resolveBoard(slug);
+    // Resolve the signed-in user's board
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if column already exists

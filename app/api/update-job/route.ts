@@ -40,17 +40,15 @@ function applyFieldToJob(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slug, jobId, jobLink, field, value, fields } = body as {
-      slug: string;
+    const { jobId, field, value, fields } = body as {
       jobId?: string;
-      jobLink?: string;
       field?: string;
       value?: string;
       fields?: FieldUpdate[];
     };
 
-    if (!jobId && !jobLink) {
-      return NextResponse.json({ error: 'jobId or jobLink is required' }, { status: 400 });
+    if (!jobId) {
+      return NextResponse.json({ error: 'jobId is required' }, { status: 400 });
     }
 
     // Normalize: support single field or batch fields array
@@ -60,10 +58,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'field or fields is required' }, { status: 400 });
     }
 
-    // Resolve board (auth session or legacy slug)
-    const ctx = await resolveBoard(slug);
+    // Resolve the signed-in user's board
+    const ctx = await resolveBoard();
     if (!ctx) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validate all updates
@@ -88,10 +86,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Find the job — prefer id (always unique), fall back to link
-    const jobIndex = ctx.board.jobs.findIndex(
-      (j) => (jobId && j.id === jobId) || (jobLink && j.link === jobLink)
-    );
+    // Find the job by id
+    const jobIndex = ctx.board.jobs.findIndex((j) => j.id === jobId);
     if (jobIndex === -1) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
